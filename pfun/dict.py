@@ -57,7 +57,7 @@ class Dict(Dict_[K, V]):
         copy[key] = value
         return Dict(copy)
 
-    def get(self, key: K, default: Optional[V]=None) -> Maybe[V]:  # type: ignore
+    def get(self, key: K) -> Maybe[V]:  # type: ignore
         """
         get the value associated with a key
 
@@ -72,7 +72,7 @@ class Dict(Dict_[K, V]):
         :return: :class:`Just` if key is found in dictionary or default is given,
                  :class:`Nothing` otherwise
         """
-        v = super().get(key, default)  # type: ignore
+        v = super().get(key)  # type: ignore
         if v is None:
             return Nothing()
         return Just(v)

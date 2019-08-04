@@ -53,15 +53,15 @@ class Maybe(Generic[A], Immutable):
         """
         raise NotImplementedError()
 
-    def get_or_else(self, default: A) -> A:
+    def or_else(self, default: A) -> A:
         """
         Try to get the result of the possibly failed computation if it was
         successful.
 
         :example:
-        >>> Just(1).get_or_else(2)
+        >>> Just(1).or_else(2)
         1
-        >>> Nothing().get_or_else(2)
+        >>> Nothing().or_else(2)
         2
 
         :param default: Value to return if computation has failed
@@ -110,7 +110,7 @@ class Just(Maybe[A]):
     def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
         return Just(f(self.a))
 
-    def get_or_else(self, default: A) -> A:
+    def or_else(self, default: A) -> A:
         return self.a
 
     def __eq__(self, other: Any) -> bool:
@@ -133,7 +133,7 @@ class Just(Maybe[A]):
         return True
 
 
-def maybe(f: Callable[[A], B]) -> Callable[[A], Maybe[B]]:
+def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
     """
     Wrap a function that may raise an exception with a :class:`Maybe`.
     Can also be used as a decorator. Useful for turning
@@ -191,7 +191,7 @@ class Nothing(Maybe[Any]):
     def __repr__(self):
         return 'Nothing()'
 
-    def get_or_else(self, default: A) -> A:
+    def or_else(self, default: A) -> A:
         return default
 
     def map(self, f: Callable[[A], B]) -> 'Maybe[B]':

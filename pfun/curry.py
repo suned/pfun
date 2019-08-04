@@ -18,6 +18,7 @@ A11 = TypeVar('A11')
 A12 = TypeVar('A12')
 R = TypeVar('R')
 
+
 def curry2(
         f: Callable[[A1, A2], R]
 ) -> Callable[[A1], Callable[[A2], R]]:
@@ -333,7 +334,7 @@ def curry12(
     return curry(f)
 
 
-class Curry:
+class Curry(Immutable):
     def __init__(self, f):
         self.f = f
 

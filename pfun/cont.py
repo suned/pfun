@@ -41,7 +41,7 @@ class Cont(Generic[A, B], Immutable):
         result to ``f``
 
         :example:
-        >>> from zen import identity
+        >>> from pfun import identity
         >>> value(1).run(identity)
         1
 
@@ -56,7 +56,7 @@ def value(a: A) -> Cont[A, B]:
     Wrap a constant value in a :class:`Cont` context
 
     :example:
-    >>> from zen import identity
+    >>> from pfun import identity
     >>> value(1).run(identity)
     1
 
