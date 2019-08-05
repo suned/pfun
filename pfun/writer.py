@@ -54,6 +54,11 @@ class Writer(Generic[A, M], Immutable):
             m = append(self.m, w.m)  # type: ignore
         return Writer(w.a, m)  # type: ignore
 
+    def __eq__(self, other):
+        if not isinstance(other, Writer):
+            return False
+        return other.a == self.a and other.m == self.m
+
     def map(self, f: 'Callable[[A, M], Tuple[B, M]]') -> 'Writer[B, M]':
         """
         Map the value/monoid pair in this :class:`Writer`
@@ -98,7 +103,7 @@ def tell(m: M) -> Writer[None, M]:
     ... ).and_then(
     ...     lambda _: tell(['another monoid value'])
     ... )
-    Writer((), ['monoid value', 'another monoid value'])
+    Writer(None, ['monoid value', 'another monoid value'])
 
     :param m: the monoid value
     :return: Writer with unit value and monoid value ``m``

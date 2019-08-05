@@ -1,25 +1,44 @@
+from hypothesis import given, assume
+
+from pfun import cont, identity, compose
 from tests.monad_test import MonadTest
+from tests.strategies import anything, unaries, conts
 
 
 class TestCont(MonadTest):
-    def test_right_identity_law(self, *args):
-        pass
+    @given(anything())
+    def test_right_identity_law(self, value):
+        assert (cont.value(value).and_then(cont.value).run(identity) ==
+                cont.value(value).run(identity))
 
-    def test_left_identity_law(self, *args):
-        pass
+    @given(unaries(conts()), anything())
+    def test_left_identity_law(self, f, value):
+        assert (cont.value(value).and_then(f).run(identity) ==
+                f(value).run(identity))
 
-    def test_associativity_law(self, *args):
-        pass
+    @given(conts(), unaries(conts()), unaries(conts()))
+    def test_associativity_law(self, c, f, g):
+        assert (c.and_then(f).and_then(g).run(identity) ==
+                c.and_then(lambda x: f(x).and_then(g)).run(identity))
 
-    def test_equality(self, *args):
-        pass
+    @given(anything())
+    def test_equality(self, value):
+        assert cont.value(value).run(identity) == cont.value(value).run(identity)
 
-    def test_inequality(self, *args):
-        pass
+    @given(anything(), anything())
+    def test_inequality(self, first, second):
+        assume(first != second)
+        assert cont.value(first).run(identity) != cont.value(second).run(identity)
 
-    def test_identity_law(self, *args):
-        pass
+    @given(anything())
+    def test_identity_law(self, value):
+        assert (cont.value(value).map(identity).run(identity) ==
+                cont.value(value).run(identity))
 
-    def test_composition_law(self, *args):
-        pass
+    @given(unaries(), unaries(), anything())
+    def test_composition_law(self, f, g, value):
+        h = compose(f, g)
+        assert (cont.value(value).map(h).run(identity) ==
+                cont.value(value).map(g).map(f).run(identity))
+
 

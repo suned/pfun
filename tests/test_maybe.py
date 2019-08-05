@@ -1,6 +1,6 @@
 from typing import Any
 from hypothesis import assume, given
-from pfun import Maybe, Just, Nothing, Unary, identity, compose
+from pfun import Maybe, Just, Nothing, Unary, identity, compose, maybe
 from .monad_test import MonadTest
 from .strategies import anything, unaries, maybes
 
@@ -61,3 +61,23 @@ class TestMaybe(MonadTest):
         h = compose(f, g)
         assert Just(value).map(h) == Just(value).map(g).map(f)
         assert Nothing().map(h) == Nothing().map(g).map(f)
+
+    @given(anything())
+    def test_just_or_else(self, value):
+        assert Just(value).or_else(None) == value
+
+    @given(anything())
+    def test_nothing_or_else(self, value):
+        assert Nothing().or_else(value) is value
+
+    def test_maybe_decorater(self):
+        maybe_int = maybe(int)
+        assert maybe_int('1') == Just(1)
+        assert maybe_int('whoops') == Nothing()
+
+    @given(anything())
+    def test_just_bool(self, value):
+        assert bool(Just(value))
+
+    def test_nothing_bool(self):
+        assert not bool(Nothing())

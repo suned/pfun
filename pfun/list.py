@@ -1,11 +1,16 @@
 from typing import List as List_, TypeVar, Callable, Iterable, Tuple, Optional
 from functools import reduce
 
+from pfun.monoid import Monoid
+
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class List(List_[A]):
+class List(List_[A], Monoid):
+    def empty(self) -> 'List[A]':
+        return List()
+
     def reduce(self, f: Callable[[B, A], B], initializer: Optional[B] = None) -> 'List[B]':
         """
         Aggregate elements by ``f``
@@ -23,7 +28,7 @@ class List(List_[A]):
     def __setitem__(self, key, value):
         raise TypeError("'List' object does not support item assignment")
 
-    def append(self, a: A) -> 'List[A]':  # type: ignore
+    def append(self, a: 'List[A]') -> 'List[A]':  # type: ignore
         """
         Add element to end of list
 
@@ -34,7 +39,7 @@ class List(List_[A]):
         :param a: Element to append
         :return: New :class:`List` with ``a`` appended
         """
-        return self + [a]
+        return self + a
 
     def extend(self, iterable: Iterable[A]) -> 'List[A]':  # type: ignore
         """

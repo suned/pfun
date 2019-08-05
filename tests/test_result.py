@@ -1,9 +1,10 @@
+import pytest
 from typing import Any
 
 from hypothesis import given, assume
 
 from pfun import Unary, identity, compose
-from pfun.result import Result, Ok, Error
+from pfun.result import Result, Ok, Error, result
 from tests.monad_test import MonadTest
 from tests.strategies import results, unaries, anything
 
@@ -48,3 +49,20 @@ class TestResult(MonadTest):
         assert Ok(value).map(h) == Ok(value).map(g).map(f)
         assert Error(value).map(h) == Error(value).map(g).map(f)
 
+    @given(anything(), anything())
+    def test_or_else(self, value, default):
+        assert Ok(value).or_else(default) == value
+        assert Error(value).or_else(default) == default
+
+    @given(anything())
+    def test_bool(self, value):
+        assert bool(Ok(value))
+        assert not bool(Error(value))
+
+    def test_result_decorator(self):
+        result_int = result(int)
+        assert result_int('1') == Ok(1)
+        error = result_int('whoops')
+        assert isinstance(error, Error)
+        assert isinstance(error.b, ValueError)
+        assert error.b.args == ("invalid literal for int() with base 10: 'whoops'",)

@@ -1,5 +1,6 @@
 from typing import Generic, Callable, TypeVar, Any
 
+from pfun import compose
 from .immutable import Immutable
 
 A = TypeVar('A')
@@ -49,6 +50,11 @@ class Cont(Generic[A, B], Immutable):
         :return: the result of passing the return value of the wrapped function to ``f``
         """
         return self.f(f)
+
+    __call__ = run
+
+    def map(self, f: Callable[[B], C]) -> 'Cont[B, C]':
+        return Cont(lambda c: self.run(compose(c, f)))
 
 
 def value(a: A) -> Cont[A, B]:

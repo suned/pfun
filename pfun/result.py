@@ -47,15 +47,15 @@ class Result(Generic[A, B], Immutable):
         """
         raise NotImplementedError()
 
-    def get_or_else(self, default: A) -> A:
+    def or_else(self, default: A) -> A:
         """
         Try to get the result of possibly failed computation, return default
         if the computation has failed
 
         :example:
-        >>> Ok(1).get_or_else(2)
+        >>> Ok(1).or_else(2)
         1
-        >>> Error(1).get_or_else(2)
+        >>> Error(1).or_else(2)
         2
 
         :param default: Value to return if the computation has failed
@@ -87,7 +87,7 @@ class Ok(Result[A, B]):
     Represents a successful computation of type A
     """
 
-    def get_or_else(self, default: A) -> A:
+    def or_else(self, default: A) -> A:
         return self.a
 
     def __init__(self, a: A):
@@ -128,7 +128,7 @@ class Ok(Result[A, B]):
 
 
 class Error(Result[A, B]):
-    def get_or_else(self, default: A) -> A:
+    def or_else(self, default: A) -> A:
         return default
 
     def __init__(self, b: B):

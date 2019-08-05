@@ -1,4 +1,4 @@
-from pfun import Just, Nothing, List, reader, state, Dict
+from pfun import Just, Nothing, List, reader, state, Dict, cont, writer
 from hypothesis.strategies import (
     integers,
     booleans,
@@ -8,7 +8,9 @@ from hypothesis.strategies import (
     builds,
     just,
     lists as lists_,
-    dictionaries
+    dictionaries,
+    tuples,
+    none
 )
 
 from pfun.result import Ok, Error
@@ -42,7 +44,7 @@ def results(value_strategy=anything()):
 
 def lists(element_strategies=_everything(allow_nan=False)):
     return builds(
-        lambda t: List(t),
+        List,
         one_of(*(lists_(strategy) for strategy in element_strategies))
     )
 
@@ -57,3 +59,23 @@ def states(value_strategy=anything()):
 
 def dicts(keys=text(), values=anything(), min_size=0, max_size=None):
     return builds(Dict, dictionaries(keys, values, min_size=min_size, max_size=max_size))
+
+
+def conts(value_strategy=anything()):
+    return builds(cont.value, value_strategy)
+
+
+def writers(value_strategy=anything(), monoid=lists()):
+    return builds(writer.value, value_strategy, monoid)
+
+
+def monoids():
+    return one_of(
+        lists_(anything()),
+        lists(),
+        tuples(),
+        integers(),
+        none(),
+        text(),
+        just(...)
+    )
