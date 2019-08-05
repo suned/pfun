@@ -1,3 +1,7 @@
+import random
+
+import pytest
+
 from pfun import List, identity, compose
 from hypothesis.strategies import integers, lists as lists_
 from hypothesis import given, assume
@@ -7,6 +11,13 @@ from .monoid_test import MonoidTest
 
 
 class TestList(MonadTest, MonoidTest):
+    @given(lists(), lists())
+    def test_append(self, l1, l2):
+        assert l1.append(l2) == l1 + l2
+
+    def test_empty(self):
+        assert List().empty() == List()
+
     @given(lists())
     def test_left_append_identity_law(self, l):
         assert List() + l == l
@@ -69,3 +80,23 @@ class TestList(MonadTest, MonoidTest):
     def test_reduce(self, l):
         i = sum(l)
         assert List(l).reduce(lambda a, b: a + b, 0) == i
+
+    @given(lists(min_size=1), anything())
+    def test_setitem(self, l, value):
+        index = random.choice(range(len(l)))
+        with pytest.raises(TypeError):
+            l[index] = value
+
+    @given(lists(min_size=1))
+    def test_delitem(self, l):
+        index = random.choice(range(len(l)))
+        with pytest.raises(TypeError):
+            del l[index]
+
+    @given(lists(), lists_(anything()))
+    def test_extend(self, l1, l2):
+        assert l1.extend(l2) == l1 + l2
+
+    @given(lists(), lists())
+    def test_zip(self, l1, l2):
+        assert List(l1.zip(l2)) == List(zip(l1, l2))

@@ -42,10 +42,10 @@ def results(value_strategy=anything()):
     return one_of(oks, errors)
 
 
-def lists(element_strategies=_everything(allow_nan=False)):
+def lists(element_strategies=_everything(allow_nan=False), min_size=0):
     return builds(
         List,
-        one_of(*(lists_(strategy) for strategy in element_strategies))
+        one_of(*(lists_(strategy, min_size=min_size) for strategy in element_strategies))
     )
 
 

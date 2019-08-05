@@ -13,3 +13,11 @@ class MonoidTest(ABC):
     @abstractmethod
     def test_append_associativity_law(self, *args):
         raise NotImplementedError()
+
+    @abstractmethod
+    def test_empty(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def test_append(self, *args):
+        raise NotImplementedError()

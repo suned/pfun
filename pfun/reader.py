@@ -44,9 +44,6 @@ class Reader(Generic[Context, Result_], Immutable):
         :param f: Function to compose with this this :class:`Reader`
         :return: Composed :class:`Reader`
         """
-        def _(a: Context):
-            result = self.f(a)
-            return f(result).f(a)
         return Reader(lambda a: f(self.f(a)).f(a))
 
     def map(self, f: Callable[[Result_], B]) -> 'Reader[Context, B]':

@@ -35,6 +35,7 @@ class TestWriter(MonadTest):
     @given(anything(), monoids())
     def test_equality(self, value, monoid):
         assert writer.value(value, monoid) == writer.value(value, monoid)
+        assert writer.value(value) != value
 
     @given(anything(), anything(), monoids())
     def test_inequality(self, first, second, monoid):
@@ -49,4 +50,8 @@ class TestWriter(MonadTest):
     def test_composition_law(self, f, g, value):
         h = tuple_compose(f, g)
         assert writer.value(value).map(h) == writer.value(value).map(g).map(f)
+
+    @given(monoids())
+    def test_tell(self, monoid):
+        assert writer.tell(monoid) == writer.value(None, monoid)
 

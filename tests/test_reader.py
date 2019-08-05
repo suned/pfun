@@ -39,3 +39,11 @@ class TestReader(MonadTest):
         h = compose(f, g)
         assert (reader.value(value).map(h)(context) ==
                 reader.value(value).map(g).map(f)(context))
+
+    @given(anything())
+    def test_ask(self, context):
+        assert reader.ask().run(context) == context
+
+    def test_reader_decorator(self):
+        reader_int = reader.reader(int)
+        assert reader_int('1').run(None) == 1
