@@ -1,4 +1,4 @@
-``eff``
+``pfun``
 =======
 
 A small library that aims to make functional programming with
