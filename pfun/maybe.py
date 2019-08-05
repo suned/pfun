@@ -24,7 +24,7 @@ class Maybe(Generic[A], Immutable):
 
         :example:
         >>> f = lambda i: Just(1 / i) if i != 0 else Nothing()
-        >>> Just(1).and_then(f)
+        >>> Just(2).and_then(f)
         Just(0.5)
         >>> Just(0).and_then(f)
         Nothing()
@@ -42,7 +42,7 @@ class Maybe(Generic[A], Immutable):
 
         :example:
         >>> f = lambda i: Just(1 / i) if i != 0 else Nothing()
-        >>> Just(1).and_then(f).map(str)
+        >>> Just(2).and_then(f).map(str)
         Just('0.5')
         >>> Just(0).and_then(f).map(str)
         Nothing()

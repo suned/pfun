@@ -1,7 +1,6 @@
 from typing import Generic, TypeVar, Callable, Tuple
 
 from .immutable import Immutable
-from .unit import Unit
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -56,8 +55,16 @@ class State(Generic[B, A], Immutable):
         """
         return self.f(a)
 
+    __call__ = run
 
-def put(a: A) -> State[Unit, A]:
+    def map(self, f: Callable[[B], C]) -> 'State[C, A]':
+        def _(b: B, a: A):
+            return f(b), a
+
+        return State(lambda a: _(*self(a)))
+
+
+def put(a: A) -> State[None, A]:
     """
     Update the state in the current computation
 
@@ -68,7 +75,7 @@ def put(a: A) -> State[Unit, A]:
     :param a: The new state
     :return: :class:`State` with ``a`` as the new state
     """
-    return State(lambda state: ((), a))
+    return State(lambda state: (None, a))
 
 
 def get() -> State[A, A]:

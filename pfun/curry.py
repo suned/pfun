@@ -2,6 +2,7 @@ from typing import TypeVar, Callable
 import functools
 import inspect
 
+from pfun import compose
 from .immutable import Immutable
 
 A1 = TypeVar('A1')

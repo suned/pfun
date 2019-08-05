@@ -1,4 +1,4 @@
-from pfun import Just, Nothing, List, reader
+from pfun import Just, Nothing, List, reader, state, Dict
 from hypothesis.strategies import (
     integers,
     booleans,
@@ -7,8 +7,11 @@ from hypothesis.strategies import (
     floats,
     builds,
     just,
-    lists as lists_
+    lists as lists_,
+    dictionaries
 )
+
+from pfun.result import Ok, Error
 
 
 def _everything(allow_nan=False):
@@ -31,6 +34,12 @@ def maybes(value_strategy=anything()):
     return one_of(justs, nothings)
 
 
+def results(value_strategy=anything()):
+    oks = builds(Ok, value_strategy)
+    errors = just(Error(Exception()))
+    return one_of(oks, errors)
+
+
 def lists(element_strategies=_everything(allow_nan=False)):
     return builds(
         lambda t: List(t),
@@ -40,3 +49,11 @@ def lists(element_strategies=_everything(allow_nan=False)):
 
 def readers(value_strategy=anything()):
     return builds(reader.value, value_strategy)
+
+
+def states(value_strategy=anything()):
+    return builds(state.value, value_strategy)
+
+
+def dicts(keys=text(), values=anything(), min_size=0, max_size=None):
+    return builds(Dict, dictionaries(keys, values, min_size=min_size, max_size=max_size))

@@ -1,110 +1,11 @@
-from typing import Union, List, Tuple, TypeVar, Generic, Callable, Type
+from typing import Tuple, Generic, Callable, TypeVar
 
-from functools import singledispatch
-
-from .unit import Unit
+from pfun.monoid import M, append, empty
 from .immutable import Immutable
 
 
-class Monoid:
-    """
-    Abstract class for implementing custom Monoids that can be used
-    with the :class:`Writer` monad
-
-    """
-    def append(self, other: 'Monoid') -> 'Monoid':
-        """
-        Append function for the Monoid type
-
-        :param other: Other Monoid type to append to this one
-        :return: Result of appending other to this Monoid
-        """
-        raise NotImplementedError()
-
-    def empty(self) -> 'Monoid':
-        """
-        empty value for the Monoid type
-
-        :return: empty value
-        """
-        raise NotImplementedError()
-
-
-M_ = Union[int, List, Tuple, str, None, Monoid]
-M = TypeVar('M', bound=M_)
-
 A = TypeVar('A')
 B = TypeVar('B')
-
-
-@singledispatch
-def append(a: M, b: M) -> M:
-    raise NotImplementedError()
-
-
-@append.register
-def append_monoid(a: Monoid, b: Monoid) -> Monoid:
-    return a.append(b)
-
-
-@append.register
-def append_int(a: int, b: int) -> int:
-    return a + b
-
-
-@append.register
-def append_list(a: list, b: list) -> list:
-    return a + b
-
-
-@append.register
-def append_str(a: str, b: str) -> str:
-    return a + b
-
-
-@append.register
-def append_none(a: None, b: None) -> None:
-    return None
-
-
-@append.register
-def append_tuple(a: tuple, b: tuple) -> tuple:
-    return a + b
-
-
-@singledispatch
-def empty(t):
-    raise NotImplementedError()
-
-
-@empty.register
-def empty_int(t: int) -> int:
-    return 0
-
-
-@empty.register
-def empty_list(t: list) -> list:
-    return []
-
-
-@empty.register
-def empty_tuple(t: tuple) -> tuple:
-    return ()
-
-
-@empty.register
-def empty_monoid(t: Monoid) -> Monoid:
-    return t.empty()
-
-
-@empty.register
-def empty_str(t: str) -> str:
-    return ''
-
-
-@empty.register
-def empty_none(t: None) -> None:
-    return None
 
 
 class Writer(Generic[A, M], Immutable):
@@ -187,7 +88,7 @@ def value(a: A, m: M = ...) -> Writer[A, M]:  # type: ignore
     return Writer(a, m)
 
 
-def tell(m: M) -> Writer[Unit, M]:
+def tell(m: M) -> Writer[None, M]:
     """
     Create a Writer with a monoid ``m`` and unit value
 
@@ -202,4 +103,4 @@ def tell(m: M) -> Writer[Unit, M]:
     :param m: the monoid value
     :return: Writer with unit value and monoid value ``m``
     """
-    return Writer((), m)
+    return Writer(None, m)

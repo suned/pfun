@@ -6,9 +6,7 @@ from . import result
 from .util import (identity,
                    compose,
                    Unary,
-                   Predicate,
-                   has_type)
-from .unit import Unit
+                   Predicate)
 from .dict import Dict
 from .list import List
 from .curry import (

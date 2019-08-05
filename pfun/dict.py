@@ -77,4 +77,11 @@ class Dict(Dict_[K, V]):
             return Nothing()
         return Just(v)
 
+    def update(self, other: 'Dict[K, V]', **kwargs) -> 'Dict[K, V]':
+        d = {}
+        d.update(self)
+        d.update(other)
+        d.update(kwargs)
+        return Dict(d)
+
 

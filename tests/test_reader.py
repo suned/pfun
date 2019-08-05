@@ -27,15 +27,15 @@ class TestReader(MonadTest):
     @given(anything(), anything(), anything())
     def test_inequality(self, first, second, context):
         assume(first != second)
-        assert reader.pure(first)(context) != reader.pure(second)(context)
+        assert reader.value(first)(context) != reader.value(second)(context)
 
     @given(anything(), anything())
     def test_identity_law(self, value, context):
-        assert (reader.pure(value).map(identity)(context) ==
-                reader.pure(value)(context))
+        assert (reader.value(value).map(identity)(context) ==
+                reader.value(value)(context))
 
     @given(unaries(), unaries(), anything(), anything())
     def test_composition_law(self, f, g, value, context):
         h = compose(f, g)
-        assert (reader.pure(value).map(h)(context) ==
-                (reader.pure(value).map(g).map(f))(context))
+        assert (reader.value(value).map(h)(context) ==
+                reader.value(value).map(g).map(f)(context))

@@ -5,20 +5,20 @@ from .util import identity
 from .immutable import Immutable
 
 Context = TypeVar('Context')
-Result = TypeVar('Result')
+Result_ = TypeVar('Result_')
 Next = TypeVar('Next')
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Reader(Generic[Context, Result], Immutable):
+class Reader(Generic[Context, Result_], Immutable):
     """
     Class that represents a computation that is not yet completed, but
     will complete once given an object of type ``Context``
 
     """
-    def __init__(self, f: Callable[[Context], Result]):
+    def __init__(self, f: Callable[[Context], Result_]):
         """
         Create a :class:`Reader` that wraps the function f which will produce
         a value of type ``Result`` when given a value of type ``Context``
@@ -31,7 +31,7 @@ class Reader(Generic[Context, Result], Immutable):
         """
         self.f = f
 
-    def and_then(self, f: 'Callable[[Result], Reader[Context, Next]]') -> 'Reader[Context, Next]':
+    def and_then(self, f: 'Callable[[Result_], Reader[Context, Next]]') -> 'Reader[Context, Next]':
         """
         Compose ``f`` with the function wrapped by this :class:`Reader` instance
 
@@ -49,7 +49,7 @@ class Reader(Generic[Context, Result], Immutable):
             return f(result).f(a)
         return Reader(lambda a: f(self.f(a)).f(a))
 
-    def map(self, f: Callable[[Result], B]) -> 'Reader[Context, B]':
+    def map(self, f: Callable[[Result_], B]) -> 'Reader[Context, B]':
         """
         Apply ``f`` to the result of this :class:`Reader`
 
@@ -62,7 +62,7 @@ class Reader(Generic[Context, Result], Immutable):
         """
         return Reader(lambda a: f(self.f(a)))
 
-    def run(self, c: Context) -> Result:
+    def run(self, c: Context) -> Result_:
         """
         Apply this :class:`Reader` to the context ``c``
 
@@ -78,7 +78,7 @@ class Reader(Generic[Context, Result], Immutable):
     __call__ = run
 
 
-def value(v: Result) -> Reader[Context, Result]:
+def value(v: Result_) -> Reader[Context, Result_]:
     """
     Make a ``Reader`` that will produce ``v`` no matter the context
 
@@ -92,10 +92,7 @@ def value(v: Result) -> Reader[Context, Result]:
     return Reader(lambda _: v)
 
 
-pure = value
-
-
-def ask() -> Reader[Context, Result]:
+def ask() -> Reader[Context, Result_]:
     """
     Return the :class:`Reader` that simply returns the context it is given
 

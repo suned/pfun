@@ -1,7 +1,5 @@
 from typing import TypeVar, Callable, Any, Type, Union
 
-from .curry import curry2
-
 A = TypeVar('A')
 B = TypeVar('B')
 C = TypeVar('C')
@@ -38,8 +36,3 @@ def flip(f: Unary[A, Unary[B, C]]) -> Unary[B, Unary[A, C]]:
         return _
     return _
 
-
-has_type = flip(curry2(isinstance))
-
-is_int = has_type(int)  
-v = is_int(2)
