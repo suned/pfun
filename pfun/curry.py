@@ -343,14 +343,15 @@ class Curry(Immutable):
         return repr(self.f)
 
     def __call__(self, *args, **kwargs):
-        n_args = len(args) + len(kwargs)
         signature = inspect.signature(self.f)
-        parameters = [p for p in signature.parameters.values()
-                      if p.default is inspect.Parameter.empty]
-        if n_args < len(parameters):
-            partial = functools.partial(self.f, *args, **kwargs)
-            return Curry(partial)
-        return self.f(*args, **kwargs)
+        bound = signature.bind_partial(*args, **kwargs)
+        bound.apply_defaults()
+        arg_names = {a for a in bound.arguments.keys()}
+        parameters = {p for p in signature.parameters.keys()}
+        if parameters - arg_names == set():
+            return self.f(*args, **kwargs)
+        partial = functools.partial(self.f, *args, **kwargs)
+        return Curry(partial)
 
 
 def curry(f):

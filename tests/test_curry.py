@@ -1,3 +1,4 @@
+import pytest
 from hypothesis import given, assume
 from hypothesis.strategies import integers
 
@@ -43,3 +44,13 @@ def test_curried_application_with_defaults(a, b, c):
     assert fc(c=c, b=b)(a=a) == expected
     assert fc(c=c)(b=b)(a=a) == expected
     assert fc(c=c)(b=b, a=a) == expected
+
+
+def test_too_many_args():
+    with pytest.raises(TypeError):
+        fc(1, 2, 3, 4)
+
+
+def test_wrong_keyword_arg():
+    with pytest.raises(TypeError):
+        fc(d=4)
