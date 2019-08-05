@@ -194,7 +194,7 @@ class Nothing(Maybe[Any]):
     def or_else(self, default: A) -> A:
         return default
 
-    def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
+    def map(self, f: Callable[[Any], B]) -> 'Maybe[B]':
         return self  # type: ignore
 
     def __bool__(self):

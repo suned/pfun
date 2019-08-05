@@ -1,5 +1,5 @@
-from zen import Maybe
+from pfun.maybe import Just, Maybe
 
 
 def test() -> Maybe[int]:
-    return Maybe.pure(1)
+    return Just(1)

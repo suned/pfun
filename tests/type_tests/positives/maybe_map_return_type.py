@@ -1,9 +1,12 @@
-from zen import Maybe, Nothing, identity
+from pfun.maybe import Maybe, Nothing, Just
+from pfun import identity
+
+from typing import Any
 
 
 def test_just() -> Maybe[int]:
-    return Maybe.pure(1) | (lambda a: a * 2)
+    return Just(1).map(lambda a: a * 2)
 
 
-def test_nothing() -> Maybe[int]:
-    return Nothing() | identity
+def test_nothing() -> Maybe[Any]:
+    return Nothing().map(identity)

@@ -1,4 +1,4 @@
-from zen import Maybe, Nothing, Just
+from pfun.maybe import Maybe, Nothing, Just
 
 
 def test_just() -> Maybe[int]:

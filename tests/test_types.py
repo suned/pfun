@@ -22,7 +22,6 @@ def type_check(file):
     return p.stdout.decode()
 
 
-@pytest.mark.skip
 @parametrize('file', python_files('type_tests/positives'))
 def test_positives(file):
     output = type_check(file)
@@ -30,7 +29,6 @@ def test_positives(file):
         pytest.fail(output)
 
 
-@pytest.mark.skip
 @parametrize('file', python_files('type_tests/negatives'))
 def test_negatives(file):
     output = type_check(file)
