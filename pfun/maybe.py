@@ -207,4 +207,4 @@ class Nothing(Maybe[Any]):
         return False
 
 
-__all__ = ['Maybe', 'Just', 'Nothing', 'maybe']
+__all__ = ['Maybe', 'Just', 'Nothing', 'maybe', 'flatten']
