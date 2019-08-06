@@ -1,7 +1,8 @@
-from typing import Generic, TypeVar, Callable, Any
+from typing import Generic, TypeVar, Callable, Any, Iterable, cast, Sequence
 from functools import wraps
 
 from .immutable import Immutable
+from .list import List
 
 
 A = TypeVar('A')
@@ -158,6 +159,11 @@ def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
             return Nothing()
 
     return dec
+
+
+def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
+    justs = cast(Sequence[Just[A]], [m for m in maybes if m])
+    return List(j.a for j in justs)
 
 
 class Nothing(Maybe[Any]):

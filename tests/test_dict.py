@@ -3,7 +3,8 @@ import random
 import pytest
 from hypothesis import given, assume
 
-from pfun import Dict, Just, Nothing
+from pfun import Dict
+from pfun.maybe import Just, Nothing
 from tests.strategies import dicts
 
 

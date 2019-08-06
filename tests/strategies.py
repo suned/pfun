@@ -1,4 +1,4 @@
-from pfun import Just, Nothing, List, reader, state, Dict, cont, writer
+from pfun import maybe, List, reader, state, Dict, cont, writer
 from hypothesis.strategies import (
     integers,
     booleans,
@@ -31,8 +31,8 @@ def unaries(return_strategy=anything()):
 
 
 def maybes(value_strategy=anything()):
-    justs = builds(Just, value_strategy)
-    nothings = just(Nothing())
+    justs = builds(maybe.Just, value_strategy)
+    nothings = just(maybe.Nothing())
     return one_of(justs, nothings)
 
 
