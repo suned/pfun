@@ -1,5 +1,5 @@
 from . import maybe
-from .pipe import pipe
+from .pipe import pipe, Pipe
 from . import reader
 from . import writer
 from . import state
