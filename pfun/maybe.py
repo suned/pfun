@@ -86,12 +86,21 @@ class Maybe(Generic[A], Immutable):
         """
         raise NotImplementedError()
 
+    @property
+    def get(self) -> A:
+        raise NotImplementedError()
+
 
 class Just(Maybe[A]):
     """
     Subclass of :class:`Maybe` that represents a successful computation
 
     """
+
+    @property
+    def get(self) -> A:
+        return self.a
+
     def __init__(self, a: A):
         """
         Initialize a Just representing a successful computation of result type A
@@ -171,6 +180,11 @@ class Nothing(Maybe[Any]):
     Subclass of :class:`Maybe` that represents a failed computation
 
     """
+
+    @property
+    def get(self):
+        raise AttributeError('"Nothing" does not support get')
+
     def __init__(self):
         """
         Initialize a value representing a failed computation
