@@ -10,17 +10,21 @@ from .util import (identity,
 from .dict import Dict
 from .list import List
 from .curry import (
-    curry,
-    curry2,
-    curry3,
-    curry4,
-    curry5,
-    curry6,
-    curry7,
-    curry8,
-    curry9,
-    curry10,
-    curry11,
-    curry12
+    curry#,
+    # curry2,
+    # curry3,
+    # curry4,
+    # curry5,
+    # curry6,
+    # curry7,
+    # curry8,
+    # curry9,
+    # curry10,
+    # curry11,
+    # curry12
 )
 from .immutable import Immutable
+
+
+def plugin(_):
+    return _mypy.PFun

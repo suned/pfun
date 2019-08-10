@@ -1,8 +1,7 @@
 from hypothesis import given
-from hypothesis.strategies import integers, text
 
-from pfun import util, curry
-from tests.strategies import anything, unaries
+from pfun import util
+from tests.strategies import anything, unaries, lists, dicts
 
 
 @given(anything(allow_nan=False))
@@ -16,8 +15,7 @@ def test_compose(f, g, arg):
     assert h(arg) == f(g(arg))
 
 
-@given(integers(), text())
-def test_flip(i, s):
-    is_int = util.flip(curry(isinstance))(int)
-    assert is_int(i)
-    assert not is_int(s)
+@given(anything(), lists(), dicts())
+def test_always(value, args, kwargs):
+    f = util.always(value)
+    assert f(*args, **kwargs) == value

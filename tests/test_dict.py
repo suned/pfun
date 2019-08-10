@@ -56,8 +56,3 @@ def test_update(d):
     assert 'key' not in d
     assert new_d != d
     assert new_d['key'] == Just('value')
-
-    new_d = d.update({}, key='value')
-    assert 'key' not in d
-    assert new_d != d
-    assert new_d['key'] == Just('value')

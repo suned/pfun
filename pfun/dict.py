@@ -1,4 +1,4 @@
-from typing import Dict as Dict_, TypeVar, Optional
+from typing import Dict as Dict_, TypeVar, Optional, Mapping
 
 from .maybe import Maybe, Nothing, Just, maybe
 
@@ -77,11 +77,10 @@ class Dict(Dict_[K, V]):
             return Nothing()
         return Just(v)
 
-    def update(self, other: 'Dict[K, V]', **kwargs) -> 'Dict[K, V]':
-        d = {}
+    def update(self, other: 'Dict[K, V]') -> 'Dict[K, V]':  # type: ignore
+        d: Dict_[K, V] = {}
         d.update(self)
         d.update(other)
-        d.update(kwargs)
         return Dict(d)
 
 

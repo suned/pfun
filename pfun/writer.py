@@ -14,15 +14,8 @@ class Writer(Generic[A, M], Immutable):
     a side effect
 
     """
-    def __init__(self, a: A, m: M):
-        """
-        Initialize a value and monoid pair
-
-        :param a: value
-        :param m: monoid value
-        """
-        self.a = a
-        self.m = m
+    a: A
+    m: M
 
     def and_then(self, f: 'Callable[[A], Writer[B, M]]') -> 'Writer[B, M]':
         """
@@ -70,7 +63,7 @@ class Writer(Generic[A, M], Immutable):
         :param f: the function to map the value and monoid in this :class:`Writer`
         :return: :class:`Writer` with value and monoid mapped by ``f``
         """
-        return Writer(*f(self.a, self.m))
+        return Writer(*f(self.a, self.m))  # type: ignore
 
     def __repr__(self):
         return f'Writer({repr(self.a)}, {repr(self.m) if self.m is not ... else "..."})'
@@ -90,7 +83,7 @@ def value(a: A, m: M = ...) -> Writer[A, M]:  # type: ignore
     :param m: Optional monoid to associate with ``a``
     :return: :class:`Writer` with ``a`` and optionally ``m``
     """
-    return Writer(a, m)
+    return Writer(a, m)  # type: ignore
 
 
 def tell(m: M) -> Writer[None, M]:
@@ -108,4 +101,4 @@ def tell(m: M) -> Writer[None, M]:
     :param m: the monoid value
     :return: Writer with unit value and monoid value ``m``
     """
-    return Writer(None, m)
+    return Writer(None, m)  # type: ignore

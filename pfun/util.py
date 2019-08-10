@@ -1,4 +1,7 @@
-from typing import TypeVar, Callable, Any, Type, Union
+from typing import TypeVar, Callable, Generic, Tuple
+
+from .immutable import Immutable
+from .list import List
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -20,19 +23,27 @@ def identity(v: A) -> A:
 
 
 Unary = Callable[[A], B]
-
-
-def compose(f: Unary[B, C], g: Unary[A, B]) -> Unary[A, C]:
-    return lambda z: f(g(z))
-
-
 Predicate = Callable[[A], bool]
 
 
-def flip(f: Unary[A, Unary[B, C]]) -> Unary[B, Unary[A, C]]:
-    def _(b):
-        def _(a):
-            return f(a)(b)
-        return _
-    return _
+class always(Generic[A], Immutable):
+    value: A
 
+    def __call__(self, *args, **kwargs) -> A:
+        return self.value
+
+
+class Composition(Immutable):
+    functions: Tuple[Callable, ...]
+
+    def __call__(self, *args, **kwargs):
+        fs = reversed(self.functions)
+        first, *rest = fs
+        last_result = first(*args, **kwargs)
+        for f in rest:
+            last_result = f(last_result)
+        return last_result
+
+
+def compose(*functions: Callable) -> Callable:
+    return Composition(functions)

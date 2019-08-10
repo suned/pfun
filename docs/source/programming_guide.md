@@ -317,3 +317,12 @@ I've tried to write `zen` in such a way that the type checker can give you as mu
 prevent me from supplying accurate types everywhere (`state.get` is a good example).
 Consequently, you will sometimes need to add type annotations yourself, instead of relying on
 type inference to get the most of this module.
+
+
+## MyPy Plugin
+
+
+```
+[mypy]
+plugins = pfun.mypy_plugin
+```

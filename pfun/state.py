@@ -12,14 +12,7 @@ class State(Generic[B, A], Immutable):
     Class representing a computation that is not yet complete, but will complete
     when given a state of type A
     """
-    def __init__(self, f: Callable[[A], Tuple[B, A]]):
-        """
-        Initialize a :class:`State` that will produce a value of type B when
-        given a state of type A
-
-        :param f: Function representing the unfinished computation
-        """
-        self.f = f
+    f: Callable[[A], Tuple[B, A]]
 
     def and_then(self, f: 'Callable[[B], State[C, A]]') -> 'State[C, A]':
         """
@@ -38,8 +31,8 @@ class State(Generic[B, A], Immutable):
         of this :class:`State` instance to ``f``
         """
         def _(b: B, a: A) -> Tuple[C, A]:
-            return f(b).f(a)
-        return State(lambda a: _(*self.f(a)))
+            return f(b).f(a)  # type: ignore
+        return State(lambda a: _(*self.f(a)))  # type: ignore
 
     def run(self, a: A) -> Tuple[B, A]:
         """
@@ -53,7 +46,7 @@ class State(Generic[B, A], Immutable):
         :param a: State to run this :class:`State` instance on
         :return: Result of running :class:`State` instance with ``a`` as state
         """
-        return self.f(a)
+        return self.f(a)  # type: ignore
 
     __call__ = run
 
@@ -61,7 +54,7 @@ class State(Generic[B, A], Immutable):
         def _(b: B, a: A):
             return f(b), a
 
-        return State(lambda a: _(*self(a)))
+        return State(lambda a: _(*self(a)))  # type: ignore
 
 
 def put(a: A) -> State[None, A]:
@@ -75,7 +68,7 @@ def put(a: A) -> State[None, A]:
     :param a: The new state
     :return: :class:`State` with ``a`` as the new state
     """
-    return State(lambda state: (None, a))
+    return State(lambda state: (None, a))  # type: ignore
 
 
 def get() -> State[A, A]:
@@ -88,7 +81,7 @@ def get() -> State[A, A]:
 
     :return: :class:`State` with the current state as its result
     """
-    return State(lambda b: (b, b))
+    return State(lambda b: (b, b))  # type: ignore
 
 
 def value(b: B) -> State[B, A]:
@@ -102,4 +95,4 @@ def value(b: B) -> State[B, A]:
     :param b: the value to put in a :class:`State` context
     :return: :class:`State` that will produce ``b`` no matter the state
     """
-    return State(lambda a: (b, a))
+    return State(lambda a: (b, a))  # type: ignore

@@ -13,14 +13,7 @@ class Cont(Generic[A, B], Immutable):
     """
     Type that represents a function in continuation passing style.
     """
-    def __init__(self, f: Callable[[Callable[[A], B]], B]):
-        """
-        Initialize :class:`Cont` that represents a function in continuation passing
-        style
-
-        :param f: Function in continuation passing style to wrap in this instance.
-        """
-        self.f = f
+    f: Callable[[Callable[[A], B]], B]
 
     def and_then(self, f: 'Callable[[B], Cont[C, D]]') -> 'Cont[C, D]':
         """
@@ -49,12 +42,12 @@ class Cont(Generic[A, B], Immutable):
         :param f: The function to pass the result of the wrapped function to
         :return: the result of passing the return value of the wrapped function to ``f``
         """
-        return self.f(f)
+        return self.f(f)  # type: ignore
 
     __call__ = run
 
     def map(self, f: Callable[[B], C]) -> 'Cont[B, C]':
-        return Cont(lambda c: self.run(compose(c, f)))
+        return Cont(lambda c: self.run(compose(c, f)))  # type: ignore
 
 
 def value(a: A) -> Cont[A, B]:

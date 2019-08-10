@@ -2,6 +2,8 @@ import os
 import subprocess
 import pytest
 
+from mypy import api as mypy_api
+
 
 parametrize = pytest.mark.parametrize
 
@@ -18,19 +20,18 @@ def python_files(path):
 
 
 def type_check(file):
-    p = subprocess.run(['mypy', file], stdout=subprocess.PIPE)
-    return p.stdout.decode()
+    return mypy_api.run([file])
 
 
 @parametrize('file', python_files('type_tests/positives'))
 def test_positives(file):
-    output = type_check(file)
-    if output:
-        pytest.fail(output)
+    normal_report, error_report, exit_code = type_check(file)
+    if normal_report or error_report or exit_code != 0:
+        pytest.fail(error_report)
 
 
 @parametrize('file', python_files('type_tests/negatives'))
 def test_negatives(file):
-    output = type_check(file)
-    if not output:
+    normal_report, error_report, exit_code = type_check(file)
+    if not normal_report or exit_code == 0:
         pytest.fail('No type error emitted for {}'.format(file))

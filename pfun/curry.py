@@ -2,7 +2,6 @@ from typing import TypeVar, Callable
 import functools
 import inspect
 
-from pfun import compose
 from .immutable import Immutable
 
 A1 = TypeVar('A1')
@@ -336,8 +335,7 @@ def curry12(
 
 
 class Curry(Immutable):
-    def __init__(self, f):
-        self.f = f
+    f: Callable
 
     def __repr__(self):
         return repr(self.f)

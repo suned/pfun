@@ -12,24 +12,14 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Reader(Generic[Context, Result_], Immutable):
+class Reader(Immutable, Generic[Context, Result_]):
     """
     Class that represents a computation that is not yet completed, but
     will complete once given an object of type ``Context``
 
     """
-    def __init__(self, f: Callable[[Context], Result_]):
-        """
-        Create a :class:`Reader` that wraps the function f which will produce
-        a value of type ``Result`` when given a value of type ``Context``
 
-        :example:
-        >>> Reader(lambda l: l + ['second value']).run(['first value'])
-        ['first value', 'second value']
-
-        :param f: function to wrap
-        """
-        self.f = f
+    f: Callable[[Context], Result_]
 
     def and_then(self, f: 'Callable[[Result_], Reader[Context, Next]]') -> 'Reader[Context, Next]':
         """
@@ -44,7 +34,7 @@ class Reader(Generic[Context, Result_], Immutable):
         :param f: Function to compose with this this :class:`Reader`
         :return: Composed :class:`Reader`
         """
-        return Reader(lambda a: f(self.f(a)).f(a))
+        return Reader(lambda a: f(self.f(a)).f(a))  # type: ignore
 
     def map(self, f: Callable[[Result_], B]) -> 'Reader[Context, B]':
         """
@@ -57,7 +47,7 @@ class Reader(Generic[Context, Result_], Immutable):
         :param f: Function to apply
         :return: :class:`Reader` that returns the result of applying ``f`` to its result
         """
-        return Reader(lambda a: f(self.f(a)))
+        return Reader(lambda a: f(self.f(a)))  # type: ignore
 
     def run(self, c: Context) -> Result_:
         """
@@ -70,7 +60,7 @@ class Reader(Generic[Context, Result_], Immutable):
         :param c: The context to passed to the function wrapped by this :class:`Reader`
         :return: The result of this :class:`Reader`
         """
-        return self.f(c)
+        return self.f(c)  # type: ignore
 
     __call__ = run
 
@@ -111,7 +101,7 @@ def reader(f: Callable[[A], B]) -> Callable[[A], Reader[Context, B]]:
     >>> to_int = reader(int)
     >>> to_int('1').and_then(lambda i: i + 1).run(...)
     2
-    
+
     :param f: Function to wrap
     :return: Wrapped function
     """

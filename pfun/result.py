@@ -12,8 +12,6 @@ class Result(Generic[A, B], Immutable):
     Abstract class representing a potentially failed computation.
     Should not be instantiated directly, use :class:`Ok` or :class:`Error` instead
     """
-    def __init__(self):
-        raise TypeError("'Result' should not be instantiated directly. Use Ok or Error instead")
 
     def and_then(self, f: Callable[[A], 'Result[A, B]']) -> 'Result[A, B]':
         """
@@ -86,16 +84,10 @@ class Ok(Result[A, B]):
     """
     Represents a successful computation of type A
     """
+    a: A
 
     def or_else(self, default: A) -> A:
         return self.a
-
-    def __init__(self, a: A):
-        """
-        Initialize value representing a successful computation of type A
-        :param a: Result of the succesful computation
-        """
-        self.a = a
 
     def map(self, f):
         return Ok(f(self.a))
@@ -128,16 +120,10 @@ class Ok(Result[A, B]):
 
 
 class Error(Result[A, B]):
+    b: B
+
     def or_else(self, default: A) -> A:
         return default
-
-    def __init__(self, b: B):
-        """
-        Initialize a value representing a failed computation of type B
-
-        :param b: The cause of the failed computation
-        """
-        self.b = b
 
     def map(self, f):
         return self

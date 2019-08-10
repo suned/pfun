@@ -91,18 +91,7 @@ class Just(Maybe[A]):
     Subclass of :class:`Maybe` that represents a successful computation
 
     """
-    def __init__(self, a: A):
-        """
-        Initialize a Just representing a successful computation of result type A
-
-        :param a: Result of the computation
-
-        """
-        try:
-            super().__init__()
-        except:
-            pass
-        self.a = a
+    a: A
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
         return f(self.a)
@@ -154,7 +143,7 @@ def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
     def dec(*args, **kwargs):
         try:
             return Just(f(*args, **kwargs))
-        except:
+        except:  # noqa
             return Nothing()
 
     return dec
@@ -165,15 +154,6 @@ class Nothing(Maybe[Any]):
     Subclass of :class:`Maybe` that represents a failed computation
 
     """
-    def __init__(self):
-        """
-        Initialize a value representing a failed computation
-
-        """
-        try:
-            super().__init__()
-        except:
-            pass
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
         return self
@@ -195,7 +175,7 @@ class Nothing(Maybe[Any]):
         return default
 
     def map(self, f: Callable[[Any], B]) -> 'Maybe[B]':
-        return self  # type: ignore
+        return self
 
     def __bool__(self):
         return False
