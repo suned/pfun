@@ -1,7 +1,8 @@
-from typing import Generic, TypeVar, Callable, Any
+from typing import Generic, TypeVar, Callable, Any, Sequence
 from functools import wraps
 
 from .immutable import Immutable
+from .list import List
 
 
 A = TypeVar('A')
@@ -14,8 +15,10 @@ class Maybe(Generic[A], Immutable):
     Should not be instantiated directly. Use :class:`Just` and :class:`Nothing` instead.
 
     """
+
     def __init__(self):
-        raise TypeError("'Maybe' can't be instantiated directly. Use Just or Nothing.")
+        raise TypeError(
+            "'Maybe' can't be instantiated directly. Use Just or Nothing.")
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
         """
@@ -85,6 +88,10 @@ class Maybe(Generic[A], Immutable):
         """
         raise NotImplementedError()
 
+    @property
+    def get(self) -> A:
+        raise NotImplementedError()
+
 
 class Just(Maybe[A]):
     """
@@ -92,6 +99,10 @@ class Just(Maybe[A]):
 
     """
     a: A
+
+    @property
+    def get(self) -> A:
+        return self.a
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
         return f(self.a)
@@ -154,6 +165,9 @@ class Nothing(Maybe[Any]):
     Subclass of :class:`Maybe` that represents a failed computation
 
     """
+    @property
+    def get(self):
+        raise AttributeError('"Nothing" does not support "get"')
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
         return self
@@ -181,4 +195,9 @@ class Nothing(Maybe[Any]):
         return False
 
 
-__all__ = ['Maybe', 'Just', 'Nothing', 'maybe']
+def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
+    justs = [m for m in maybes if m]
+    return List(j.get for j in justs)
+
+
+__all__ = ['Maybe', 'Just', 'Nothing', 'maybe', 'flatten']

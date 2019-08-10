@@ -1,8 +1,10 @@
+import pytest
 from typing import Any
 from hypothesis import assume, given
-from pfun import Maybe, Just, Nothing, Unary, identity, compose, maybe
+from pfun import Unary, identity, compose, List
+from pfun.maybe import Maybe, Just, Nothing, maybe, flatten
 from .monad_test import MonadTest
-from .strategies import anything, unaries, maybes
+from .strategies import anything, unaries, maybes, lists
 
 
 class TestMaybe(MonadTest):
@@ -81,3 +83,15 @@ class TestMaybe(MonadTest):
 
     def test_nothing_bool(self):
         assert not bool(Nothing())
+
+    @given(lists([maybes()]))
+    def test_flatten(self, maybe_list):
+        assert flatten(maybe_list) == List(m.a for m in maybe_list if m)
+
+    @given(maybes())
+    def test_get(self, m):
+        if m:
+            assert m.get == m.a
+        else:
+            with pytest.raises(AttributeError):
+                _ = m.get
