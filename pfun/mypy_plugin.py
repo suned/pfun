@@ -2,9 +2,8 @@ import typing as t
 
 from mypy.plugin import Plugin, FunctionContext, ClassDefContext
 from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.types import Type, CallableType, AnyType, EllipsisType
+from mypy.types import Type, CallableType, AnyType, TypeOfAny
 from mypy.nodes import ClassDef
-from mypy.sametypes import is_same_type
 
 _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
@@ -12,7 +11,10 @@ _IMMUTABLE = 'pfun.immutable.Immutable'
 
 
 def _curry_hook(context: FunctionContext) -> Type:
+    import ipdb; ipdb.set_trace()
     function = t.cast(CallableType, context.arg_types[0][0])
+    if not isinstance(function, CallableType):
+        return context.default_return_type
     if not function.arg_names:
         return function
     return_type = function.ret_type
@@ -39,12 +41,11 @@ def _curry_hook(context: FunctionContext) -> Type:
     return last_function
 
 
-def _get_expected_compose_type(context: FunctionContext):
+def _get_expected_compose_type(context: FunctionContext) -> CallableType:
     # TODO, why are the arguments lists of lists, and do I need to worry about it?
     actual_arg_types = [at for ats in context.arg_types for at in ats]
     actual_arg_kinds = [ak for aks in context.arg_kinds for ak in aks]
     actual_arg_names = [an for ans in context.arg_names for an in ans]
-    # TODO, check that this is callable
     arg_types = []
     arg_kinds = []
     arg_names = []
@@ -70,9 +71,8 @@ def _get_expected_compose_type(context: FunctionContext):
 
         if is_first_arg:
             # if this is the first function,
-            # the return type is just the return type of the function
-            ret_type = arg_type.ret_type
-            current_arg_types = [arg_type.arg_types[0]]
+            # the return type can by anything
+            ret_type = AnyType(TypeOfAny.explicit)
         else:
             # otherwise, the return type must be the argument of the previous function
             ret_type = actual_arg_types[index - 1].arg_types[0]
@@ -107,22 +107,20 @@ def _get_expected_compose_type(context: FunctionContext):
 
 
 def _compose_hook(context: FunctionContext) -> Type:
-    #import ipdb; ipdb.set_trace()
     api = context.api
-    compose = _get_expected_compose_type(context)
-    actual_arg_types = [at for ats in context.arg_types for at in ats]
-    for arg_count, (actual_arg_type, expected_arg_type) in enumerate(zip(actual_arg_types, compose.arg_types)):
-        if not is_same_type(actual_arg_type, expected_arg_type):
-            api.msg.incompatible_argument(
-                n=arg_count + 1,
-                m=arg_count + 1,
-                callee=compose,
-                arg_type=actual_arg_type,
-                arg_kind=context.arg_kinds[arg_count][0],
-                context=context.context
-            )
-            break
-    return compose.ret_type
+    try:
+        compose = _get_expected_compose_type(context)
+        api.expr_checker.check_call(
+            compose,
+            [arg for args in context.args for arg in args],
+            [kind for kinds in context.arg_kinds for kind in kinds],
+            context.context,
+            [name for names in context.arg_names for name in names]
+        )
+        return compose.ret_type
+    except AttributeError:
+        # an argument was not callable, defer to default type checking
+        return context.default_return_type
 
 
 def _immutable_hook(context: ClassDefContext):

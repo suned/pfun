@@ -1,21 +1,12 @@
-from pfun import compose
+from pfun import curry
 
 
-def f(a: str) -> str:
+class C:
+    def __call__(a):
+        pass
+
+
+class D(C):
     pass
 
-
-def g(a: str) -> int:
-    pass
-
-
-reveal_type(compose(f, g))
-
-
-"""
-Considerations:
-- Arguments to compose must be unary. 
-  For error reporting what should the expected type of "(a: Any, b: Any) -> Any" be?
-    - (a: Any) -> (b: Any) -> Any?
-    - (a: Any) -> Any?
-"""
+reveal_type(curry(D()))
