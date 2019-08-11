@@ -2,8 +2,9 @@ import typing as t
 
 from mypy.plugin import Plugin, FunctionContext, ClassDefContext
 from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.types import Type, CallableType, AnyType, TypeOfAny
+from mypy.types import Type, CallableType, AnyType, TypeOfAny, Instance
 from mypy.nodes import ClassDef
+from mypy import checkmember
 
 _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
@@ -11,8 +12,27 @@ _IMMUTABLE = 'pfun.immutable.Immutable'
 
 
 def _curry_hook(context: FunctionContext) -> Type:
-    import ipdb; ipdb.set_trace()
-    function = t.cast(CallableType, context.arg_types[0][0])
+    arg_type = context.arg_types[0][0]
+    if not isinstance(arg_type, CallableType):
+        # called with an object
+        if isinstance(arg_type, Instance) and arg_type.has_readable_member('__call__'):
+            function = checkmember.analyze_member_access(
+                '__call__',
+                arg_type,
+                context.context,
+                False,
+                False,
+                False,
+                context.api.msg,
+                original_type=arg_type,
+                chk=context.api
+            )
+        else:
+            # called with an object without __call__ member: defer to normal type check
+            return context.default_return_type
+    else:
+        function = arg_type
+
     if not isinstance(function, CallableType):
         return context.default_return_type
     if not function.arg_names:
