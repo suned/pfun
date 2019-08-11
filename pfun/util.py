@@ -1,7 +1,6 @@
-from typing import TypeVar, Callable, Generic, Tuple
+from typing import TypeVar, Callable, Generic, Tuple, Any
 
 from .immutable import Immutable
-from .list import List
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -45,5 +44,5 @@ class Composition(Immutable):
         return last_result
 
 
-def compose(*functions: Callable) -> Callable:
-    return Composition(functions)
+def compose(f: Callable, g: Callable, *functions: Callable) -> Callable:
+    return Composition((f, g) + functions)  # type: ignore
