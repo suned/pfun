@@ -5,7 +5,7 @@ from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.types import (Type, CallableType, AnyType, TypeOfAny, Instance,
                         TypeVarType, UnionType)
 from mypy.nodes import ClassDef
-from mypy import checkmember, infer
+from mypy import checkmember, infer, expandtype
 from mypy.checker import TypeChecker
 
 _CURRY = 'pfun.curry.curry'
@@ -79,8 +79,8 @@ def _get_expected_compose_type(context: FunctionContext
     arg_types = []
     arg_kinds = []
     arg_names = []
-    args = list(zip(actual_arg_types, actual_arg_kinds, actual_arg_names))
-    all_variables = []
+    args = list(list(t) for t in zip(actual_arg_types, actual_arg_kinds, actual_arg_names))
+    variables = []
     for index, (arg_type, arg_kind, arg_name) in enumerate(args):
         is_last_arg = index == len(actual_arg_types) - 1
         is_first_arg = index == 0
@@ -92,8 +92,16 @@ def _get_expected_compose_type(context: FunctionContext
             current_arg_names = arg_type.arg_names
         else:
             current_arg_type = actual_arg_types[index + 1].ret_type
-            # if isinstance(current_arg_type, TypeVarType):
-            #     current_arg_type = arg_type.arg_types[0]
+            if isinstance(current_arg_type, TypeVarType):
+                type_to_expand_with = arg_type.arg_types[0]
+                if isinstance(type_to_expand_with, TypeVarType):
+                    variables.append(next(v for v in arg_type.variables if v.id == type_to_expand_with.id))
+                next_function = args[index + 1][0]
+                args[index + 1][0] = expandtype.expand_type(next_function, {current_arg_type.id: type_to_expand_with})
+                current_arg_type = type_to_expand_with
+            if isinstance(arg_type.arg_types[0], TypeVarType):
+                tv = arg_type.arg_types[0]
+                args[index][0] = expandtype.expand_type(arg_type, {tv.id: current_arg_type})
             current_arg_types = [current_arg_type]
             current_arg_kinds = [arg_type.arg_kinds[0]]
             current_arg_names = [arg_type.arg_names[0]]
@@ -104,37 +112,35 @@ def _get_expected_compose_type(context: FunctionContext
             ret_type = AnyType(TypeOfAny.explicit)
         else:
             # otherwise, the return type must be the argument of the previous function
-            ret_type = (actual_arg_types[index - 1].arg_types[0]
-                        if not isinstance(arg_type.ret_type, TypeVarType) else
-                        arg_type.ret_type)
-        all_variables.extend(arg_type.variables)
+            ret_type = args[index - 1][0].arg_types[0]
         arg_types.append(
             CallableType(arg_types=current_arg_types,
                          arg_names=current_arg_names,
                          arg_kinds=current_arg_kinds,
                          ret_type=ret_type,
-                         variables=arg_type.variables,
+                         variables=variables,
                          fallback=arg_type.fallback))
         arg_kinds.append(arg_kind)
         arg_names.append(arg_name)
-    first_arg_type, *_, last_arg_type = actual_arg_types
+    first_arg_type, *_, last_arg_type = [a[0] for a in args]
     ret_type = CallableType(
         arg_types=last_arg_type.arg_types,
         arg_names=last_arg_type.arg_names,
         arg_kinds=last_arg_type.arg_kinds,
         ret_type=first_arg_type.ret_type,
+        variables=variables,
         fallback=context.api.named_type('builtins.function'))
-    all_variables = list(set(all_variables))
     return CallableType(arg_types=arg_types,
                         arg_kinds=arg_kinds,
                         arg_names=arg_names,
                         ret_type=ret_type,
-                        variables=all_variables,
+                        variables=variables,
                         fallback=context.api.named_type('builtins.function'),
                         name='compose')
 
 
 def _compose_hook(context: FunctionContext) -> Type:
+    import ipdb; ipdb.set_trace()
     api = context.api
     try:
         compose = _get_expected_compose_type(context)
