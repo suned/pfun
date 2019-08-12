@@ -2,78 +2,85 @@ import typing as t
 
 from mypy.plugin import Plugin, FunctionContext, ClassDefContext
 from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.types import Type, CallableType, AnyType, TypeOfAny, Instance
+from mypy.types import (Type, CallableType, AnyType, TypeOfAny, Instance,
+                        TypeVarType, UnionType)
 from mypy.nodes import ClassDef
-from mypy import checkmember
+from mypy import checkmember, infer
+from mypy.checker import TypeChecker
 
 _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 
 
+def _get_callable_type(type_: Type,
+                       context: FunctionContext) -> t.Optional[CallableType]:
+    if isinstance(type_, CallableType):
+        return type_
+        # called with an object
+    elif isinstance(type_, Instance) and type_.has_readable_member('__call__'):
+        chk: TypeChecker = t.cast(TypeChecker, context.api)
+        return t.cast(
+            CallableType,
+            checkmember.analyze_member_access('__call__',
+                                              type_,
+                                              context.context,
+                                              False,
+                                              False,
+                                              False,
+                                              context.api.msg,
+                                              original_type=type_,
+                                              chk=chk))
+    return None
+
+
 def _curry_hook(context: FunctionContext) -> Type:
     arg_type = context.arg_types[0][0]
-    if not isinstance(arg_type, CallableType):
-        # called with an object
-        if isinstance(arg_type, Instance) and arg_type.has_readable_member('__call__'):
-            function = checkmember.analyze_member_access(
-                '__call__',
-                arg_type,
-                context.context,
-                False,
-                False,
-                False,
-                context.api.msg,
-                original_type=arg_type,
-                chk=context.api
-            )
-        else:
-            # called with an object without __call__ member: defer to normal type check
-            return context.default_return_type
-    else:
-        function = arg_type
-
-    if not isinstance(function, CallableType):
+    function = _get_callable_type(arg_type, context)
+    if function is None:
         return context.default_return_type
+
     if not function.arg_names:
         return function
     return_type = function.ret_type
-    last_function = CallableType(
-        arg_types=[function.arg_types[-1]],
-        arg_kinds=[function.arg_kinds[-1]],
-        arg_names=[function.arg_names[-1]],
-        ret_type=return_type,
-        fallback=function.fallback
-    )
-    args = list(zip(
-        function.arg_types[:-1],
-        function.arg_kinds[:-1],
-        function.arg_names[:-1]
-    ))
+    last_function = CallableType(arg_types=[function.arg_types[-1]],
+                                 arg_kinds=[function.arg_kinds[-1]],
+                                 arg_names=[function.arg_names[-1]],
+                                 ret_type=return_type,
+                                 fallback=function.fallback)
+    args = list(
+        zip(function.arg_types[:-1], function.arg_kinds[:-1],
+            function.arg_names[:-1]))
     for arg_type, kind, name in reversed(args):
-        last_function = CallableType(
-            arg_types=[arg_type],
-            arg_kinds=[kind],
-            arg_names=[name],
-            ret_type=last_function,
-            fallback=function.fallback
-        )
+        last_function = CallableType(arg_types=[arg_type],
+                                     arg_kinds=[kind],
+                                     arg_names=[name],
+                                     ret_type=last_function,
+                                     fallback=function.fallback,
+                                     variables=function.variables,
+                                     implicit=True)
     return last_function
 
 
-def _get_expected_compose_type(context: FunctionContext) -> CallableType:
-    # TODO, why are the arguments lists of lists, and do I need to worry about it?
-    actual_arg_types = [at for ats in context.arg_types for at in ats]
+def _get_expected_compose_type(context: FunctionContext
+                               ) -> t.Optional[CallableType]:
+    # TODO, why are the arguments lists of lists,
+    # and do I need to worry about it?
+    actual_arg_types = [
+        _get_callable_type(at, context) for ats in context.arg_types
+        for at in ats
+    ]
+    if any(at is None for at in actual_arg_types):
+        # an argument was not callable, defer to default type checking
+        return None
+
     actual_arg_kinds = [ak for aks in context.arg_kinds for ak in aks]
     actual_arg_names = [an for ans in context.arg_names for an in ans]
     arg_types = []
     arg_kinds = []
     arg_names = []
-    args = list(
-        zip(actual_arg_types,
-            actual_arg_kinds,
-            actual_arg_names)
-    )
+    args = list(zip(actual_arg_types, actual_arg_kinds, actual_arg_names))
+    all_variables = []
     for index, (arg_type, arg_kind, arg_name) in enumerate(args):
         is_last_arg = index == len(actual_arg_types) - 1
         is_first_arg = index == 0
@@ -84,8 +91,10 @@ def _get_expected_compose_type(context: FunctionContext) -> CallableType:
             current_arg_kinds = arg_type.arg_kinds
             current_arg_names = arg_type.arg_names
         else:
-            # otherwise, the arguments must be the return type of the next function
-            current_arg_types = [actual_arg_types[index + 1].ret_type]
+            current_arg_type = actual_arg_types[index + 1].ret_type
+            # if isinstance(current_arg_type, TypeVarType):
+            #     current_arg_type = arg_type.arg_types[0]
+            current_arg_types = [current_arg_type]
             current_arg_kinds = [arg_type.arg_kinds[0]]
             current_arg_names = [arg_type.arg_names[0]]
 
@@ -95,17 +104,17 @@ def _get_expected_compose_type(context: FunctionContext) -> CallableType:
             ret_type = AnyType(TypeOfAny.explicit)
         else:
             # otherwise, the return type must be the argument of the previous function
-            ret_type = actual_arg_types[index - 1].arg_types[0]
-
+            ret_type = (actual_arg_types[index - 1].arg_types[0]
+                        if not isinstance(arg_type.ret_type, TypeVarType) else
+                        arg_type.ret_type)
+        all_variables.extend(arg_type.variables)
         arg_types.append(
-            CallableType(
-                arg_types=current_arg_types,
-                arg_names=current_arg_names,
-                arg_kinds=current_arg_kinds,
-                ret_type=ret_type,
-                fallback=arg_type.fallback
-            )
-        )
+            CallableType(arg_types=current_arg_types,
+                         arg_names=current_arg_names,
+                         arg_kinds=current_arg_kinds,
+                         ret_type=ret_type,
+                         variables=arg_type.variables,
+                         fallback=arg_type.fallback))
         arg_kinds.append(arg_kind)
         arg_names.append(arg_name)
     first_arg_type, *_, last_arg_type = actual_arg_types
@@ -114,29 +123,28 @@ def _get_expected_compose_type(context: FunctionContext) -> CallableType:
         arg_names=last_arg_type.arg_names,
         arg_kinds=last_arg_type.arg_kinds,
         ret_type=first_arg_type.ret_type,
-        fallback=context.api.named_type('builtins.function')
-    )
-    return CallableType(
-        arg_types=arg_types,
-        arg_kinds=arg_kinds,
-        arg_names=arg_names,
-        ret_type=ret_type,
-        fallback=context.api.named_type('builtins.function'),
-        name='compose'
-    )
+        fallback=context.api.named_type('builtins.function'))
+    all_variables = list(set(all_variables))
+    return CallableType(arg_types=arg_types,
+                        arg_kinds=arg_kinds,
+                        arg_names=arg_names,
+                        ret_type=ret_type,
+                        variables=all_variables,
+                        fallback=context.api.named_type('builtins.function'),
+                        name='compose')
 
 
 def _compose_hook(context: FunctionContext) -> Type:
     api = context.api
     try:
         compose = _get_expected_compose_type(context)
+        if compose is None:
+            return context.default_return_type
         api.expr_checker.check_call(
-            compose,
-            [arg for args in context.args for arg in args],
-            [kind for kinds in context.arg_kinds for kind in kinds],
-            context.context,
-            [name for names in context.arg_names for name in names]
-        )
+            compose, [arg for args in context.args for arg in args],
+            [kind for kinds in context.arg_kinds
+             for kind in kinds], context.context,
+            [name for names in context.arg_names for name in names])
         return compose.ret_type
     except AttributeError:
         # an argument was not callable, defer to default type checking
@@ -154,8 +162,7 @@ def _immutable_hook(context: ClassDefContext):
 
 
 class PFun(Plugin):
-    def get_function_hook(self,
-                          fullname: str
+    def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
         if fullname == _CURRY:
             return _curry_hook

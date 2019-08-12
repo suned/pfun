@@ -13,7 +13,7 @@ C = TypeVar('C', bound='case')
 
 
 @dataclass(frozen=True)
-class case(Generic[C, B]):
+class case(Generic[C, B]):..
     def __init__(self,
                  t: Union[Type[C], Type[_]],
                  *,

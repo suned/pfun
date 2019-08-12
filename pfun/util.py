@@ -44,5 +44,6 @@ class Composition(Immutable):
         return last_result
 
 
-def compose(f: Callable, g: Callable, *functions: Callable) -> Callable:
+def compose(f: Callable[[Any], Any], g: Callable[[Any], Any],
+            *functions: Callable[[Any], Any]) -> Callable[[Any], Any]:
     return Composition((f, g) + functions)  # type: ignore
