@@ -47,3 +47,8 @@ class Composition(Immutable):
 def compose(f: Callable[[Any], Any], g: Callable[[Any], Any],
             *functions: Callable[[Any], Any]) -> Callable[[Any], Any]:
     return Composition((f, g) + functions)  # type: ignore
+
+
+def pipeline(first: Callable[[Any], Any], second: Callable[[Any], Any],
+             *rest: Callable[[Any], Any]):
+    return compose(*reversed(rest), second, first)

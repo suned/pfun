@@ -3,7 +3,7 @@ import typing as t
 from mypy.plugin import Plugin, FunctionContext, ClassDefContext
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.types import (Type, CallableType, AnyType, TypeOfAny, Instance,
-                        TypeVarType, UnionType)
+                        TypeVarType, UnionType, Overloaded)
 from mypy.nodes import ClassDef
 from mypy import checkmember, infer, expandtype
 from mypy.checker import TypeChecker
@@ -59,7 +59,7 @@ def _curry_hook(context: FunctionContext) -> Type:
                                      fallback=function.fallback,
                                      variables=function.variables,
                                      implicit=True)
-    return last_function
+    return Overloaded([last_function, function])
 
 
 def _get_expected_compose_type(context: FunctionContext
@@ -79,7 +79,9 @@ def _get_expected_compose_type(context: FunctionContext
     arg_types = []
     arg_kinds = []
     arg_names = []
-    args = list(list(t) for t in zip(actual_arg_types, actual_arg_kinds, actual_arg_names))
+    args = list(
+        list(t)
+        for t in zip(actual_arg_types, actual_arg_kinds, actual_arg_names))
     variables = []
     for index, (arg_type, arg_kind, arg_name) in enumerate(args):
         is_last_arg = index == len(actual_arg_types) - 1
@@ -95,13 +97,17 @@ def _get_expected_compose_type(context: FunctionContext
             if isinstance(current_arg_type, TypeVarType):
                 type_to_expand_with = arg_type.arg_types[0]
                 if isinstance(type_to_expand_with, TypeVarType):
-                    variables.append(next(v for v in arg_type.variables if v.id == type_to_expand_with.id))
+                    variables.append(
+                        next(v for v in arg_type.variables
+                             if v.id == type_to_expand_with.id))
                 next_function = args[index + 1][0]
-                args[index + 1][0] = expandtype.expand_type(next_function, {current_arg_type.id: type_to_expand_with})
+                args[index + 1][0] = expandtype.expand_type(
+                    next_function, {current_arg_type.id: type_to_expand_with})
                 current_arg_type = type_to_expand_with
             if isinstance(arg_type.arg_types[0], TypeVarType):
                 tv = arg_type.arg_types[0]
-                args[index][0] = expandtype.expand_type(arg_type, {tv.id: current_arg_type})
+                args[index][0] = expandtype.expand_type(
+                    arg_type, {tv.id: current_arg_type})
             current_arg_types = [current_arg_type]
             current_arg_kinds = [arg_type.arg_kinds[0]]
             current_arg_names = [arg_type.arg_names[0]]
@@ -140,7 +146,7 @@ def _get_expected_compose_type(context: FunctionContext
 
 
 def _compose_hook(context: FunctionContext) -> Type:
-    import ipdb; ipdb.set_trace()
+    #import ipdb; ipdb.set_trace()
     api = context.api
     try:
         compose = _get_expected_compose_type(context)

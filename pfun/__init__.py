@@ -3,14 +3,12 @@ from . import reader
 from . import writer
 from . import state
 from . import result
-from .util import (identity,
-                   compose,
-                   Unary,
-                   Predicate)
+#from . import operator
+from .util import (identity, compose, Unary, Predicate)
 from .dict import Dict
 from .list import List
 from .curry import (
-    curry#,
+    curry  #,
     # curry2,
     # curry3,
     # curry4,
