@@ -1,15 +1,17 @@
 from functools import singledispatch
 
 from typing import Union, List, Tuple, TypeVar
+from abc import ABC, abstractmethod
 
 
-class Monoid:
+class Monoid(ABC):
     """
     Abstract class for implementing custom Monoids that can be used
     with the :class:`Writer` monad
 
     """
-    def append(self, other: 'Monoid') -> 'Monoid':
+    @abstractmethod
+    def append(self, other):
         """
         Append function for the Monoid type
 
@@ -18,6 +20,7 @@ class Monoid:
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def empty(self) -> 'Monoid':
         """
         empty value for the Monoid type
