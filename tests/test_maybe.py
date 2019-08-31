@@ -29,11 +29,10 @@ class TestMaybe(MonadTest):
         assert Just(value).and_then(f) == f(value)
 
     @given(maybes(), unaries(maybes()), unaries(maybes()))
-    def test_associativity_law(self,
-                               maybe: Maybe,
-                               f: Unary[Any, Maybe],
+    def test_associativity_law(self, maybe: Maybe, f: Unary[Any, Maybe],
                                g: Unary[Any, Maybe]):
-        assert maybe.and_then(f).and_then(g) == maybe.and_then(lambda x: f(x).and_then(g))
+        assert maybe.and_then(f).and_then(g) == maybe.and_then(
+            lambda x: f(x).and_then(g))
 
     @given(anything())
     def _test_just_equality(self, value):

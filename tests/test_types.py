@@ -4,7 +4,6 @@ import pytest
 
 from mypy import api as mypy_api
 
-
 parametrize = pytest.mark.parametrize
 
 

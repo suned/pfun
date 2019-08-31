@@ -37,7 +37,8 @@ class TestList(MonadTest, MonoidTest):
 
     @given(lists(), unaries(lists()), unaries(lists()))
     def test_associativity_law(self, l: List, f, g):
-        assert l.and_then(f).and_then(g) == l.and_then(lambda x: f(x).and_then(g))
+        assert l.and_then(f).and_then(g) == l.and_then(
+            lambda x: f(x).and_then(g))
 
     @given(lists_(anything()))
     def test_equality(self, t):

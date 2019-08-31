@@ -3,7 +3,6 @@ from .functor_test import FunctorTest
 
 
 class MonadTest(FunctorTest, ABC):
-
     @abstractmethod
     def test_right_identity_law(self, *args):
         raise NotImplementedError()

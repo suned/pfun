@@ -6,23 +6,27 @@ from tests.monad_test import MonadTest
 from tests.strategies import anything, unaries, writers, monoids, lists
 
 
-def tuple_identity(a, m): return a, m
+def tuple_identity(a, m):
+    return a, m
 
 
-def tuple_compose(f, g): return lambda a, m: f(*g(a, m))
+def tuple_compose(f, g):
+    return lambda a, m: f(*g(a, m))
 
 
 def monoidal_dyads(value_strategy=anything(), monoids=lists()):
     def _(a, m):
         return lambda a_, m_: (a, m)
+
     return builds(_, value_strategy, monoids)
 
 
 class TestWriter(MonadTest):
     @given(anything(), monoids())
     def test_right_identity_law(self, value, monoid):
-        assert (writer.value(value, monoid).and_then(writer.value) ==
-                writer.value(value, monoid))
+        assert (writer.value(value,
+                             monoid).and_then(writer.value) == writer.value(
+                                 value, monoid))
 
     @given(unaries(writers()), anything())
     def test_left_identity_law(self, f, value):
@@ -30,7 +34,8 @@ class TestWriter(MonadTest):
 
     @given(writers(), unaries(writers()), unaries(writers()))
     def test_associativity_law(self, w, f, g):
-        assert w.and_then(f).and_then(g) == w.and_then(lambda x: f(x).and_then(g))
+        assert w.and_then(f).and_then(g) == w.and_then(
+            lambda x: f(x).and_then(g))
 
     @given(anything(), monoids())
     def test_equality(self, value, monoid):
@@ -54,4 +59,3 @@ class TestWriter(MonadTest):
     @given(monoids())
     def test_tell(self, monoid):
         assert writer.tell(monoid) == writer.value(None, monoid)
-

@@ -19,12 +19,11 @@ class TestResult(MonadTest):
         assert Ok(value).and_then(f) == f(value)
 
     @given(results(), unaries(results()), unaries(results()))
-    def test_associativity_law(self,
-                               result: Result,
-                               f: Unary[Any, Result],
+    def test_associativity_law(self, result: Result, f: Unary[Any, Result],
                                g: Unary[Any, Result]):
 
-        assert result.and_then(f).and_then(g) == result.and_then(lambda x: f(x).and_then(g))
+        assert result.and_then(f).and_then(g) == result.and_then(
+            lambda x: f(x).and_then(g))
 
     @given(anything())
     def test_equality(self, value):
@@ -65,4 +64,5 @@ class TestResult(MonadTest):
         error = result_int('whoops')
         assert isinstance(error, Error)
         assert isinstance(error.b, ValueError)
-        assert error.b.args == ("invalid literal for int() with base 10: 'whoops'",)
+        assert error.b.args == (
+            "invalid literal for int() with base 10: 'whoops'", )

@@ -8,5 +8,4 @@ class C:
 
 c = curry(C())
 
-
 c('')('') + 1

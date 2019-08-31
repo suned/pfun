@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 
 class FunctorTest(ABC):
-
     @abstractmethod
     def test_equality(self, *args):
         raise NotImplementedError()
