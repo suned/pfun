@@ -1,18 +1,19 @@
 from typing import Generic, TypeVar, Callable, Any
 from functools import wraps
 from .immutable import Immutable
+from abc import ABC, abstractmethod
 
 A = TypeVar('A')
 B = TypeVar('B')
 C = TypeVar('C')
 
 
-class Result(Generic[A, B], Immutable):
+class Result(Generic[A, B], Immutable, ABC):
     """
     Abstract class representing a potentially failed computation.
     Should not be instantiated directly, use :class:`Ok` or :class:`Error` instead
     """
-
+    @abstractmethod
     def and_then(self, f: Callable[[A], 'Result[A, B]']) -> 'Result[A, B]':
         """
         Chain together functions of potentially failed computations, keeping
@@ -31,6 +32,7 @@ class Result(Generic[A, B], Immutable):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def __bool__(self):
         """
         Convert this result to a boolean value
@@ -45,6 +47,7 @@ class Result(Generic[A, B], Immutable):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def or_else(self, default: A) -> A:
         """
         Try to get the result of possibly failed computation, return default
@@ -61,6 +64,7 @@ class Result(Generic[A, B], Immutable):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def map(self, f: Callable[[A], C]) -> 'Result[C, B]':
         """
         Map the result of a possibly failed computation

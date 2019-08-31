@@ -1,25 +1,25 @@
 from typing import Generic, TypeVar, Callable, Any, Sequence
 from functools import wraps
+from abc import ABC, abstractmethod
 
 from .immutable import Immutable
 from .list import List
-
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Maybe(Generic[A], Immutable):
+class Maybe(Generic[A], Immutable, ABC):
     """
     Abstract super class for classes that represent computations that can fail.
     Should not be instantiated directly. Use :class:`Just` and :class:`Nothing` instead.
 
     """
-
     def __init__(self):
         raise TypeError(
             "'Maybe' can't be instantiated directly. Use Just or Nothing.")
 
+    @abstractmethod
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
         """
         Chain together functional calls, carrying along the state of the
@@ -39,6 +39,7 @@ class Maybe(Generic[A], Immutable):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
         """
         Map the result of a possibly failed computation
@@ -56,6 +57,7 @@ class Maybe(Generic[A], Immutable):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def or_else(self, default: A) -> A:
         """
         Try to get the result of the possibly failed computation if it was
@@ -73,6 +75,7 @@ class Maybe(Generic[A], Immutable):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def __bool__(self):
         """
         Convert possibly failed computation to a bool
