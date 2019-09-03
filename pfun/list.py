@@ -11,7 +11,8 @@ class List(List_[A], Monoid):
     def empty(self) -> 'List[A]':
         return List()
 
-    def reduce(self, f: Callable[[B, A], B], initializer: Optional[B] = None) -> 'List[B]':
+    def reduce(self, f: Callable[[B, A], B],
+               initializer: Optional[B] = None) -> 'List[B]':
         """
         Aggregate elements by ``f``
 

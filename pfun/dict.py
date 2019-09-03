@@ -1,6 +1,6 @@
-from typing import Dict as Dict_, TypeVar, Optional, Mapping
+from typing import Dict as Dict_, TypeVar
 
-from .maybe import Maybe, Nothing, Just, maybe
+from .maybe import Maybe, Nothing, Just
 
 K = TypeVar('K')
 V = TypeVar('V')
@@ -22,8 +22,7 @@ class Dict(Dict_[K, V]):
 
     def __repr__(self):
         mapping_repr = ', '.join(
-            [f'{repr(key)}: {repr(value)}' for key, value in self.items()]
-        )
+            [f'{repr(key)}: {repr(value)}' for key, value in self.items()])
         return f'{{{mapping_repr}}}'
 
     def __getitem__(self, key: K) -> Maybe[V]:  # type: ignore
@@ -69,7 +68,8 @@ class Dict(Dict_[K, V]):
 
         :param key: the key to retrieve
         :param default: value to return if the key is not found
-        :return: :class:`Just` if key is found in dictionary or default is given,
+        :return: :class:`Just` if key is found in dictionary
+                 or default is given,
                  :class:`Nothing` otherwise
         """
         v = super().get(key)  # type: ignore
@@ -82,5 +82,3 @@ class Dict(Dict_[K, V]):
         d.update(self)
         d.update(other)
         return Dict(d)
-
-

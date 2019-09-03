@@ -1,9 +1,10 @@
-from pfun import maybe, List, reader, state, Dict, cont, writer
+from pfun import maybe, List, reader, state, Dict, cont, writer, io
 from hypothesis.strategies import (integers, booleans, text, one_of, floats,
                                    builds, just, lists as lists_, dictionaries,
                                    tuples, none)
 
 from pfun.result import Ok, Error
+from pfun.io import IO, Put, Get, ReadFile, WriteFile
 
 
 def _everything(allow_nan=False):
@@ -64,3 +65,25 @@ def writers(value_strategy=anything(), monoid=lists()):
 def monoids():
     return one_of(lists_(anything()), lists(), tuples(), integers(), none(),
                   text(), just(...))
+
+
+def io_primitives(value_strategy=anything()):
+    return builds(io.IO, value_strategy)
+
+
+def puts(value_strategy=anything()):
+    return builds(Put, tuples(text(), io_primitives(value_strategy)))
+
+
+def gets(value_strategy=anything()):
+    return builds(Get, unaries(io_primitives(value_strategy)), text())
+
+
+def read_files(value_strategy=anything()):
+    return builds(ReadFile,
+                  tuples(text(), unaries(io_primitives(value_strategy))))
+
+
+def ios(value_strategy=anything()):
+    return one_of(io_primitives(value_strategy), puts(value_strategy),
+                  gets(value_strategy), read_files(value_strategy))

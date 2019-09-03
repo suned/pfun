@@ -57,7 +57,7 @@ def test_str(s1, s2):
 
 
 @given(none(), none())
-def test_str(n1, n2):
+def test_none(n1, n2):
     assert empty(n1) is None
     assert append(n1, None) is None
     assert append(None, n1) is None

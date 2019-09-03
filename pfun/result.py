@@ -144,7 +144,7 @@ class Error(Result[A, B]):
         False
 
         :param other: object to compare with
-        :return: True if other is an :class:`Error` instance and wraps the same \
+        :return: True if other is an :class:`Error` instance and wraps the same
         value as this instance, False otherwise
         """
         return isinstance(other, Error) and other.b == self.b

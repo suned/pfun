@@ -1,5 +1,4 @@
 import os
-import subprocess
 import pytest
 
 from mypy import api as mypy_api
@@ -13,13 +12,15 @@ def python_files(path):
     folder = os.path.join(current_folder, path)
     for root, _, files in os.walk(folder):
         for file in files:
+            if file == '__init__.py':
+                continue
             if file.endswith('.py'):
                 py_files.append(os.path.join(root, file))
     return py_files
 
 
 def type_check(file):
-    return mypy_api.run([file])
+    return mypy_api.run(['--config-file=tests/mypy.ini', file])
 
 
 @parametrize('file', python_files('type_tests/positives'))

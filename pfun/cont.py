@@ -1,4 +1,4 @@
-from typing import Generic, Callable, TypeVar, Any
+from typing import Generic, Callable, TypeVar
 
 from pfun import compose
 from .immutable import Immutable
@@ -40,7 +40,8 @@ class Cont(Generic[A, B], Immutable):
         1
 
         :param f: The function to pass the result of the wrapped function to
-        :return: the result of passing the return value of the wrapped function to ``f``
+        :return: the result of passing the return value
+        of the wrapped function to ``f``
         """
         return self.f(f)  # type: ignore
 
@@ -63,4 +64,3 @@ def value(a: A) -> Cont[A, B]:
     :return: :class:`Cont` wrapping the value
     """
     return Cont(lambda cont: cont(a))
-
