@@ -11,7 +11,8 @@ C = TypeVar('C')
 class Result(Generic[A, B], Immutable, ABC):
     """
     Abstract class representing a potentially failed computation.
-    Should not be instantiated directly, use :class:`Ok` or :class:`Error` instead
+    Should not be instantiated directly,
+    use :class:`Ok` or :class:`Error` instead
     """
     @abstractmethod
     def and_then(self, f: Callable[[A], 'Result[A, B]']) -> 'Result[A, B]':
@@ -43,7 +44,8 @@ class Result(Generic[A, B], Immutable, ABC):
         >>> "Ok" if Error("an error") else "Error"
         "Error"
 
-        :return: True if this as an :class:`Ok`, False if this is an :class:`Error`
+        :return: True if this as an :class:`Ok`,
+                 False if this is an :class:`Error`
         """
         raise NotImplementedError()
 

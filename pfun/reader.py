@@ -21,9 +21,11 @@ class Reader(Immutable, Generic[Context, Result_]):
 
     f: Callable[[Context], Result_]
 
-    def and_then(self, f: 'Callable[[Result_], Reader[Context, Next]]') -> 'Reader[Context, Next]':
+    def and_then(self, f: 'Callable[[Result_], Reader[Context, Next]]'
+                 ) -> 'Reader[Context, Next]':
         """
-        Compose ``f`` with the function wrapped by this :class:`Reader` instance
+        Compose ``f`` with the function wrapped by this
+        :class:`Reader` instance
 
         :example:
         >>> ask().and_then(
@@ -45,7 +47,8 @@ class Reader(Immutable, Generic[Context, Result_]):
         '1'
 
         :param f: Function to apply
-        :return: :class:`Reader` that returns the result of applying ``f`` to its result
+        :return: :class:`Reader` that returns the result of
+                 applying ``f`` to its result
         """
         return Reader(lambda a: f(self.f(a)))  # type: ignore
 
@@ -57,7 +60,8 @@ class Reader(Immutable, Generic[Context, Result_]):
         >>> value(1).run(...)
         1
 
-        :param c: The context to passed to the function wrapped by this :class:`Reader`
+        :param c: The context to passed to the
+                  function wrapped by this :class:`Reader`
         :return: The result of this :class:`Reader`
         """
         return self.f(c)  # type: ignore
@@ -94,7 +98,8 @@ def ask() -> Reader[Context, Result_]:
 
 def reader(f: Callable[[A], B]) -> Callable[[A], Reader[Context, B]]:
     """
-    Wrap any function in a :class:`Reader` context. Useful for making non-monadic
+    Wrap any function in a :class:`Reader` context.
+    Useful for making non-monadic
     functions monadic. Can also be used as a decorator
 
     :example:
@@ -109,6 +114,7 @@ def reader(f: Callable[[A], B]) -> Callable[[A], Reader[Context, B]]:
     def dec(*args, **kwargs):
         result = f(*args, **kwargs)
         return value(result)
+
     return dec
 
 

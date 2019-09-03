@@ -1,4 +1,3 @@
-import pytest
 from typing import Any
 
 from hypothesis import given, assume

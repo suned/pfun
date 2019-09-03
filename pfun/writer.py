@@ -1,8 +1,6 @@
 from typing import Tuple, Generic, Callable, TypeVar
-
 from pfun.monoid import M, append, empty
 from .immutable import Immutable
-
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -10,7 +8,8 @@ B = TypeVar('B')
 
 class Writer(Generic[A, M], Immutable):
     """
-    Class that represents a value along with a monoid value that is accumulated as
+    Class that represents a value
+    along with a monoid value that is accumulated as
     a side effect
 
     """
@@ -29,8 +28,10 @@ class Writer(Generic[A, M], Immutable):
         Writer(2, ['first element', 'second element'])
 
         :param f: Function to pass the value to
-        :return: :class:`Writer` with result of passing the value in this :class:`Writer` \
-        to ``f``, and appending the monoid in this instance with the result of ``f``
+        :return: :class:`Writer` with result of
+                 passing the value in this :class:`Writer`
+                 to ``f``, and appending the monoid in this
+                 instance with the result of ``f``
         """
 
         # this is kind of a hack:
@@ -60,13 +61,16 @@ class Writer(Generic[A, M], Immutable):
         >>> Writer('value', []).map(lambda v, m: ('new value', ['new monoid']))
         Writer('new value', ['new monoid'])
 
-        :param f: the function to map the value and monoid in this :class:`Writer`
+        :param f: the function to map the value and
+                  monoid in this :class:`Writer`
         :return: :class:`Writer` with value and monoid mapped by ``f``
         """
         return Writer(*f(self.a, self.m))  # type: ignore
 
     def __repr__(self):
-        return f'Writer({repr(self.a)}, {repr(self.m) if self.m is not ... else "..."})'
+        a_repr = repr(self.a)
+        m_repr = repr(self.m) if self.m is not ... else "..."
+        return f'Writer({a_repr}, {m_repr})'
 
 
 def value(a: A, m: M = ...) -> Writer[A, M]:  # type: ignore

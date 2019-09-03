@@ -9,14 +9,15 @@ C = TypeVar('C')
 
 class State(Generic[B, A], Immutable):
     """
-    Class representing a computation that is not yet complete, but will complete
-    when given a state of type A
+    Class representing a computation that is not yet complete,
+    but will complete when given a state of type A
     """
     f: Callable[[A], Tuple[B, A]]
 
     def and_then(self, f: 'Callable[[B], State[C, A]]') -> 'State[C, A]':
         """
-        Chain together state computations, keeping track of state without mutable state
+        Chain together state computations,
+        keeping track of state without mutable state
 
         :example:
         >>> get().and_then(
@@ -27,11 +28,12 @@ class State(Generic[B, A], Immutable):
 
         :param f: Function to pass the result of this :class:`State` instance \
         once it can be computed
-        :return: new :class:`State` which wraps the result of passing the result \
-        of this :class:`State` instance to ``f``
+        :return: new :class:`State` which wraps the result of \
+        passing the result of this :class:`State` instance to ``f``
         """
         def _(b: B, a: A) -> Tuple[C, A]:
             return f(b).f(a)  # type: ignore
+
         return State(lambda a: _(*self.f(a)))  # type: ignore
 
     def run(self, a: A) -> Tuple[B, A]:
@@ -40,7 +42,8 @@ class State(Generic[B, A], Immutable):
         to the wrapped function
 
         :example:
-        >>> get().and_then(lambda state: value(state + ['final state'])).run(['initial state'])
+        >>> append_to_state = lambda state: value(state + ['final state'])
+        >>> get().and_then(append_to_state).run(['initial state'])
         ['initial state', 'final state'], ['initial state', 'final state']
 
         :param a: State to run this :class:`State` instance on

@@ -1,4 +1,4 @@
-from pfun import maybe, List, reader, state, Dict, cont, writer, io
+from pfun import maybe, List, reader, state, Dict, cont, writer
 from hypothesis.strategies import (integers, booleans, text, one_of, floats,
                                    builds, just, lists as lists_, dictionaries,
                                    tuples, none)
@@ -68,7 +68,7 @@ def monoids():
 
 
 def io_primitives(value_strategy=anything()):
-    return builds(io.IO, value_strategy)
+    return builds(IO, value_strategy)
 
 
 def puts(value_strategy=anything()):
@@ -84,6 +84,12 @@ def read_files(value_strategy=anything()):
                   tuples(text(), unaries(io_primitives(value_strategy))))
 
 
+def write_files(value_strategy=anything()):
+    return builds(WriteFile,
+                  tuples(text(), text(), io_primitives(value_strategy)))
+
+
 def ios(value_strategy=anything()):
     return one_of(io_primitives(value_strategy), puts(value_strategy),
-                  gets(value_strategy), read_files(value_strategy))
+                  gets(value_strategy), read_files(value_strategy),
+                  write_files(value_strategy))

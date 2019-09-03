@@ -18,7 +18,6 @@ A11 = TypeVar('A11')
 A12 = TypeVar('A12')
 R = TypeVar('R')
 
-
 # def curry2(
 #         f: Callable[[A1, A2], R]
 # ) -> Callable[[A1], Callable[[A2], R]]:
@@ -29,7 +28,6 @@ R = TypeVar('R')
 #     :return: Curried version of ``f``
 #     """
 #     return curry(f)
-
 
 # def curry3(
 #         f: Callable[[A1, A2, A3], R]
@@ -42,7 +40,6 @@ R = TypeVar('R')
 #     """
 #     return curry(f)
 
-
 # def curry4(
 #         f: Callable[[A1, A2, A3, A4], R]
 # ) -> Callable[[A1], Callable[[A2], Callable[[A3], Callable[[A4], R]]]]:
@@ -53,7 +50,6 @@ R = TypeVar('R')
 #     :return: Curried version of ``f``
 #     """
 #     return curry(f)
-
 
 # def curry5(
 #     f: Callable[[A1, A2, A3, A4, A5], R]
@@ -77,7 +73,6 @@ R = TypeVar('R')
 #     :return: Curried version of ``f``
 #     """
 #     return curry(f)
-
 
 # def curry6(
 #     f: Callable[[A1, A2, A3, A4, A5, A6], R]
@@ -104,7 +99,6 @@ R = TypeVar('R')
 #     :return: Curried version of ``f``
 #     """
 #     return curry(f)
-
 
 # def curry7(
 #     f: Callable[[A1, A2, A3, A4, A5, A6, A7], R]
@@ -134,7 +128,6 @@ R = TypeVar('R')
 #     :return: Curried version of ``f``
 #     """
 #     return curry(f)
-
 
 # def curry8(
 #     f: Callable[[A1, A2, A3, A4, A5, A6, A7, A8], R]
@@ -171,7 +164,6 @@ R = TypeVar('R')
 #     """
 #     return curry(f)
 
-
 # def curry9(
 #     f: Callable[[A1, A2, A3, A4, A5, A6, A7, A8, A9], R]
 # ) -> Callable[
@@ -206,7 +198,6 @@ R = TypeVar('R')
 #     :return: Curried version of ``f``
 #     """
 #     return curry(f)
-
 
 # def curry10(
 #     f: Callable[[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10], R]
@@ -245,7 +236,6 @@ R = TypeVar('R')
 #     :return: Curried version of ``f``
 #     """
 #     return curry(f)
-
 
 # def curry11(
 #     f: Callable[[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11], R]
@@ -287,7 +277,6 @@ R = TypeVar('R')
 #     :return: Curried version of ``f``
 #     """
 #     return curry(f)
-
 
 # def curry12(
 #     f: Callable[[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12], R]
@@ -367,7 +356,6 @@ def curry(f: Callable) -> Callable:
     :param f: The function to curry
     :return: Curried version of ``f``
     """
-
     @functools.wraps(f)
     def decorator(*args, **kwargs):
         return Curry(f)(*args, **kwargs)

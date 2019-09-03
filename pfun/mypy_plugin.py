@@ -5,9 +5,9 @@ import typing as t
 from mypy.plugin import Plugin, FunctionContext, ClassDefContext
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.types import (Type, CallableType, AnyType, TypeOfAny, Instance,
-                        TypeVarType, UnionType, Overloaded)
+                        TypeVarType, Overloaded)
 from mypy.nodes import ClassDef
-from mypy import checkmember, infer, expandtype
+from mypy import checkmember, expandtype
 from mypy.checker import TypeChecker
 
 _CURRY = 'pfun.curry.curry'
@@ -119,7 +119,8 @@ def _get_expected_compose_type(context: FunctionContext
             # the return type can by anything
             ret_type = AnyType(TypeOfAny.explicit)
         else:
-            # otherwise, the return type must be the argument of the previous function
+            # otherwise, the return type must be
+            # the argument of the previous function
             ret_type = args[index - 1][0].arg_types[0]
         arg_types.append(
             CallableType(arg_types=current_arg_types,
@@ -148,7 +149,6 @@ def _get_expected_compose_type(context: FunctionContext
 
 
 def _compose_hook(context: FunctionContext) -> Type:
-    #import ipdb; ipdb.set_trace()
     api = context.api
     try:
         compose = _get_expected_compose_type(context)

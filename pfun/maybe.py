@@ -12,7 +12,8 @@ B = TypeVar('B')
 class Maybe(Generic[A], Immutable, ABC):
     """
     Abstract super class for classes that represent computations that can fail.
-    Should not be instantiated directly. Use :class:`Just` and :class:`Nothing` instead.
+    Should not be instantiated directly.
+    Use :class:`Just` and :class:`Nothing` instead.
 
     """
     def __init__(self):
@@ -86,7 +87,8 @@ class Maybe(Generic[A], Immutable, ABC):
         >>> "Just" if Nothing() else "Nothing"
         "Nothing"
 
-        :return: True if this is a :class:`Just` value, False if this is a :class:`Nothing`
+        :return: True if this is a :class:`Just` value,
+                 False if this is a :class:`Nothing`
 
         """
         raise NotImplementedError()
