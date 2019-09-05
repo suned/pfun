@@ -13,6 +13,10 @@ from mypy.checker import TypeChecker
 _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
+_MAYBE = 'pfun.maybe.maybe'
+_RESULT = 'pfun.result.result'
+_IO = 'pfun.io.io'
+_READER = 'pfun.reader.reader'
 
 
 def _get_callable_type(type_: Type,
@@ -42,7 +46,7 @@ def _curry_hook(context: FunctionContext) -> Type:
     if function is None:
         return context.default_return_type
 
-    if not function.arg_names:
+    if not function.arg_types:
         return function
     return_type = function.ret_type
     last_function = CallableType(arg_types=[function.arg_types[-1]],
@@ -62,6 +66,24 @@ def _curry_hook(context: FunctionContext) -> Type:
                                      variables=function.variables,
                                      implicit=True)
     return Overloaded([last_function, function])
+
+
+def _variadic_decorator_hook(context: FunctionContext) -> Type:
+    arg_type = context.arg_types[0][0]
+    function = _get_callable_type(arg_type, context)
+    if function is None:
+        return context.default_return_type
+
+    ret_type = context.default_return_type.ret_type
+    variables = list(
+        set(function.variables + context.default_return_type.variables))
+    return CallableType(arg_types=function.arg_types,
+                        arg_kinds=function.arg_kinds,
+                        arg_names=function.arg_names,
+                        ret_type=ret_type,
+                        fallback=function.fallback,
+                        variables=variables,
+                        implicit=True)
 
 
 def _get_expected_compose_type(context: FunctionContext
@@ -182,6 +204,14 @@ class PFun(Plugin):
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
+        if fullname == _MAYBE:
+            return _variadic_decorator_hook
+        if fullname == _RESULT:
+            return _variadic_decorator_hook
+        if fullname == _IO:
+            return _variadic_decorator_hook
+        if fullname == _READER:
+            return _variadic_decorator_hook
         return None
 
     def get_base_class_hook(self, fullname: str):

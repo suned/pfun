@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Generic, TypeVar, Callable
+from typing import Generic, TypeVar, Callable, Any
 
 from .util import identity
 from .immutable import Immutable
@@ -83,7 +83,7 @@ def value(v: Result_) -> Reader[Context, Result_]:
     return Reader(lambda _: v)
 
 
-def ask() -> Reader[Context, Result_]:
+def ask(_: Any = None) -> Reader[Context, Result_]:
     """
     Return the :class:`Reader` that simply returns the context it is given
 
@@ -96,7 +96,7 @@ def ask() -> Reader[Context, Result_]:
     return Reader(identity)  # type: ignore
 
 
-def reader(f: Callable[[A], B]) -> Callable[[A], Reader[Context, B]]:
+def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
     """
     Wrap any function in a :class:`Reader` context.
     Useful for making non-monadic

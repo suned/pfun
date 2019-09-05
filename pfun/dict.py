@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Dict as Dict_, overload
+from typing import TypeVar, Generic, Dict as Dict_, Union
 
 from .maybe import Maybe, Nothing, Just
 from .immutable import Immutable
@@ -8,25 +8,35 @@ V = TypeVar('V')
 
 
 class Dict(Immutable, Generic[K, V], init=False):
-    _d: Dict_[K, V]
-
-    def __init__(self, d: Dict_[K, V] = dict()):
-        object.__setattr__(self, '_d', dict(d))
     """
     Immutable dictionary class with functional helper methods
     """
+
+    _d: Dict_[K, V]
+
+    def __init__(self, d: Union[Dict_[K, V], 'Dict[K, V]'] = dict()):
+        if isinstance(d, Dict):
+            d = d._d
+        object.__setattr__(self, '_d', dict(d))
 
     def __repr__(self):
         mapping_repr = ', '.join(
             [f'{repr(key)}: {repr(value)}' for key, value in self._d.items()])
         return f'{{{mapping_repr}}}'
-    
+
+    def __eq__(self, other):
+        if isinstance(other, dict):
+            return other == self._d
+        if isinstance(other, Dict):
+            return other._d == self._d
+        return False
+
     def keys(self):
         return self._d.keys()
-    
+
     def values(self):
         return self._d.values()
-    
+
     def copy(self):
         return Dict(self._d.copy())
 
@@ -83,7 +93,7 @@ class Dict(Immutable, Generic[K, V], init=False):
                  or default is given,
                  :class:`Nothing` otherwise
         """
-        v = self._d.get(key) 
+        v = self._d.get(key)
         if v is None:
             return Nothing()
         return Just(v)
@@ -91,5 +101,5 @@ class Dict(Immutable, Generic[K, V], init=False):
     def update(self, other: 'Dict[K, V]') -> 'Dict[K, V]':
         d: Dict_[K, V] = {}
         d.update(self._d)
-        d.update(other)
+        d.update(other)  # type: ignore
         return Dict(d)

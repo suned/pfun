@@ -161,7 +161,7 @@ class Error(Result[A, B]):
         return f'Error({repr(self.b)})'
 
 
-def result(f: Callable[[A], B]) -> Callable[[A], Result[B, Exception]]:
+def result(f: Callable[..., B]) -> Callable[..., Result[B, Exception]]:
     """
     Wrap a function that may raise an exception with a :class:`Result`.
     Can also be used as a decorator. Useful for turning

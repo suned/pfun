@@ -1,6 +1,3 @@
-import random
-
-import pytest
 from hypothesis import given, assume
 
 from pfun import Dict

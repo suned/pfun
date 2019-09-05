@@ -1,4 +1,14 @@
-from pfun.list import List
+from pfun.reader import reader, ask
 
-l = List()
-l[0] = 1
+
+@reader
+def f(b: int) -> int:
+    pass
+
+
+@reader
+def g(r: str) -> int:
+    pass
+
+
+reveal_type(ask().and_then(g).and_then(f))

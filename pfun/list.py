@@ -14,12 +14,14 @@ class List(Monoid, Generic[A], Immutable, init=False):
     def __init__(self, iterable: Iterable[A] = ()):
         object.__setattr__(self, '_iterable', tuple(iterable))
 
+    def __repr__(self):
+        return repr(list(self._t))
 
     def empty(self) -> 'List[A]':
         return List()
 
     def reduce(self, f: Callable[[B, A], B],
-               initializer: Optional[B] = None) -> 'List[B]':
+               initializer: Optional[B] = None) -> B:
         """
         Aggregate elements by ``f``
 
@@ -31,7 +33,7 @@ class List(Monoid, Generic[A], Immutable, init=False):
         :param initializer: Starting value for aggregation
         :return: Aggregated result
         """
-        return List(reduce(f, self._iterable, initializer))
+        return reduce(f, self._iterable, initializer)  # type: ignore
 
     def append(self, a: Iterable[A]) -> 'List[A]':  # type: ignore
         """
@@ -139,9 +141,9 @@ class List(Monoid, Generic[A], Immutable, init=False):
 
     def reverse(self) -> 'List[A]':
         return List(reversed(self._iterable))
-    
+
     def __len__(self):
         return len(self._iterable)
-    
+
     def __iter__(self):
         return iter(self._iterable)

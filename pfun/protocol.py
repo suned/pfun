@@ -4,6 +4,26 @@ A = TypeVar('A', contravariant=True)
 B = TypeVar('B', covariant=True)
 
 
+class SupportsLt(Protocol[A, B]):
+    def __lt__(self, other: A) -> B:
+        pass
+
+
+class SupportsLe(Protocol[A, B]):
+    def __le__(self, other: A) -> B:
+        pass
+
+
+class SupportsEq(Protocol[B]):
+    def __eq__(self, other: object) -> bool:
+        pass
+
+
+class SupportsNe(Protocol[B]):
+    def __ne__(self, other: object) -> bool:
+        pass
+
+
 class SupportsAdd(Protocol[A, B]):
     def __add__(self, other: A) -> B:
         pass
