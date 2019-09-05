@@ -1,31 +1,42 @@
-from typing import Dict as Dict_, TypeVar
+from typing import TypeVar, Generic, Dict as Dict_, overload
 
 from .maybe import Maybe, Nothing, Just
+from .immutable import Immutable
 
 K = TypeVar('K')
 V = TypeVar('V')
 
 
-class Dict(Dict_[K, V]):
+class Dict(Immutable, Generic[K, V], init=False):
+    _d: Dict_[K, V]
+
+    def __init__(self, d: Dict_[K, V] = dict()):
+        object.__setattr__(self, '_d', dict(d))
     """
     Immutable dictionary class with functional helper methods
     """
-    def __setitem__(self, key, value):
-        raise TypeError("'Dict' object does not support item assignment. "
-                        "Use '.set' instead")
-
-    def __delitem__(self, key):
-        raise TypeError("'Dict' object does not support item deletion")
-
-    def clear(self):
-        raise TypeError("'Dict' object does not support clear method")
 
     def __repr__(self):
         mapping_repr = ', '.join(
-            [f'{repr(key)}: {repr(value)}' for key, value in self.items()])
+            [f'{repr(key)}: {repr(value)}' for key, value in self._d.items()])
         return f'{{{mapping_repr}}}'
+    
+    def keys(self):
+        return self._d.keys()
+    
+    def values(self):
+        return self._d.values()
+    
+    def copy(self):
+        return Dict(self._d.copy())
 
-    def __getitem__(self, key: K) -> Maybe[V]:  # type: ignore
+    def items(self):
+        return self._d.items()
+
+    def __contains__(self, key: K) -> bool:
+        return key in self._d
+
+    def __getitem__(self, key: K) -> Maybe[V]:
         """
         get the value associated with a key
 
@@ -52,11 +63,11 @@ class Dict(Dict_[K, V]):
         :return: new dictionary with existing keys and values
                  in addition to key and value
         """
-        copy = self.copy()
+        copy = self._d.copy()
         copy[key] = value
         return Dict(copy)
 
-    def get(self, key: K) -> Maybe[V]:  # type: ignore
+    def get(self, key: K) -> Maybe[V]:
         """
         get the value associated with a key
 
@@ -72,13 +83,13 @@ class Dict(Dict_[K, V]):
                  or default is given,
                  :class:`Nothing` otherwise
         """
-        v = super().get(key)  # type: ignore
+        v = self._d.get(key) 
         if v is None:
             return Nothing()
         return Just(v)
 
-    def update(self, other: 'Dict[K, V]') -> 'Dict[K, V]':  # type: ignore
+    def update(self, other: 'Dict[K, V]') -> 'Dict[K, V]':
         d: Dict_[K, V] = {}
-        d.update(self)
+        d.update(self._d)
         d.update(other)
         return Dict(d)
