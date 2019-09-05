@@ -180,8 +180,8 @@ class PFun(Plugin):
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
         if fullname == _CURRY:
             return _curry_hook
-        # if fullname == _COMPOSE:
-        #     return _compose_hook
+        if fullname == _COMPOSE:
+            return _compose_hook
         return None
 
     def get_base_class_hook(self, fullname: str):
