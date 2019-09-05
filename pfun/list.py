@@ -1,13 +1,20 @@
-from typing import List as List_, TypeVar, Callable, Iterable, Tuple, Optional
+from typing import TypeVar, Callable, Iterable, Tuple, Optional, Generic
 from functools import reduce
 
-from pfun.monoid import Monoid
+from .monoid import Monoid
+from .immutable import Immutable
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class List(List_[A], Monoid):
+class List(Monoid, Generic[A], Immutable, init=False):
+    _iterable: Tuple[A]
+
+    def __init__(self, iterable: Iterable[A] = ()):
+        object.__setattr__(self, '_iterable', tuple(iterable))
+
+
     def empty(self) -> 'List[A]':
         return List()
 
@@ -24,12 +31,9 @@ class List(List_[A], Monoid):
         :param initializer: Starting value for aggregation
         :return: Aggregated result
         """
-        return reduce(f, self, initializer)  # type: ignore
+        return List(reduce(f, self._iterable, initializer))
 
-    def __setitem__(self, key, value):
-        raise TypeError("'List' object does not support item assignment")
-
-    def append(self, a: 'List[A]') -> 'List[A]':  # type: ignore
+    def append(self, a: Iterable[A]) -> 'List[A]':  # type: ignore
         """
         Add element to end of list
 
@@ -40,9 +44,9 @@ class List(List_[A], Monoid):
         :param a: Element to append
         :return: New :class:`List` with ``a`` appended
         """
-        return self + a
+        return List(self._iterable + tuple(a))
 
-    def extend(self, iterable: Iterable[A]) -> 'List[A]':  # type: ignore
+    def extend(self, iterable: Iterable[A]) -> 'List[A]':
         """
         Add all elements from ``iterable`` to end of list
 
@@ -55,7 +59,7 @@ class List(List_[A], Monoid):
         """
         return self + list(iterable)
 
-    def __add__(self, other: List_[A]) -> 'List[A]':
+    def __add__(self, other: Iterable[A]) -> 'List[A]':
         """
         Concatenate with other ``list`` or :class:`List`
 
@@ -66,9 +70,9 @@ class List(List_[A], Monoid):
         :param other: list to concatenate with
         :return: new :class:`List` concatenated with ``other``
         """
-        return List(super().__add__(other))
+        return List(self._iterable + tuple(other))
 
-    def __radd__(self, other):
+    def __radd__(self, other: Iterable[A]) -> 'List[A]':
         """
         Concatenate with other ``list`` or :class:`List`
 
@@ -79,7 +83,7 @@ class List(List_[A], Monoid):
         :param other: list to concatenate with
         :return: new :class:`List` concatenated with ``other``
         """
-        return List(other.__add__(self))
+        return List(tuple(other) + self._iterable)
 
     def map(self, f: Callable[[A], B]) -> 'List[B]':
         """
@@ -105,7 +109,7 @@ class List(List_[A], Monoid):
         :param f: Function to filter by
         :return: new :class:`List` filtered by ``f``
         """
-        return List(filter(f, self))
+        return List(filter(f, self._iterable))
 
     def and_then(self, f: 'Callable[[A], List[B]]') -> 'List[B]':
         """
@@ -131,10 +135,13 @@ class List(List_[A], Monoid):
         :param other: Iterable to zip with
         :return: Zip with ``other``
         """
-        return zip(self, other)
+        return zip(self._iterable, other)
 
-    def reverse(self):
-        return List(reversed(self))
-
-    def __delitem__(self, key):
-        raise TypeError("'List' object does not support item deletion")
+    def reverse(self) -> 'List[A]':
+        return List(reversed(self._iterable))
+    
+    def __len__(self):
+        return len(self._iterable)
+    
+    def __iter__(self):
+        return iter(self._iterable)
