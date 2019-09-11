@@ -1,9 +1,9 @@
 from functools import wraps
-from typing import Generic, TypeVar, Callable, Iterable
+from typing import Generic, TypeVar, Callable, Iterable, cast
 
 from .immutable import Immutable
-from .util import map_m_
 from .curry import curry
+from .monad import Monad, map_m_
 
 Context = TypeVar('Context')
 Result_ = TypeVar('Result_')
@@ -13,7 +13,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Reader(Immutable, Generic[Context, Result_]):
+class Reader(Immutable, Generic[Context, Result_], Monad):
     """
     Class that represents a computation that is not yet completed, but
     will complete once given an object of type ``Context``
@@ -111,7 +111,7 @@ def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
 @curry
 def map_m(f: Callable[[A], Reader[Context, B]],
           iterable: Iterable[A]) -> Reader[Context, Iterable[B]]:
-    return map_m_(value, f, iterable)
+    return cast(Reader[Context, Iterable[B]], map_m_(value, f, iterable))
 
 
 __all__ = ['Reader', 'reader', 'value', 'map_m']

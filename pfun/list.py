@@ -1,16 +1,16 @@
-from typing import TypeVar, Callable, Iterable, Tuple, Optional, Generic
+from typing import TypeVar, Callable, Iterable, Tuple, Optional, Generic, cast
 from functools import reduce
 
 from .monoid import Monoid
 from .immutable import Immutable
 from .curry import curry
-from .util import map_m_
+from .monad import map_m_, Monad
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class List(Monoid, Generic[A], Iterable[A], Immutable, init=False):
+class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
     _iterable: Tuple[A]
 
     def __init__(self, iterable: Iterable[A] = ()):
@@ -159,4 +159,4 @@ def value(a: A) -> List[A]:
 @curry
 def map_m(f: Callable[[A], List[B]],
           iterable: Iterable[A]) -> List[Iterable[B]]:
-    return map_m_(value, f, iterable)
+    return cast(List[Iterable[B]], map_m_(value, f, iterable))

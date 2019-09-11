@@ -4,8 +4,9 @@ import typing as t
 
 from mypy.plugin import Plugin, FunctionContext, ClassDefContext
 from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.types import (Type, CallableType, AnyType, TypeOfAny, Instance,
-                        TypeVarType, Overloaded)
+from mypy.types import (
+    Type, CallableType, AnyType, TypeOfAny, Instance, TypeVarType, Overloaded
+)
 from mypy.nodes import ClassDef
 from mypy import checkmember, expandtype
 from mypy.checker import TypeChecker
@@ -29,15 +30,18 @@ def _get_callable_type(type_: Type,
         chk: TypeChecker = t.cast(TypeChecker, context.api)
         return t.cast(
             CallableType,
-            checkmember.analyze_member_access('__call__',
-                                              type_,
-                                              context.context,
-                                              False,
-                                              False,
-                                              False,
-                                              context.api.msg,
-                                              original_type=type_,
-                                              chk=chk))
+            checkmember.analyze_member_access(
+                '__call__',
+                type_,
+                context.context,
+                False,
+                False,
+                False,
+                context.api.msg,
+                original_type=type_,
+                chk=chk
+            )
+        )
     return None
 
 
@@ -50,22 +54,29 @@ def _curry_hook(context: FunctionContext) -> Type:
     if not function.arg_types:
         return function
     return_type = function.ret_type
-    last_function = CallableType(arg_types=[function.arg_types[-1]],
-                                 arg_kinds=[function.arg_kinds[-1]],
-                                 arg_names=[function.arg_names[-1]],
-                                 ret_type=return_type,
-                                 fallback=function.fallback)
+    last_function = CallableType(
+        arg_types=[function.arg_types[-1]],
+        arg_kinds=[function.arg_kinds[-1]],
+        arg_names=[function.arg_names[-1]],
+        ret_type=return_type,
+        fallback=function.fallback
+    )
     args = list(
-        zip(function.arg_types[:-1], function.arg_kinds[:-1],
-            function.arg_names[:-1]))
+        zip(
+            function.arg_types[:-1], function.arg_kinds[:-1],
+            function.arg_names[:-1]
+        )
+    )
     for arg_type, kind, name in reversed(args):
-        last_function = CallableType(arg_types=[arg_type],
-                                     arg_kinds=[kind],
-                                     arg_names=[name],
-                                     ret_type=last_function,
-                                     fallback=function.fallback,
-                                     variables=function.variables,
-                                     implicit=True)
+        last_function = CallableType(
+            arg_types=[arg_type],
+            arg_kinds=[kind],
+            arg_names=[name],
+            ret_type=last_function,
+            fallback=function.fallback,
+            variables=function.variables,
+            implicit=True
+        )
     return Overloaded([last_function, function])
 
 
@@ -77,14 +88,17 @@ def _variadic_decorator_hook(context: FunctionContext) -> Type:
 
     ret_type = context.default_return_type.ret_type
     variables = list(
-        set(function.variables + context.default_return_type.variables))
-    return CallableType(arg_types=function.arg_types,
-                        arg_kinds=function.arg_kinds,
-                        arg_names=function.arg_names,
-                        ret_type=ret_type,
-                        fallback=function.fallback,
-                        variables=variables,
-                        implicit=True)
+        set(function.variables + context.default_return_type.variables)
+    )
+    return CallableType(
+        arg_types=function.arg_types,
+        arg_kinds=function.arg_kinds,
+        arg_names=function.arg_names,
+        ret_type=ret_type,
+        fallback=function.fallback,
+        variables=variables,
+        implicit=True
+    )
 
 
 def _get_expected_compose_type(context: FunctionContext
@@ -106,7 +120,8 @@ def _get_expected_compose_type(context: FunctionContext
     arg_names = []
     args = list(
         list(t)
-        for t in zip(actual_arg_types, actual_arg_kinds, actual_arg_names))
+        for t in zip(actual_arg_types, actual_arg_kinds, actual_arg_names)
+    )
     variables = []
     for index, (arg_type, arg_kind, arg_name) in enumerate(args):
         is_last_arg = index == len(actual_arg_types) - 1
@@ -123,16 +138,21 @@ def _get_expected_compose_type(context: FunctionContext
                 type_to_expand_with = arg_type.arg_types[0]
                 if isinstance(type_to_expand_with, TypeVarType):
                     variables.append(
-                        next(v for v in arg_type.variables
-                             if v.id == type_to_expand_with.id))
+                        next(
+                            v for v in arg_type.variables
+                            if v.id == type_to_expand_with.id
+                        )
+                    )
                 next_function = args[index + 1][0]
                 args[index + 1][0] = expandtype.expand_type(
-                    next_function, {current_arg_type.id: type_to_expand_with})
+                    next_function, {current_arg_type.id: type_to_expand_with}
+                )
                 current_arg_type = type_to_expand_with
             if isinstance(arg_type.arg_types[0], TypeVarType):
                 tv = arg_type.arg_types[0]
                 args[index][0] = expandtype.expand_type(
-                    arg_type, {tv.id: current_arg_type})
+                    arg_type, {tv.id: current_arg_type}
+                )
             current_arg_types = [current_arg_type]
             current_arg_kinds = [arg_type.arg_kinds[0]]
             current_arg_names = [arg_type.arg_names[0]]
@@ -146,12 +166,15 @@ def _get_expected_compose_type(context: FunctionContext
             # the argument of the previous function
             ret_type = args[index - 1][0].arg_types[0]
         arg_types.append(
-            CallableType(arg_types=current_arg_types,
-                         arg_names=current_arg_names,
-                         arg_kinds=current_arg_kinds,
-                         ret_type=ret_type,
-                         variables=variables,
-                         fallback=arg_type.fallback))
+            CallableType(
+                arg_types=current_arg_types,
+                arg_names=current_arg_names,
+                arg_kinds=current_arg_kinds,
+                ret_type=ret_type,
+                variables=variables,
+                fallback=arg_type.fallback
+            )
+        )
         arg_kinds.append(arg_kind)
         arg_names.append(arg_name)
     first_arg_type, *_, last_arg_type = [a[0] for a in args]
@@ -161,14 +184,17 @@ def _get_expected_compose_type(context: FunctionContext
         arg_kinds=last_arg_type.arg_kinds,
         ret_type=first_arg_type.ret_type,
         variables=variables,
-        fallback=context.api.named_type('builtins.function'))
-    return CallableType(arg_types=arg_types,
-                        arg_kinds=arg_kinds,
-                        arg_names=arg_names,
-                        ret_type=ret_type,
-                        variables=variables,
-                        fallback=context.api.named_type('builtins.function'),
-                        name='compose')
+        fallback=context.api.named_type('builtins.function')
+    )
+    return CallableType(
+        arg_types=arg_types,
+        arg_kinds=arg_kinds,
+        arg_names=arg_names,
+        ret_type=ret_type,
+        variables=variables,
+        fallback=context.api.named_type('builtins.function'),
+        name='compose'
+    )
 
 
 def _compose_hook(context: FunctionContext) -> Type:
@@ -181,7 +207,8 @@ def _compose_hook(context: FunctionContext) -> Type:
             compose, [arg for args in context.args for arg in args],
             [kind for kinds in context.arg_kinds
              for kind in kinds], context.context,
-            [name for names in context.arg_names for name in names])
+            [name for names in context.arg_names for name in names]
+        )
         return compose.ret_type
     except AttributeError:
         # an argument was not callable, defer to default type checking
@@ -208,8 +235,8 @@ class PFun(Plugin):
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
         if fullname == _CURRY:
             return _curry_hook
-        if fullname == _COMPOSE:
-            return _compose_hook
+        # if fullname == _COMPOSE:
+        #     return _compose_hook
         if fullname == _MAYBE:
             return _variadic_decorator_hook
         if fullname == _RESULT:

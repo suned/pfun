@@ -1,7 +1,7 @@
-from typing import Generic, TypeVar, Callable, Tuple, Iterable
+from typing import Generic, TypeVar, Callable, Tuple, Iterable, cast
 
 from .immutable import Immutable
-from .util import sequence_, map_m_, filter_m_
+from .monad import sequence_, map_m_, filter_m_, Monad
 from .curry import curry
 
 A = TypeVar('A')
@@ -9,7 +9,7 @@ B = TypeVar('B')
 C = TypeVar('C')
 
 
-class State(Generic[B, A], Immutable):
+class State(Generic[B, A], Immutable, Monad):
     """
     Class representing a computation that is not yet complete,
     but will complete when given a state of type A
@@ -106,14 +106,14 @@ def value(b: B) -> State[B, A]:
 @curry
 def map_m(f: Callable[[A], State[A, B]],
           iterable: Iterable[A]) -> State[Iterable[A], B]:
-    return map_m_(value, f, iterable)
+    return cast(State[Iterable[A], B], map_m_(value, f, iterable))
 
 
 def sequence(iterable: Iterable[State[A, B]]) -> State[Iterable[A], B]:
-    return sequence_(value, iterable)
+    return cast(State[Iterable[A], B], sequence_(value, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], State[bool, B]],
              iterable: Iterable[A]) -> State[Iterable[A], B]:
-    return filter_m_(value, f, iterable)
+    return cast(State[Iterable[A], B], filter_m_(value, f, iterable))

@@ -65,7 +65,3 @@ def run(action: DBAction[A]) -> A:
     except Exception:
         t.rollback()
         raise
-
-
-def f(a: Transaction) -> bool:
-    pass

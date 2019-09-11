@@ -1,17 +1,17 @@
-from typing import Generic, TypeVar, Callable, Any, Sequence, Iterable
+from typing import Generic, TypeVar, Callable, Any, Sequence, Iterable, cast
 from functools import wraps
 from abc import ABC, abstractmethod
 
 from .immutable import Immutable
 from .list import List
-from .util import map_m_, sequence_, filter_m_
 from .curry import curry
+from .monad import Monad, map_m_, sequence_, filter_m_
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Maybe(Generic[A], Immutable, ABC):
+class Maybe(Generic[A], Immutable, Monad, ABC):
     """
     Abstract super class for classes that represent computations that can fail.
     Should not be instantiated directly.
@@ -211,17 +211,17 @@ def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
 @curry
 def map_m(f: Callable[[A], Maybe[B]],
           iterable: Iterable[A]) -> Maybe[Iterable[B]]:
-    return map_m_(Just, f, iterable)
+    return cast(Maybe[Iterable[B]], map_m_(Just, f, iterable))
 
 
 def sequence(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
-    return sequence_(Just, iterable)
+    return cast(Maybe[Iterable[A]], sequence_(Just, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], Maybe[bool]],
              iterable: Iterable[A]) -> Maybe[Iterable[A]]:
-    return filter_m_(Just, f, iterable)
+    return cast(Maybe[Iterable[A]], filter_m_(Just, f, iterable))
 
 
 __all__ = [

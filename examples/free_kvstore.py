@@ -1,5 +1,6 @@
-from pfun.free import (Functor, Free, More, Done, FreeInterpreter,
-                       FreeInterpreterElement)
+from pfun.free import (
+    Functor, Free, More, Done, FreeInterpreter, FreeInterpreterElement
+)
 from pfun import Immutable, Dict, compose
 
 from typing import TypeVar, Callable

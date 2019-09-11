@@ -1,14 +1,14 @@
-from typing import Tuple, Generic, Callable, TypeVar, Iterable
+from typing import Generic, Callable, TypeVar, Iterable, cast
 from pfun.monoid import M, append, empty
 from .immutable import Immutable
-from .util import map_m_
 from .curry import curry
+from .monad import map_m_, Monad
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Writer(Generic[A, M], Immutable):
+class Writer(Generic[A, M], Immutable, Monad):
     """
     Class that represents a value
     along with a monoid value that is accumulated as
@@ -55,7 +55,7 @@ class Writer(Generic[A, M], Immutable):
             return False
         return other.a == self.a and other.m == self.m
 
-    def map(self, f: 'Callable[[A, M], Tuple[B, M]]') -> 'Writer[B, M]':
+    def map(self, f: 'Callable[[A], B]') -> 'Writer[B, M]':
         """
         Map the value/monoid pair in this :class:`Writer`
 
@@ -67,7 +67,7 @@ class Writer(Generic[A, M], Immutable):
                   monoid in this :class:`Writer`
         :return: :class:`Writer` with value and monoid mapped by ``f``
         """
-        return Writer(*f(self.a, self.m))  # type: ignore
+        return Writer(f(self.a), self.m)
 
     def __repr__(self):
         a_repr = repr(self.a)
@@ -113,4 +113,4 @@ def tell(m: M) -> Writer[None, M]:
 @curry
 def map_m(f: Callable[[A], Writer[B, M]],
           iterable: Iterable[A]) -> Writer[Iterable[B], M]:
-    return map_m_(value, f, iterable)
+    return cast(Writer[Iterable[B], M], map_m_(value, f, iterable))

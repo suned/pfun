@@ -3,15 +3,10 @@ from typing import TypeVar, Generic, Callable
 from pfun.immutable import Immutable
 from abc import ABC, abstractmethod
 
+from .functor import Functor
+
 A = TypeVar('A')
 B = TypeVar('B')
-
-
-class Functor(ABC):
-    @abstractmethod
-    def map(self, f):
-        pass
-
 
 C = TypeVar('C')
 D = TypeVar('D')
@@ -39,8 +34,9 @@ F = TypeVar('F', bound=Functor)
 
 class Free(Generic[F, A, C, D], FreeInterpreterElement[C, D], ABC, Immutable):
     @abstractmethod
-    def and_then(self,
-                 f: 'Callable[[A], Free[F, B, C, D]]') -> 'Free[F, B, C, D]':
+    def and_then(
+        self, f: 'Callable[[A], Free[F, B, C, D]]'
+    ) -> 'Free[F, B, C, D]':
         pass
 
     def map(self, f: Callable[[A], B]) -> 'Free[F, B, C, D]':
@@ -58,7 +54,7 @@ class Done(Free[F, A, C, D]):
 
 
 class More(Free[F, A, C, D]):
-    k: FreeInterpreterElement[C, D]
+    k: Functor
 
     def and_then(self, f: Callable[[A], Free[F, B, C, D]]) -> Free[F, B, C, D]:
         return More(self.k.map(lambda v: v.and_then(f)))
