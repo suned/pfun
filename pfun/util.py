@@ -2,6 +2,7 @@ from typing import TypeVar, Callable, Generic, Tuple, Any
 
 from .immutable import Immutable
 from .curry import curry
+from functools import reduce
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -59,20 +60,22 @@ def pipeline(
     return compose(*reversed(rest), second, first)
 
 
-# Since mypy does not support higher-order type variables,
-# the functions below cannot be typed :(
+# Since PEP484 does not support higher-order type variables,
+# the functions below cannot be typed here :(
+# type versions for each monad is provided
+# in their respective namespaces instead (e.g maybe.sequence)
 
 
 @curry
 def sequence_(value, iterable):
-    result = value(())
-    for m in iterable:
-        result = result.and_then(
+    def combine(ms, m):
+        return ms.and_then(
             lambda xs: m.and_then(
                 lambda x: value(xs + (x, ))
             )
         )  # yapf: disable
-    return result
+
+    return reduce(combine, iterable, value(()))
 
 
 @curry

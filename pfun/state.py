@@ -1,6 +1,8 @@
-from typing import Generic, TypeVar, Callable, Tuple
+from typing import Generic, TypeVar, Callable, Tuple, Iterable
 
 from .immutable import Immutable
+from .util import sequence_, map_m_, filter_m_
+from .curry import curry
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -99,3 +101,9 @@ def value(b: B) -> State[B, A]:
     :return: :class:`State` that will produce ``b`` no matter the state
     """
     return State(lambda a: (b, a))  # type: ignore
+
+
+@curry
+def map_m(f: Callable[[A], State[A, B]],
+          iterable: Iterable[A]) -> State[Iterable[A], B]:
+    return map_m_(value, f, iterable)
