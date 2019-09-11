@@ -1,7 +1,13 @@
-from typing import Protocol, TypeVar
+from typing_extensions import Protocol
+from typing import TypeVar
 
 A = TypeVar('A', contravariant=True)
 B = TypeVar('B', covariant=True)
+
+
+class SupportsCall(Protocol[A, B]):
+    def __call__(self, a: A) -> B:
+        pass
 
 
 class SupportsLt(Protocol[A, B]):

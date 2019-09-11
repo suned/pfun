@@ -3,25 +3,28 @@ from functools import reduce
 
 from .monoid import Monoid
 from .immutable import Immutable
+from .curry import curry
+from .util import map_m_
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class List(Monoid, Generic[A], Immutable, init=False):
+class List(Monoid, Generic[A], Iterable[A], Immutable, init=False):
     _iterable: Tuple[A]
 
     def __init__(self, iterable: Iterable[A] = ()):
         object.__setattr__(self, '_iterable', tuple(iterable))
 
     def __repr__(self):
-        return repr(list(self._t))
+        return f"List({repr(self._iterable)})"
 
     def empty(self) -> 'List[A]':
         return List()
 
-    def reduce(self, f: Callable[[B, A], B],
-               initializer: Optional[B] = None) -> B:
+    def reduce(
+        self, f: Callable[[B, A], B], initializer: Optional[B] = None
+    ) -> B:
         """
         Aggregate elements by ``f``
 
@@ -147,3 +150,13 @@ class List(Monoid, Generic[A], Immutable, init=False):
 
     def __iter__(self):
         return iter(self._iterable)
+
+
+def value(a: A) -> List[A]:
+    return List([a])
+
+
+@curry
+def map_m(f: Callable[[A], List[B]],
+          iterable: Iterable[A]) -> List[Iterable[B]]:
+    return map_m_(value, f, iterable)

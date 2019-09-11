@@ -1,8 +1,9 @@
 from functools import wraps
-from typing import Generic, TypeVar, Callable, Any
+from typing import Generic, TypeVar, Callable, Iterable
 
-from .util import identity
 from .immutable import Immutable
+from .util import map_m_
+from .curry import curry
 
 Context = TypeVar('Context')
 Result_ = TypeVar('Result_')
@@ -21,8 +22,10 @@ class Reader(Immutable, Generic[Context, Result_]):
 
     f: Callable[[Context], Result_]
 
-    def and_then(self, f: 'Callable[[Result_], Reader[Context, Next]]'
-                 ) -> 'Reader[Context, Next]':
+    def and_then(
+        self: 'Reader[Context, Result_]',
+        f: 'Callable[[Result_], Reader[Context, Next]]'
+    ) -> 'Reader[Context, Next]':
         """
         Compose ``f`` with the function wrapped by this
         :class:`Reader` instance
@@ -83,19 +86,6 @@ def value(v: Result_) -> Reader[Context, Result_]:
     return Reader(lambda _: v)
 
 
-def ask(_: Any = None) -> Reader[Context, Result_]:
-    """
-    Return the :class:`Reader` that simply returns the context it is given
-
-    :example:
-    >>> ask().run('context')
-    'context'
-
-    :return: :class:`Reader` that returns the context
-    """
-    return Reader(identity)  # type: ignore
-
-
 def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
     """
     Wrap any function in a :class:`Reader` context.
@@ -118,4 +108,10 @@ def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
     return dec
 
 
-__all__ = ['Reader', 'reader', 'value', 'ask']
+@curry
+def map_m(f: Callable[[A], Reader[Context, B]],
+          iterable: Iterable[A]) -> Reader[Context, Iterable[B]]:
+    return map_m_(value, f, iterable)
+
+
+__all__ = ['Reader', 'reader', 'value', 'map_m']

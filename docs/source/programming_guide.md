@@ -273,6 +273,7 @@ def main():
     
 
 ```
+### `IO`
 ### `Cont`
 
 ## Immutable Objects and Data Structures
@@ -312,11 +313,6 @@ assert 'new_key' not in d and d2['new_key'] == 'new_value'
 ### `compose`
 ### `curry`
 ### `Unit`
-## A Note on Type Checking
-I've tried to write `zen` in such a way that the type checker can give you as much help as possible. However, the Python typing system is still quite new, and there are a few features that
-prevent me from supplying accurate types everywhere (`state.get` is a good example).
-Consequently, you will sometimes need to add type annotations yourself, instead of relying on
-type inference to get the most of this module.
 
 
 ## MyPy Plugin

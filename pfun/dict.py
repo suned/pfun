@@ -20,9 +20,7 @@ class Dict(Immutable, Generic[K, V], init=False):
         object.__setattr__(self, '_d', dict(d))
 
     def __repr__(self):
-        mapping_repr = ', '.join(
-            [f'{repr(key)}: {repr(value)}' for key, value in self._d.items()])
-        return f'{{{mapping_repr}}}'
+        return f'Dict({repr(self._d)})'
 
     def __eq__(self, other):
         if isinstance(other, dict):
@@ -75,6 +73,11 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         copy = self._d.copy()
         copy[key] = value
+        return Dict(copy)
+
+    def without(self, key: K) -> 'Dict[K, V]':
+        copy = self._d.copy()
+        del copy[key]
         return Dict(copy)
 
     def get(self, key: K) -> Maybe[V]:

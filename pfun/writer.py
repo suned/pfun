@@ -1,6 +1,8 @@
-from typing import Tuple, Generic, Callable, TypeVar
+from typing import Tuple, Generic, Callable, TypeVar, Iterable
 from pfun.monoid import M, append, empty
 from .immutable import Immutable
+from .util import map_m_
+from .curry import curry
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -106,3 +108,9 @@ def tell(m: M) -> Writer[None, M]:
     :return: Writer with unit value and monoid value ``m``
     """
     return Writer(None, m)  # type: ignore
+
+
+@curry
+def map_m(f: Callable[[A], Writer[B, M]],
+          iterable: Iterable[A]) -> Writer[Iterable[B], M]:
+    return map_m_(value, f, iterable)

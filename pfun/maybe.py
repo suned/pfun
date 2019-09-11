@@ -1,9 +1,11 @@
-from typing import Generic, TypeVar, Callable, Any, Sequence
+from typing import Generic, TypeVar, Callable, Any, Sequence, Iterable
 from functools import wraps
 from abc import ABC, abstractmethod
 
 from .immutable import Immutable
 from .list import List
+from .util import map_m_, sequence_, filter_m_
+from .curry import curry
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -18,7 +20,8 @@ class Maybe(Generic[A], Immutable, ABC):
     """
     def __init__(self):
         raise TypeError(
-            "'Maybe' can't be instantiated directly. Use Just or Nothing.")
+            "'Maybe' can't be instantiated directly. Use Just or Nothing."
+        )
 
     @abstractmethod
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
@@ -205,4 +208,23 @@ def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
     return List(j.get for j in justs)
 
 
-__all__ = ['Maybe', 'Just', 'Nothing', 'maybe', 'flatten']
+@curry
+def map_m(f: Callable[[A], Maybe[B]],
+          iterable: Iterable[A]) -> Maybe[Iterable[B]]:
+    return map_m_(Just, f, iterable)
+
+
+def sequence(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
+    return sequence_(Just, iterable)
+
+
+@curry
+def filter_m(f: Callable[[A], Maybe[bool]],
+             iterable: Iterable[A]) -> Maybe[Iterable[A]]:
+    return filter_m_(Just, f, iterable)
+
+
+__all__ = [
+    'Maybe', 'Just', 'Nothing', 'maybe', 'flatten', 'map_m', 'sequence',
+    'filter_m'
+]

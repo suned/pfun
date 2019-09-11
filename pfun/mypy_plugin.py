@@ -17,6 +17,7 @@ _MAYBE = 'pfun.maybe.maybe'
 _RESULT = 'pfun.result.result'
 _IO = 'pfun.io.io'
 _READER = 'pfun.reader.reader'
+_READER_AND_THEN = 'pfun.reader.Reader.and_then'
 
 
 def _get_callable_type(type_: Type,
@@ -197,6 +198,11 @@ def _immutable_hook(context: ClassDefContext):
     transformer._freeze(attributes)
 
 
+def _and_then_hook(context: FunctionContext) -> Type:
+
+    return context.default_return_type
+
+
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
@@ -212,6 +218,10 @@ class PFun(Plugin):
             return _variadic_decorator_hook
         if fullname == _READER:
             return _variadic_decorator_hook
+
+    def get_method_hook(self, fullname: str):
+        if fullname == _READER_AND_THEN:
+            return _and_then_hook
         return None
 
     def get_base_class_hook(self, fullname: str):
