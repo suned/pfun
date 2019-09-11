@@ -86,7 +86,7 @@ def get() -> State[A, A]:
 
     :return: :class:`State` with the current state as its result
     """
-    return State(lambda b: (b, b))  # type: ignore
+    return State(lambda b: (b, b))
 
 
 def value(b: B) -> State[B, A]:
@@ -100,10 +100,20 @@ def value(b: B) -> State[B, A]:
     :param b: the value to put in a :class:`State` context
     :return: :class:`State` that will produce ``b`` no matter the state
     """
-    return State(lambda a: (b, a))  # type: ignore
+    return State(lambda a: (b, a))
 
 
 @curry
 def map_m(f: Callable[[A], State[A, B]],
           iterable: Iterable[A]) -> State[Iterable[A], B]:
     return map_m_(value, f, iterable)
+
+
+def sequence(iterable: Iterable[State[A, B]]) -> State[Iterable[A], B]:
+    return sequence_(value, iterable)
+
+
+@curry
+def filter_m(f: Callable[[A], State[bool, B]],
+             iterable: Iterable[A]) -> State[Iterable[A], B]:
+    return filter_m_(value, f, iterable)

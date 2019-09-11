@@ -86,13 +86,16 @@ def map_m_(value, f, iterable):
 
 @curry
 def filter_m_(value, f, iterable):
-    result = value(())
-    for x in iterable:
-        result = result.and_then(
-            lambda xs: f(x).and_then(
-                lambda b: value(xs + (x, )) if b else value(xs)
-            )
-        )  # yapf: disable
+    def combine(ms, mbx):
+        mb, x = mbx
+        return ms.and_then(
+            lambda xs: mb.and_then(lambda b: value(xs + (x, ) if b else xs))
+        )
+
+    mbs = (f(x) for x in iterable)
+    mbxs = zip(mbs, iterable)
+    return reduce(combine, mbxs, value(()))
+
     return result
 
 
