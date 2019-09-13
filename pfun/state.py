@@ -3,6 +3,8 @@ from typing import Generic, TypeVar, Callable, Tuple, Iterable, cast
 from .immutable import Immutable
 from .monad import sequence_, map_m_, filter_m_, Monad
 from .curry import curry
+from .trampoline import Trampoline, run, AndThen, Done, Call
+from .util import compose
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -14,7 +16,7 @@ class State(Generic[B, A], Immutable, Monad):
     Class representing a computation that is not yet complete,
     but will complete when given a state of type A
     """
-    f: Callable[[A], Tuple[B, A]]
+    f: Callable[[A], Trampoline[Tuple[B, A]]]
 
     def and_then(self, f: 'Callable[[B], State[C, A]]') -> 'State[C, A]':
         """
@@ -33,10 +35,15 @@ class State(Generic[B, A], Immutable, Monad):
         :return: new :class:`State` which wraps the result of \
         passing the result of this :class:`State` instance to ``f``
         """
-        def _(b: B, a: A) -> Tuple[C, A]:
-            return f(b).f(a)  # type: ignore
-
-        return State(lambda a: _(*self.f(a)))  # type: ignore
+        return State(
+            lambda a: Call(lambda: 
+                self.f(a).and_then(
+                    lambda tu: Call(lambda:
+                        f(tu[0]).f(tu[1])
+                    )
+                )
+            )
+        )
 
     def run(self, a: A) -> Tuple[B, A]:
         """
@@ -51,9 +58,7 @@ class State(Generic[B, A], Immutable, Monad):
         :param a: State to run this :class:`State` instance on
         :return: Result of running :class:`State` instance with ``a`` as state
         """
-        return self.f(a)  # type: ignore
-
-    __call__ = run
+        return run(self.f(a))  # type: ignore
 
     def map(self, f: Callable[[B], C]) -> 'State[C, A]':
         def _(b: B, a: A):
@@ -86,7 +91,7 @@ def get() -> State[A, A]:
 
     :return: :class:`State` with the current state as its result
     """
-    return State(lambda b: (b, b))
+    return State(lambda b: Done((b, b)))
 
 
 def value(b: B) -> State[B, A]:
@@ -100,7 +105,7 @@ def value(b: B) -> State[B, A]:
     :param b: the value to put in a :class:`State` context
     :return: :class:`State` that will produce ``b`` no matter the state
     """
-    return State(lambda a: (b, a))
+    return State(lambda a: Done((b, a)))
 
 
 @curry

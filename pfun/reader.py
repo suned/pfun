@@ -3,7 +3,8 @@ from typing import Generic, TypeVar, Callable, Iterable, cast
 
 from .immutable import Immutable
 from .curry import curry
-from .monad import Monad, map_m_
+from .trampoline import run, Trampoline, Done, Call
+from .monad import Monad, map_m_, sequence_
 
 Context = TypeVar('Context')
 Result_ = TypeVar('Result_')
@@ -20,7 +21,7 @@ class Reader(Immutable, Generic[Context, Result_], Monad):
 
     """
 
-    f: Callable[[Context], Result_]
+    f: Callable[[Context], Trampoline[Result_]]
 
     def and_then(
         self: 'Reader[Context, Result_]',
@@ -39,7 +40,7 @@ class Reader(Immutable, Generic[Context, Result_], Monad):
         :param f: Function to compose with this this :class:`Reader`
         :return: Composed :class:`Reader`
         """
-        return Reader(lambda a: f(self.f(a)).f(a))  # type: ignore
+        return Reader(lambda a: Call(lambda: self.f(a).and_then(lambda v: Call(lambda: f(v).f(a)))))  # type: ignore
 
     def map(self, f: Callable[[Result_], B]) -> 'Reader[Context, B]':
         """
@@ -67,7 +68,7 @@ class Reader(Immutable, Generic[Context, Result_], Monad):
                   function wrapped by this :class:`Reader`
         :return: The result of this :class:`Reader`
         """
-        return self.f(c)  # type: ignore
+        return run(self.f(c))  # type: ignore
 
     __call__ = run
 
@@ -83,7 +84,7 @@ def value(v: Result_) -> Reader[Context, Result_]:
     :param v: the value to put in a :class:`Reader` instance
     :return: :class:`Reader` that returns ``v`` when given any context
     """
-    return Reader(lambda _: v)
+    return Reader(lambda _: Done(v))
 
 
 def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
@@ -112,6 +113,9 @@ def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
 def map_m(f: Callable[[A], Reader[Context, B]],
           iterable: Iterable[A]) -> Reader[Context, Iterable[B]]:
     return cast(Reader[Context, Iterable[B]], map_m_(value, f, iterable))
+
+def sequence(it):
+    return sequence_(value, it)
 
 
 __all__ = ['Reader', 'reader', 'value', 'map_m']
