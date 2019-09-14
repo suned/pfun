@@ -23,15 +23,13 @@ class Immutable:
     AttributeError: <__main__.B object at 0x10f99a0f0> is immutable
 
     """
-    def __init_subclass__(cls,
-                          init=True,
-                          repr=True,
-                          eq=True,
-                          order=False,
-                          unsafe_hash=False):
+    def __init_subclass__(
+        cls, init=True, repr=True, eq=True, order=False, unsafe_hash=False
+    ):
         super().__init_subclass__()
-        return dataclass(frozen=True, init=init, repr=repr, eq=eq,
-                         order=order)(cls)
+        return dataclass(
+            frozen=True, init=init, repr=repr, eq=eq, order=order
+        )(cls)
 
     def clone(self: T, **kwargs) -> T:
         """

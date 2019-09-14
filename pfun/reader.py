@@ -3,7 +3,7 @@ from typing import Generic, TypeVar, Callable, Iterable, cast
 
 from .immutable import Immutable
 from .curry import curry
-from .trampoline import run, Trampoline, Done, Call
+from .trampoline import Trampoline, Done, Call
 from .monad import Monad, map_m_, sequence_
 
 Context = TypeVar('Context')
@@ -40,7 +40,13 @@ class Reader(Immutable, Generic[Context, Result_], Monad):
         :param f: Function to compose with this this :class:`Reader`
         :return: Composed :class:`Reader`
         """
-        return Reader(lambda a: Call(lambda: self.f(a).and_then(lambda v: Call(lambda: f(v).f(a)))))  # type: ignore
+        return Reader(
+            lambda a: Call(
+                lambda: self.f(a).and_then(  # type: ignore
+                    lambda v: Call(lambda: f(v).f(a))  # type: ignore
+                )
+            )
+        )  # type: ignore
 
     def map(self, f: Callable[[Result_], B]) -> 'Reader[Context, B]':
         """
@@ -54,7 +60,9 @@ class Reader(Immutable, Generic[Context, Result_], Monad):
         :return: :class:`Reader` that returns the result of
                  applying ``f`` to its result
         """
-        return Reader(lambda a: f(self.f(a)))  # type: ignore
+        return Reader(
+            lambda a: self.f(a).and_then(lambda r: Done(f(r)))  # type: ignore
+        )
 
     def run(self, c: Context) -> Result_:
         """
@@ -68,7 +76,7 @@ class Reader(Immutable, Generic[Context, Result_], Monad):
                   function wrapped by this :class:`Reader`
         :return: The result of this :class:`Reader`
         """
-        return run(self.f(c))  # type: ignore
+        return self.f(c).run()  # type: ignore
 
     __call__ = run
 
@@ -85,6 +93,10 @@ def value(v: Result_) -> Reader[Context, Result_]:
     :return: :class:`Reader` that returns ``v`` when given any context
     """
     return Reader(lambda _: Done(v))
+
+
+def ask() -> Reader[Context, Context]:
+    return Reader(lambda c: Done(c))
 
 
 def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
@@ -113,6 +125,7 @@ def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
 def map_m(f: Callable[[A], Reader[Context, B]],
           iterable: Iterable[A]) -> Reader[Context, Iterable[B]]:
     return cast(Reader[Context, Iterable[B]], map_m_(value, f, iterable))
+
 
 def sequence(it):
     return sequence_(value, it)

@@ -1,5 +1,6 @@
-from typing import (Generic, TypeVar, Callable, Tuple, cast, IO as TextIO,
-                    Optional)
+from typing import (
+    Generic, TypeVar, Callable, Tuple, cast, IO as TextIO, Optional
+)
 import sys
 from functools import wraps
 

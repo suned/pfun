@@ -1,10 +1,10 @@
-from pfun.reader import Reader, value
+from pfun.reader import Reader, value, ask
 from pfun import Immutable, curry
 
-from typing import TypeVar, List
+from typing import TypeVar, List, Callable
 
 
-class Transaction(Immutable):
+class Transaction:
     _os: List[object] = []
 
     def add(self, o: object) -> None:
@@ -26,6 +26,8 @@ class User(Immutable):
 A = TypeVar('A')
 DBAction = Reader[Transaction, A]
 
+get_transaction: Callable[[], DBAction[Transaction]] = ask
+
 
 def get_user(user_id: int) -> DBAction[User]:
     return value(User(user_id, 'pa$$word'))
@@ -40,17 +42,18 @@ def check_password(password: str, user: User) -> DBAction[bool]:
 def set_password(user_id: int, old_password: str,
                  new_password: str) -> DBAction[bool]:
     @curry
-    def update_password(user: User, t: Transaction) -> bool:
+    def update_password(user: User, t: Transaction) -> DBAction[bool]:
         user = user.clone(password=new_password)
         t.add(user)
-        return True
+        return value(True)
 
     # yapf: disable
     return get_user(user_id).and_then(
         lambda user: check_password(old_password, user).and_then(
-            lambda match: DBAction(update_password(user))
-            if match
-            else value(False)
+            lambda match:
+                get_transaction().and_then(update_password(user))
+                if match
+                else value(False)
         )
     )
     # yapf: enable

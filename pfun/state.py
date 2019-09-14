@@ -3,8 +3,7 @@ from typing import Generic, TypeVar, Callable, Tuple, Iterable, cast
 from .immutable import Immutable
 from .monad import sequence_, map_m_, filter_m_, Monad
 from .curry import curry
-from .trampoline import Trampoline, run, AndThen, Done, Call
-from .util import compose
+from .trampoline import Trampoline, Done, Call
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -36,11 +35,10 @@ class State(Generic[B, A], Immutable, Monad):
         passing the result of this :class:`State` instance to ``f``
         """
         return State(
-            lambda a: Call(lambda: 
-                self.f(a).and_then(
-                    lambda tu: Call(lambda:
-                        f(tu[0]).f(tu[1])
-                    )
+            lambda a: Call(
+                lambda: self.f(a).  # type: ignore
+                and_then(
+                    lambda tu: Call(lambda: f(tu[0]).f(tu[1]))  # type: ignore
                 )
             )
         )
@@ -58,13 +56,14 @@ class State(Generic[B, A], Immutable, Monad):
         :param a: State to run this :class:`State` instance on
         :return: Result of running :class:`State` instance with ``a`` as state
         """
-        return run(self.f(a))  # type: ignore
+        return self.f(a).run()  # type: ignore
 
     def map(self, f: Callable[[B], C]) -> 'State[C, A]':
-        def _(b: B, a: A):
-            return f(b), a
-
-        return State(lambda a: _(*self(a)))  # type: ignore
+        return State(
+            lambda a: self.f(a).and_then(  # type: ignore
+                lambda tu: Done((f(tu[0]), tu[1]))
+            )
+        )
 
 
 def put(a: A) -> State[None, A]:
