@@ -18,11 +18,6 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
     Use :class:`Just` and :class:`Nothing` instead.
 
     """
-    def __init__(self):
-        raise TypeError(
-            "'Maybe' can't be instantiated directly. Use Just or Nothing."
-        )
-
     @abstractmethod
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
         """
@@ -225,6 +220,12 @@ def filter_m(f: Callable[[A], Maybe[bool]],
 
 
 __all__ = [
-    'Maybe', 'Just', 'Nothing', 'maybe', 'flatten', 'map_m', 'sequence',
+    'Maybe',
+    'Just',
+    'Nothing',
+    'maybe',
+    'flatten',
+    'map_m',
+    'sequence',
     'filter_m'
 ]

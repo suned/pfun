@@ -1,7 +1,9 @@
-from typing import Generic, Callable, TypeVar
+from typing import Generic, Callable, TypeVar, Iterable, cast
 
-from pfun import compose
+from .util import compose
 from .immutable import Immutable
+from .monad import Monad, sequence_, map_m_, filter_m_
+from .curry import curry
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -9,7 +11,7 @@ C = TypeVar('C')
 D = TypeVar('D')
 
 
-class Cont(Generic[A, B], Immutable):
+class Cont(Generic[A, B], Monad, Immutable):
     """
     Type that represents a function in continuation passing style.
     """
@@ -49,6 +51,22 @@ class Cont(Generic[A, B], Immutable):
 
     def map(self, f: Callable[[B], C]) -> 'Cont[B, C]':
         return Cont(lambda c: self.run(compose(c, f)))  # type: ignore
+
+
+@curry
+def map_m(f: Callable[[A], Cont[A, B]],
+          iterable: Iterable[A]) -> Cont[Iterable[A], B]:
+    return cast(Cont[Iterable[A], B], map_m_(value, f, iterable))
+
+
+def sequence(iterable: Iterable[Cont[A, B]]) -> Cont[Iterable[A], B]:
+    return cast(Cont[Iterable[A], B], sequence_(value, iterable))
+
+
+@curry
+def filter_m(f: Callable[[A], Cont[bool, B]],
+             iterable: Iterable[A]) -> Cont[Iterable[A], B]:
+    return cast(Cont[Iterable[A], B], filter_m_(value, f, iterable))
 
 
 def value(a: A) -> Cont[A, B]:

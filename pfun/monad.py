@@ -33,7 +33,8 @@ def sequence_(
 
 @curry
 def map_m_(
-    value: Callable[[Any], Monad], f: Callable[[Any], Monad],
+    value: Callable[[Any], Monad],
+    f: Callable[[Any], Monad],
     iterable: Iterable
 ) -> Monad:
     m_iterable = (f(x) for x in iterable)
@@ -42,7 +43,8 @@ def map_m_(
 
 @curry
 def filter_m_(
-    value: Callable[[Any], Monad], f: Callable[[Any], Monad],
+    value: Callable[[Any], Monad],
+    f: Callable[[Any], Monad],
     iterable: Iterable
 ) -> Monad:
     def combine(ms, mbx):

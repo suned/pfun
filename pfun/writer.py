@@ -2,7 +2,7 @@ from typing import Generic, Callable, TypeVar, Iterable, cast
 from pfun.monoid import M, append, empty
 from .immutable import Immutable
 from .curry import curry
-from .monad import map_m_, Monad
+from .monad import map_m_, Monad, sequence_, filter_m_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -108,6 +108,16 @@ def tell(m: M) -> Writer[None, M]:
     :return: Writer with unit value and monoid value ``m``
     """
     return Writer(None, m)  # type: ignore
+
+
+def sequence(iterable: Iterable[Writer[A, M]]) -> Writer[Iterable[A], M]:
+    return cast(Writer[Iterable[A], M], sequence_(value, iterable))
+
+
+@curry
+def filter_m(f: Callable[[A], Writer[bool, M]],
+             iterable: Iterable[A]) -> Writer[Iterable[A], M]:
+    return cast(Writer[Iterable[A], M], filter_m_(value, f, iterable))
 
 
 @curry

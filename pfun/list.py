@@ -4,7 +4,7 @@ from functools import reduce
 from .monoid import Monoid
 from .immutable import Immutable
 from .curry import curry
-from .monad import map_m_, Monad
+from .monad import map_m_, sequence_, filter_m_, Monad
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -160,3 +160,13 @@ def value(a: A) -> List[A]:
 def map_m(f: Callable[[A], List[B]],
           iterable: Iterable[A]) -> List[Iterable[B]]:
     return cast(List[Iterable[B]], map_m_(value, f, iterable))
+
+
+def sequence(iterable: Iterable[List[A]]) -> List[Iterable[A]]:
+    return cast(List[Iterable[A]], sequence_(value, iterable))
+
+
+@curry
+def filter_m(f: Callable[[A], List[bool]],
+             iterable: Iterable[A]) -> List[Iterable[A]]:
+    return cast(List[Iterable[A]], filter_m_(value, f, iterable))

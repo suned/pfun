@@ -63,7 +63,8 @@ def _curry_hook(context: FunctionContext) -> Type:
     )
     args = list(
         zip(
-            function.arg_types[:-1], function.arg_kinds[:-1],
+            function.arg_types[:-1],
+            function.arg_kinds[:-1],
             function.arg_names[:-1]
         )
     )
@@ -205,8 +206,8 @@ def _compose_hook(context: FunctionContext) -> Type:
             return context.default_return_type
         api.expr_checker.check_call(
             compose, [arg for args in context.args for arg in args],
-            [kind for kinds in context.arg_kinds
-             for kind in kinds], context.context,
+            [kind for kinds in context.arg_kinds for kind in kinds],
+            context.context,
             [name for names in context.arg_names for name in names]
         )
         return compose.ret_type

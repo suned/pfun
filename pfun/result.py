@@ -1,14 +1,17 @@
-from typing import Generic, TypeVar, Callable, Any
+from typing import Generic, TypeVar, Callable, Any, Iterable, cast
 from functools import wraps
-from .immutable import Immutable
 from abc import ABC, abstractmethod
+
+from .immutable import Immutable
+from .monad import Monad, sequence_, map_m_, filter_m_
+from .curry import curry
 
 A = TypeVar('A')
 B = TypeVar('B')
 C = TypeVar('C')
 
 
-class Result(Generic[A, B], Immutable, ABC):
+class Result(Generic[A, B], Immutable, Monad, ABC):
     """
     Abstract class representing a potentially failed computation.
     Should not be instantiated directly,
@@ -159,6 +162,22 @@ class Error(Result[A, B]):
 
     def __repr__(self):
         return f'Error({repr(self.b)})'
+
+
+def sequence(iterable: Iterable[Result[A, B]]) -> Result[Iterable[A], B]:
+    return cast(Result[Iterable[A], B], sequence_(Ok, iterable))
+
+
+@curry
+def map_m(f: Callable[[A], Result[B, C]],
+          iterable: Iterable[A]) -> Result[Iterable[B], C]:
+    return cast(Result[Iterable[B], C], map_m_(Ok, f, iterable))
+
+
+@curry
+def filter_m(f: Callable[[A], Result[bool, B]],
+             iterable: Iterable[A]) -> Result[Iterable[A], B]:
+    return cast(Result[Iterable[A], B], filter_m_(Ok, f, iterable))
 
 
 def result(f: Callable[..., B]) -> Callable[..., Result[B, Exception]]:

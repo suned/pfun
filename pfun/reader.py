@@ -4,7 +4,7 @@ from typing import Generic, TypeVar, Callable, Iterable, cast
 from .immutable import Immutable
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
-from .monad import Monad, map_m_, sequence_
+from .monad import Monad, map_m_, sequence_, filter_m_
 
 Context = TypeVar('Context')
 Result_ = TypeVar('Result_')
@@ -127,8 +127,15 @@ def map_m(f: Callable[[A], Reader[Context, B]],
     return cast(Reader[Context, Iterable[B]], map_m_(value, f, iterable))
 
 
-def sequence(it):
-    return sequence_(value, it)
+def sequence(iterable: Iterable[Reader[Context, B]]
+             ) -> Reader[Context, Iterable[B]]:
+    return cast(Reader[Context, Iterable[B]], sequence_(value, iterable))
 
 
-__all__ = ['Reader', 'reader', 'value', 'map_m']
+@curry
+def filter_m(f: Callable[[A], Reader[Context, bool]],
+             iterable: Iterable[A]) -> Reader[Context, Iterable[A]]:
+    return cast(Reader[Context, Iterable[A]], filter_m_(value, f, iterable))
+
+
+__all__ = ['Reader', 'reader', 'value', 'map_m', 'sequence', 'filter_m']

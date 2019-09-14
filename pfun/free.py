@@ -1,9 +1,11 @@
-from typing import TypeVar, Generic, Callable
+from typing import TypeVar, Generic, Callable, Iterable, cast
 
 from pfun.immutable import Immutable
 from abc import ABC, abstractmethod
 
 from .functor import Functor
+from .monad import Monad, sequence_, map_m_, filter_m_
+from .curry import curry
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -32,7 +34,9 @@ class FreeInterpreterElement(Functor, Generic[C, D], ABC):
 F = TypeVar('F', bound=Functor)
 
 
-class Free(Generic[F, A, C, D], FreeInterpreterElement[C, D], ABC, Immutable):
+class Free(
+    Generic[F, A, C, D], FreeInterpreterElement[C, D], Monad, Immutable
+):
     @abstractmethod
     def and_then(
         self, f: 'Callable[[A], Free[F, B, C, D]]'
@@ -61,3 +65,20 @@ class More(Free[F, A, C, D]):
 
     def accept(self, interpreter: FreeInterpreter[C, D], arg: C) -> D:
         return interpreter.interpret_more(self, arg)
+
+
+@curry
+def map_m(f: Callable[[A], Free[F, B, C, D]],
+          iterable: Iterable[A]) -> Free[F, Iterable[B], C, D]:
+    return cast(Free[F, Iterable[B], C, D], map_m_(Done, f, iterable))
+
+
+def sequence(iterable: Iterable[Free[F, A, C, D]]
+             ) -> Free[F, Iterable[A], C, D]:
+    return cast(Free[F, Iterable[A], C, D], sequence_(Done, iterable))
+
+
+@curry
+def filter_m(f: Callable[[A], Free[F, bool, C, D]],
+             iterable: Iterable[A]) -> Free[F, Iterable[A], C, D]:
+    return cast(Free[F, Iterable[A], C, D], filter_m_(Done, f, iterable))

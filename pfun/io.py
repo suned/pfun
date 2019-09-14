@@ -1,11 +1,20 @@
 from typing import (
-    Generic, TypeVar, Callable, Tuple, cast, IO as TextIO, Optional
+    Generic,
+    TypeVar,
+    Callable,
+    Tuple,
+    cast,
+    IO as TextIO,
+    Optional,
+    Iterable,
+    cast
 )
 import sys
 from functools import wraps
 
 from .immutable import Immutable
 from .curry import curry
+from .monad import Monad, sequence_, map_m_, filter_m_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -21,7 +30,7 @@ def pure_input(world: int, message: Optional[str]) -> Tuple[int, str]:
     return (world + 1, text)
 
 
-class IO(Generic[A], Immutable):
+class IO(Generic[A], Monad, Immutable):
     a: A
 
     def and_then(self, f: 'Callable[[A], IO[B]]') -> 'IO[B]':
@@ -143,3 +152,18 @@ def io(f: Callable[..., A]) -> Callable[..., IO[A]]:
         return IO(v)
 
     return decorator
+
+
+@curry
+def map_m(f: Callable[[A], IO[B]], iterable: Iterable[A]) -> IO[Iterable[B]]:
+    return cast(IO[Iterable[B]], map_m_(IO, f, iterable))
+
+
+def sequence(iterable: Iterable[IO[A]]) -> IO[Iterable[A]]:
+    return cast(IO[Iterable[A]], sequence_(IO, iterable))
+
+
+@curry
+def filter_m(f: Callable[[A], IO[bool]],
+             iterable: Iterable[A]) -> IO[Iterable[A]]:
+    return cast(IO[Iterable[A]], filter_m_(IO, f, iterable))
