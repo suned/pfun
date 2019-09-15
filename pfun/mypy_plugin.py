@@ -5,10 +5,16 @@ import typing as t
 from mypy.plugin import Plugin, FunctionContext, ClassDefContext
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.types import (
-    Type, CallableType, AnyType, TypeOfAny, Instance, TypeVarType, Overloaded
+    Type,
+    CallableType,
+    Instance,
+    TypeVarType,
+    Overloaded,
+    TypeVarId,
+    TypeVarDef
 )
-from mypy.nodes import ClassDef
-from mypy import checkmember, expandtype
+from mypy.nodes import ClassDef, ARG_POS
+from mypy import checkmember, infer
 from mypy.checker import TypeChecker
 
 _CURRY = 'pfun.curry.curry'
@@ -18,6 +24,7 @@ _MAYBE = 'pfun.maybe.maybe'
 _RESULT = 'pfun.result.result'
 _IO = 'pfun.io.io'
 _READER = 'pfun.reader.reader'
+_EITHER = 'pfun.either.either'
 _READER_AND_THEN = 'pfun.reader.Reader.and_then'
 
 
@@ -102,89 +109,56 @@ def _variadic_decorator_hook(context: FunctionContext) -> Type:
     )
 
 
-def _get_expected_compose_type(context: FunctionContext
-                               ) -> t.Optional[CallableType]:
+def _type_var_def(
+    name: str, module: str, upper_bound, values=(), meta_level=0
+) -> TypeVarDef:
+    id_ = TypeVarId.new(meta_level)
+    id_.raw_id = -id_.raw_id
+    fullname = f'{module}.{name}'
+    return TypeVarDef(name, fullname, id_, list(values), upper_bound)
+
+
+def _get_compose_type(context: FunctionContext) -> t.Optional[CallableType]:
     # TODO, why are the arguments lists of lists,
     # and do I need to worry about it?
-    actual_arg_types = [
-        _get_callable_type(at, context) for ats in context.arg_types
-        for at in ats
-    ]
-    if any(at is None for at in actual_arg_types):
-        # an argument was not callable, defer to default type checking
-        return None
+    n_args = len([at for ats in context.arg_types for at in ats])
 
-    actual_arg_kinds = [ak for aks in context.arg_kinds for ak in aks]
-    actual_arg_names = [an for ans in context.arg_names for an in ans]
     arg_types = []
     arg_kinds = []
     arg_names = []
-    args = list(
-        list(t)
-        for t in zip(actual_arg_types, actual_arg_kinds, actual_arg_names)
+    ret_type_def = _type_var_def(
+        'R1', 'pfun.compose', context.api.named_type('builtins.object')
     )
-    variables = []
-    for index, (arg_type, arg_kind, arg_name) in enumerate(args):
-        is_last_arg = index == len(actual_arg_types) - 1
-        is_first_arg = index == 0
-        if is_last_arg:
-            # if this is the last function,
-            # the arguments are just the arguments to the function
-            current_arg_types = arg_type.arg_types
-            current_arg_kinds = arg_type.arg_kinds
-            current_arg_names = arg_type.arg_names
-        else:
-            current_arg_type = actual_arg_types[index + 1].ret_type
-            if isinstance(current_arg_type, TypeVarType):
-                type_to_expand_with = arg_type.arg_types[0]
-                if isinstance(type_to_expand_with, TypeVarType):
-                    variables.append(
-                        next(
-                            v for v in arg_type.variables
-                            if v.id == type_to_expand_with.id
-                        )
-                    )
-                next_function = args[index + 1][0]
-                args[index + 1][0] = expandtype.expand_type(
-                    next_function, {current_arg_type.id: type_to_expand_with}
-                )
-                current_arg_type = type_to_expand_with
-            if isinstance(arg_type.arg_types[0], TypeVarType):
-                tv = arg_type.arg_types[0]
-                args[index][0] = expandtype.expand_type(
-                    arg_type, {tv.id: current_arg_type}
-                )
-            current_arg_types = [current_arg_type]
-            current_arg_kinds = [arg_type.arg_kinds[0]]
-            current_arg_names = [arg_type.arg_names[0]]
-
-        if is_first_arg:
-            # if this is the first function,
-            # the return type can by anything
-            ret_type = AnyType(TypeOfAny.explicit)
-        else:
-            # otherwise, the return type must be
-            # the argument of the previous function
-            ret_type = args[index - 1][0].arg_types[0]
-        arg_types.append(
-            CallableType(
-                arg_types=current_arg_types,
-                arg_names=current_arg_names,
-                arg_kinds=current_arg_kinds,
-                ret_type=ret_type,
-                variables=variables,
-                fallback=arg_type.fallback
-            )
+    ret_type = TypeVarType(ret_type_def)
+    variables = [ret_type_def]
+    for n in range(n_args):
+        current_arg_type_def = _type_var_def(
+            f'R{n + 2}',
+            'pfun.compose',
+            context.api.named_type('builtins.object')
         )
-        arg_kinds.append(arg_kind)
-        arg_names.append(arg_name)
-    first_arg_type, *_, last_arg_type = [a[0] for a in args]
+        current_arg_type = TypeVarType(current_arg_type_def)
+        arg_type = CallableType(
+            arg_types=[current_arg_type],
+            ret_type=ret_type,
+            arg_kinds=[ARG_POS],
+            arg_names=[None],
+            variables=[current_arg_type_def, ret_type_def],
+            fallback=context.api.named_type('builtins.function')
+        )
+        arg_types.append(arg_type)
+        arg_kinds.append(ARG_POS)
+        arg_names.append(None)
+        variables.append(current_arg_type_def)
+        ret_type_def = current_arg_type_def
+        ret_type = current_arg_type
+    first_arg_type, *_, last_arg_type = arg_types
     ret_type = CallableType(
         arg_types=last_arg_type.arg_types,
         arg_names=last_arg_type.arg_names,
         arg_kinds=last_arg_type.arg_kinds,
         ret_type=first_arg_type.ret_type,
-        variables=variables,
+        variables=[first_arg_type.variables[-1], last_arg_type.variables[0]],
         fallback=context.api.named_type('builtins.function')
     )
     return CallableType(
@@ -199,21 +173,20 @@ def _get_expected_compose_type(context: FunctionContext
 
 
 def _compose_hook(context: FunctionContext) -> Type:
-    api = context.api
-    try:
-        compose = _get_expected_compose_type(context)
-        if compose is None:
-            return context.default_return_type
-        api.expr_checker.check_call(
-            compose, [arg for args in context.args for arg in args],
-            [kind for kinds in context.arg_kinds for kind in kinds],
-            context.context,
-            [name for names in context.arg_names for name in names]
-        )
-        return compose.ret_type
-    except AttributeError:
-        # an argument was not callable, defer to default type checking
-        return context.default_return_type
+    compose = _get_compose_type(context)
+    inferred = infer.infer_function_type_arguments(
+        compose, [arg for args in context.arg_types for arg in args],
+        [kind for kinds in context.arg_kinds for kind in kinds],
+        [
+            [i, i] for i in
+            range(len([arg for args in context.arg_types for arg in args]))
+        ]
+    )
+    ret_type = context.api.expr_checker.apply_inferred_arguments(
+        compose, inferred, context.context
+    ).ret_type
+    ret_type.variables = []
+    return ret_type
 
 
 def _immutable_hook(context: ClassDefContext):
@@ -236,11 +209,13 @@ class PFun(Plugin):
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
         if fullname == _CURRY:
             return _curry_hook
-        # if fullname == _COMPOSE:
-        #     return _compose_hook
+        if fullname == _COMPOSE:
+            return _compose_hook
         if fullname == _MAYBE:
             return _variadic_decorator_hook
         if fullname == _RESULT:
+            return _variadic_decorator_hook
+        if fullname == _EITHER:
             return _variadic_decorator_hook
         if fullname == _IO:
             return _variadic_decorator_hook

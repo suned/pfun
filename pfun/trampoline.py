@@ -61,8 +61,7 @@ class AndThen(Generic[A, B], Trampoline[A]):
         return sub2.and_then(lambda x: cont2(x).and_then(cont))  # type: ignore
 
     def and_then(  # type: ignore
-        self,
-        f: Callable[[A], Trampoline[B]]
+        self, f: Callable[[A], Trampoline[B]]
     ) -> Trampoline[B]:
         return AndThen(  # type: ignore
             self.sub, lambda x: self.cont(x).and_then(f)  # type: ignore

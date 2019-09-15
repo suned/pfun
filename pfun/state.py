@@ -61,9 +61,7 @@ class State(Generic[B, A], Immutable, Monad):
     def map(self, f: Callable[[B], C]) -> 'State[C, A]':
         return State(
             lambda a: self.f(a).  # type: ignore
-            and_then(
-                lambda tu: Done((f(tu[0]), tu[1]))
-            )
+            and_then(lambda tu: Done((f(tu[0]), tu[1])))
         )
 
 

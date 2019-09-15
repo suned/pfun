@@ -57,7 +57,7 @@ def pipeline(
     second: Callable[[Any], Any],
     *rest: Callable[[Any], Any]
 ):
-    return compose(*reversed(rest), second, first)
+    return compose(*reversed(rest), second, first)  # type: ignore
 
 
 __all__ = ['always', 'compose', 'pipeline', 'identity']

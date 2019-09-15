@@ -3,7 +3,7 @@ from hypothesis.strategies import (integers, booleans, text, one_of, floats,
                                    builds, just, lists as lists_, dictionaries,
                                    tuples, none)
 
-from pfun.result import Ok, Error
+from pfun.either import Left, Right
 from pfun.io import IO, Put, Get, ReadFile, WriteFile
 
 
@@ -28,10 +28,10 @@ def maybes(value_strategy=anything()):
     return one_of(justs, nothings)
 
 
-def results(value_strategy=anything()):
-    oks = builds(Ok, value_strategy)
-    errors = just(Error(Exception()))
-    return one_of(oks, errors)
+def eithers(value_strategy=anything()):
+    lefts = builds(Left, value_strategy)
+    rights = builds(Right, value_strategy)
+    return one_of(lefts, rights)
 
 
 def lists(element_strategies=_everything(allow_nan=False), min_size=0):
