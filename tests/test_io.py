@@ -1,8 +1,18 @@
 from unittest.mock import patch, mock_open as mock_open_
 import sys
-from pfun.io import (put_line, get_line, read_file, read_file_bytes,
-                     write_file, write_file_bytes, IO, Put, Get, ReadFile,
-                     WriteFile)
+from pfun.io import (
+    put_line,
+    get_line,
+    read_file,
+    read_file_bytes,
+    write_file,
+    write_file_bytes,
+    IO,
+    Put,
+    Get,
+    ReadFile,
+    WriteFile
+)
 from pfun import identity, compose
 from .monad_test import MonadTest
 from .strategies import ios, unaries, anything
@@ -36,8 +46,8 @@ class TestIO(MonadTest):
     @given(ios(), unaries(ios()), unaries(ios()), text())
     def test_associativity_law(self, io, f, g, open_data):
         with mock_input(), mock_open(open_data), mock_print():
-            assert io.and_then(f).and_then(g).run() == io.and_then(
-                lambda x: f(x).and_then(g)).run()
+            assert io.and_then(f).and_then(g).run(
+            ) == io.and_then(lambda x: f(x).and_then(g)).run()
 
     @given(ios(), unaries(), unaries(), text())
     def test_composition_law(self, io, f, g, text):
@@ -53,9 +63,11 @@ class TestIO(MonadTest):
             assert Put((text, io)).run() == Put((text, io)).run()
             assert Get(lambda _: io).run() == Get(lambda _: io).run()
             assert ReadFile((text, lambda _: io)).run() == ReadFile(
-                (text, lambda _: io)).run()
+                (text, lambda _: io)
+            ).run()
             assert WriteFile((text, text, io)).run() == WriteFile(
-                (text, text, io)).run()
+                (text, text, io)
+            ).run()
 
     @given(ios(), text())
     def test_identity_law(self, io, text):

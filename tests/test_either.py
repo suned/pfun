@@ -18,11 +18,13 @@ class TestEither(MonadTest):
         assert Left(value).and_then(f) == f(value)
 
     @given(eithers(), unaries(eithers()), unaries(eithers()))
-    def test_associativity_law(self, either: Either, f: Unary[Any, Either],
-                               g: Unary[Any, Either]):
+    def test_associativity_law(
+        self, either: Either, f: Unary[Any, Either], g: Unary[Any, Either]
+    ):
 
         assert either.and_then(f).and_then(g) == either.and_then(
-            lambda x: f(x).and_then(g))
+            lambda x: f(x).and_then(g)
+        )
 
     @given(anything())
     def test_equality(self, value):

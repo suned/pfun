@@ -1,7 +1,18 @@
-from pfun import maybe, List, reader, state, Dict, cont, writer
-from hypothesis.strategies import (integers, booleans, text, one_of, floats,
-                                   builds, just, lists as lists_, dictionaries,
-                                   tuples, none)
+from pfun import maybe, List, reader, state, Dict, cont, writer, trampoline
+from hypothesis.strategies import (
+    integers,
+    booleans,
+    text,
+    one_of,
+    floats,
+    builds,
+    just,
+    lists as lists_,
+    dictionaries,
+    tuples,
+    none,
+    composite
+)
 
 from pfun.either import Left, Right
 from pfun.io import IO, Put, Get, ReadFile, WriteFile
@@ -34,11 +45,40 @@ def eithers(value_strategy=anything()):
     return one_of(lefts, rights)
 
 
+def nullaries(value_strategy=anything()):
+    def f(v):
+        return lambda: v
+
+    return builds(f, value_strategy)
+
+
+def trampolines(value_strategy=anything()):
+    dones = builds(trampoline.Done, value_strategy)
+
+    @composite
+    def call(draw):
+        t = draw(trampolines(value_strategy))
+        return trampoline.Call(lambda: t)
+
+    @composite
+    def and_then(draw):
+        t = draw(trampolines(value_strategy))
+        cont = lambda _: t
+        return trampoline.AndThen(draw(trampolines(value_strategy)), cont)
+
+    return one_of(dones, call(), and_then())
+
+
 def lists(element_strategies=_everything(allow_nan=False), min_size=0):
     return builds(
         List,
-        one_of(*(lists_(strategy, min_size=min_size)
-                 for strategy in element_strategies)))
+        one_of(
+            *(
+                lists_(strategy, min_size=min_size)
+                for strategy in element_strategies
+            )
+        )
+    )
 
 
 def readers(value_strategy=anything()):
@@ -51,7 +91,8 @@ def states(value_strategy=anything()):
 
 def dicts(keys=text(), values=anything(), min_size=0, max_size=None):
     return builds(
-        Dict, dictionaries(keys, values, min_size=min_size, max_size=max_size))
+        Dict, dictionaries(keys, values, min_size=min_size, max_size=max_size)
+    )
 
 
 def conts(value_strategy=anything()):
@@ -63,8 +104,15 @@ def writers(value_strategy=anything(), monoid=lists()):
 
 
 def monoids():
-    return one_of(lists_(anything()), lists(), tuples(), integers(), none(),
-                  text(), just(...))
+    return one_of(
+        lists_(anything()),
+        lists(),
+        tuples(),
+        integers(),
+        none(),
+        text(),
+        just(...)
+    )
 
 
 def io_primitives(value_strategy=anything()):
@@ -80,16 +128,22 @@ def gets(value_strategy=anything()):
 
 
 def read_files(value_strategy=anything()):
-    return builds(ReadFile,
-                  tuples(text(), unaries(io_primitives(value_strategy))))
+    return builds(
+        ReadFile, tuples(text(), unaries(io_primitives(value_strategy)))
+    )
 
 
 def write_files(value_strategy=anything()):
-    return builds(WriteFile,
-                  tuples(text(), text(), io_primitives(value_strategy)))
+    return builds(
+        WriteFile, tuples(text(), text(), io_primitives(value_strategy))
+    )
 
 
 def ios(value_strategy=anything()):
-    return one_of(io_primitives(value_strategy), puts(value_strategy),
-                  gets(value_strategy), read_files(value_strategy),
-                  write_files(value_strategy))
+    return one_of(
+        io_primitives(value_strategy),
+        puts(value_strategy),
+        gets(value_strategy),
+        read_files(value_strategy),
+        write_files(value_strategy)
+    )
