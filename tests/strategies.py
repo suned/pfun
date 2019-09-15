@@ -1,4 +1,6 @@
-from pfun import maybe, List, reader, state, Dict, cont, writer, trampoline, free
+from pfun import (
+    maybe, List, reader, state, Dict, cont, writer, trampoline, free
+)
 from hypothesis.strategies import (
     integers,
     booleans,
@@ -47,10 +49,12 @@ def eithers(value_strategy=anything()):
 
 def frees(value_strategy=anything()):
     dones = builds(free.Done, value_strategy)
+
     @composite
     def mores(draw):
         f = draw(frees(value_strategy))
         return free.More(maybe.Just(f))
+
     return one_of(dones, mores())
 
 

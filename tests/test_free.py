@@ -17,7 +17,9 @@ class TestFree(MonadTest):
 
     @given(frees(), unaries(frees()), unaries(frees()))
     def test_associativity_law(self, free, f, g):
-        assert free.and_then(f).and_then(g)  == free.and_then(lambda x: f(x).and_then(g))
+        assert free.and_then(f).and_then(g) == free.and_then(
+            lambda x: f(x).and_then(g)
+        )
 
     @given(anything())
     def test_equality(self, value):
