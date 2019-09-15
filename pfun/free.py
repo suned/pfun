@@ -82,3 +82,15 @@ def sequence(iterable: Iterable[Free[F, A, C, D]]
 def filter_m(f: Callable[[A], Free[F, bool, C, D]],
              iterable: Iterable[A]) -> Free[F, Iterable[A], C, D]:
     return cast(Free[F, Iterable[A], C, D], filter_m_(Done, f, iterable))
+
+
+__all__ = [
+    'FreeInterpreter',
+    'FreeInterpreterElement',
+    'Free',
+    'Done',
+    'More',
+    'map_m',
+    'sequence',
+    'filter_m'
+]

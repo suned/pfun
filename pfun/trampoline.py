@@ -82,3 +82,8 @@ def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
 def filter_m(f: Callable[[A], Trampoline[bool]],
              iterable: Iterable[A]) -> Trampoline[Iterable[A]]:
     return cast(Trampoline[Iterable[A]], filter_m_(Done, f, iterable))
+
+
+__all__ = [
+    'Trampoline', 'Done', 'Call', 'AndThen', 'map_m', 'sequence', 'filter_m'
+]

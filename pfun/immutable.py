@@ -52,3 +52,6 @@ class Immutable:
         attrs = self.__dict__.copy()
         attrs.update(kwargs)
         return type(self)(**attrs)  # type: ignore
+
+
+__all__ = ['Immutable']

@@ -43,3 +43,6 @@ def result(f: Callable[..., B]) -> Callable[..., Result[B]]:
             return Error(e)
 
     return dec
+
+
+__all__ = ['Result', 'Ok', 'Error', 'result']

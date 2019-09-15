@@ -43,3 +43,6 @@ def curry(f: Callable) -> Callable:
         return Curry(f)(*args, **kwargs)
 
     return decorator
+
+
+__all__ = ['curry']

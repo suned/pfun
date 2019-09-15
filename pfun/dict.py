@@ -106,3 +106,6 @@ class Dict(Immutable, Generic[K, V], init=False):
         d.update(self._d)
         d.update(other)  # type: ignore
         return Dict(d)
+
+
+__all__ = ['Dict']
