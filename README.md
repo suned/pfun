@@ -1,6 +1,8 @@
 # `pfun`
 Types and utilities for statically typed functional programing in Python 3.
 
+Build Status: [![CircleCI](https://circleci.com/gh/suned/pfun/tree/master.svg?style=svg)](https://circleci.com/gh/suned/pfun/tree/master)
+
 ## Install
 
 `pip install pfun`
