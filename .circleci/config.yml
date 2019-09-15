@@ -17,34 +17,12 @@ jobs:
           key: dependency-cache-{{ checksum "poetry.lock" }}
           paths:
             - .venv
-  lint:
-    docker:
-      - image: jonatkinson/python-poetry:3.7
-    steps:
-      - checkout
       - run:
           name: Lint
           command: poetry run flake8 pfun tests examples
       - run:
           name: Type-check
           command: poetry run mypy pfun tests examples
-  test:
-    docker:
-      - image: jonatkinson/python-poetry:3.7
-    steps:
-      - checkout
       - run:
           name: Test
           command: poetry run pytest
-
-workflows:
-  version: 2
-  build_and_test:
-    jobs:
-      - build
-      - lint:
-          requires:
-            - build
-      - test:
-          requires:
-            - build
