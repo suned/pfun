@@ -25,4 +25,4 @@ jobs:
           command: poetry run mypy pfun tests examples
       - run:
           name: Test
-          command: poetry run pytest
+          command: poetry run pytest -p no:sugar -n 4
