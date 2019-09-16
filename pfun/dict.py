@@ -2,10 +2,11 @@ from typing import (
     TypeVar,
     Dict as Dict_,
     Union,
+    Mapping,
     KeysView,
     ValuesView,
     ItemsView,
-    Mapping,
+    Generic,
     Iterator
 )
 
@@ -16,7 +17,7 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-class Dict(Immutable, Mapping[K, V], init=False):
+class Dict(Immutable, Generic[K, V], init=False):
     """
     Immutable dictionary class with functional helper methods
     """
@@ -195,7 +196,7 @@ class Dict(Immutable, Mapping[K, V], init=False):
             return Nothing()
         return Just(v)
 
-    def update(self, other: Mapping[K, V]) -> 'Dict[K, V]':
+    def update(self, other: Union[Mapping[K, V], 'Dict[K, V]']) -> 'Dict[K, V]':
         """
         Get a copy of this dictionary updated with key/value pairs
         from ``other``
