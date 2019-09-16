@@ -1,4 +1,4 @@
-# `pfun`
+# ![pfun](https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true)<img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true">
 Statically typed functional programming in Python 3.
 
 Build Status: 
