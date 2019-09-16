@@ -1,4 +1,13 @@
-from typing import (TypeVar, Generic, Dict as Dict_, Union, KeysView, ValuesView, ItemsView, Mapping, Iterator)
+from typing import (
+    TypeVar,
+    Dict as Dict_,
+    Union,
+    KeysView,
+    ValuesView,
+    ItemsView,
+    Mapping,
+    Iterator
+)
 
 from .maybe import Maybe, Nothing, Just
 from .immutable import Immutable
@@ -86,7 +95,8 @@ class Dict(Immutable, Mapping[K, V], init=False):
         True
 
         :param key: The key to test for membership
-        :return: ``True`` if ``key`` is a key in this dictionary, ``False`` otherwise
+        :return: ``True`` if ``key`` is a key in this dictionary,
+                 ``False`` otherwise
         """
         return key in self._d
 

@@ -52,7 +52,7 @@ class Cont(Generic[A, B], Monad, Immutable):
     def map(self, f: Callable[[B], C]) -> 'Cont[B, C]':
         """
         Map the  ``f`` over this continuation
-        
+
         :example:
         >>> from pfun import identity
         >>> value(1).map(lambda v: v + 1).run(identity)

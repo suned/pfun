@@ -55,6 +55,6 @@ class TestReader(MonadTest):
     def test_reader_decorator(self):
         reader_int = reader.reader(int)
         assert reader_int('1').run(None) == 1
-    
+
     def test_ask(self):
         reader.ask().run('context') == 'context'
