@@ -20,7 +20,7 @@ entire function to know which error cases to cover,
 and you could even get a type checker to help you. The `Maybe` type is designed to do just that:
 
 ```python
-from eff.maybe import (
+from pfun.maybe import (
     Maybe,
     Just,    # Class that represents success
     Nothing  # Class that represents failure
@@ -57,7 +57,7 @@ A function that returns a monadic value is called a _monadic function_.
 it doesn't tell the caller _what_ went wrong. `Result` will do that:
 
 ```python
-from eff.result import Result, Ok, Error
+from pfun.result import Result, Ok, Error
 
 
 def i_can_fail(s: str) -> Result[str, ValueError]:
@@ -108,7 +108,7 @@ def main():
 Ugh. There has to be a better way. With the `Reader` monad there is
 
 ```python
-from eff.reader import value, ask, Reader
+from pfun.reader import value, ask, Reader
 
 
 def f() -> Reader[Connection, str]:
@@ -202,7 +202,7 @@ like it should be possible to abstract. This is what `Writer` will do for you:
 
 ```python
 from typing import List
-from eff.writer import value, Writer
+from pfun.writer import value, Writer
 
 
 def i_need_to_log_something(i: int) -> Writer[int, List[str]]:
@@ -220,59 +220,30 @@ def main():
     print('log', log)  # output: ['Something was succesfully computed', 'Something else was successfully computed']
  
 ```
+`tuple` is not the only thing `Writer` can combine: in fact the only requirement on the second argument is that its a _monoid_. You can even tell writer
+to combine custom types by implementing the `Monoid` ABC.
 
 ### State
+Where `Reader` can only read the context passed into it, and `Writer` can only append to a monoid but not read it, `State` can do both.
+You can use it to thread some state through a computation without global shared state
+
 ```python
-from typing import Tuple
-from eff import Immutable, List, Unit
-from eff.state import State, value, put, get
-from eff.maybe import Maybe, Just, Nothing
-from ast import literal_eval
+from pfun.state import value, put, get, State
 
-Move = Tuple[int, int]
+def add(item: str) -> State[None, tuple]:
+    return get().and_then(lambda t: put(t + (item,)))
 
-Moves = List[Move]
+def remove_first() -> State[None, tuple]:
+    return get().and_then(lambda t: put(t[1:]))
 
-class Player(Immutable):
-    def __init__(self, name: str, moves: Moves = List()):
-        self.name = name
-        self.moves = moves
-
-class Game(Immutable):
-    def __init__(self, current_player: Player, other_player: Player):
-        self.current_player = current_player
-        self.other = other_player
-
-def get_player() -> Player:
-    name = input('Enter a player name:')
-    return Player(name=name)
-
-def get_move(player: Player) -> Move:
-    move = input(f'{player.name}, please input your next move as a python tuple')
-    return literal_eval(move)
-
-
-def play(game: Game) -> State[Unit, Game]:
-    if game.is_over:
-        return put(game)
-    current_player = game.current_player
-    move = get_move(player=current_player)
-    if game.is_legal(move):
-        current_player = current_player.clone(moves=current_player.moves.append(move))
-        game = game.clone(current_player=current_player)
-        return put(game).and_then(lambda _: get()).and_then(play)
-    else:
-        print(f'{move} is not a legal move')
-        return play(game)
-
-def main():
-    player1 = get_player()
-    player2 = get_player()
-    game = Game(current=player1, other=player2)
-    _, game = get().and_then(play).run(game)
-    
-
+state = add('first element').and_then(
+    lambda _: add('second_element')
+).and_then(
+    lambda _: remove_first()
+)
+print(state.run(()))  # outputs (None, ('second element',))
 ```
+The `None` value is the result of the computation (which is nothing, because all we do is change the state), and `('second element',)` is the final state.
 ### IO
 
 ## Immutable Objects and Data Structures

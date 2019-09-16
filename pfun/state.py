@@ -76,7 +76,7 @@ def put(a: A) -> State[None, A]:
     :param a: The new state
     :return: :class:`State` with ``a`` as the new state
     """
-    return State(lambda state: (None, a))  # type: ignore
+    return State(lambda state: Done((None, a)))
 
 
 def get() -> State[A, A]:
