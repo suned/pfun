@@ -2,9 +2,6 @@
 [![CircleCI](https://circleci.com/gh/suned/pfun/tree/master.svg?style=svg)](https://circleci.com/gh/suned/pfun/tree/master)
 
 
-Statically typed functional programming in Python 3.
-
-
 - [Documentation](https://pfun.readthedocs.io/en/latest/)
 - [Examples](https://github.com/suned/pfun/tree/master/examples)
 - [Known issues](https://github.com/suned/pfun/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
