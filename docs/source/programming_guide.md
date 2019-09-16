@@ -3,7 +3,7 @@ This section gives you an overview over functional programming and
 static type checking with `pfun`. This is a good place to start, especially if you're new to programming in monadic style.
 For a detailed documentation of all classes and functions, see [API Reference](api_reference.html).
 ## Effectful (But Side-Effect Free) Functional Programming
-### `Maybe`
+### Maybe
 Say you have a function that can fail:
 
 ```python
@@ -52,7 +52,7 @@ The only requirement for the function argument to `and_then` is that it returns 
 monadic type that you started with (a `Maybe` in this case).
 A function that returns a monadic value is called a _monadic function_.
 
-### `Result`
+### Result
 `Maybe` allowed us to put the failure effect in the type signature, but
 it doesn't tell the caller _what_ went wrong. `Result` will do that:
 
@@ -66,7 +66,7 @@ def i_can_fail(s: str) -> Result[str, ValueError]:
     return Ok('Ok!')
 ```
 
-### `Reader`
+### Reader
 Imagine that you're trying to write a Python program in functional style.
 In many places in your code, you need to instantiate dependencies
 (like a database connection). You could of course instantiate that
@@ -173,7 +173,7 @@ is eventually passed to `f` is unchanged. In other words, your program is guaran
 side-effect free.
 
 
-### `Writer`
+### Writer
 Imagine that you are logging by appending to a `tuple` (Why a `tuple`? Well because they're
 immutable of course!). Trying to avoid global mutable state,
 you decide to pass the list around as a common argument to all the functions
@@ -221,7 +221,7 @@ def main():
  
 ```
 
-### `State`
+### State
 ```python
 from typing import Tuple
 from eff import Immutable, List, Unit
@@ -273,14 +273,13 @@ def main():
     
 
 ```
-### `IO`
-### `Cont`
+### IO
 
 ## Immutable Objects and Data Structures
-### `List`
+### List
 `List` is a functional style wrapper around `list` that prevents mutation
 ```python
-from zen import List
+from pfun import List
 
 l = List(range(5))
 l2 = l.append(5)
@@ -296,23 +295,22 @@ instance methods
 assert List(range(3)).reduce(sum) == 3
 assert List(range(3)).map(str) == ['0', '1', '2']
 ```
-### `Dict`
+### Dict
 `Dict` is a functional style wrapper around `dict` that prevents mutation.
 
 ```python
-from zen import Dict
+from pfun import Dict
 
 d = Dict(key='value')
 d2 = d.set('new_key', 'new_value')
 assert 'new_key' not in d and d2['new_key'] == 'new_value'
 ```
-### `Immutable`
+### Immutable
 
 `Immutable` is an abstract class to 
 ## Utilities
-### `compose`
-### `curry`
-### `Unit`
+### compose
+### curry
 
 
 ## MyPy Plugin

@@ -16,7 +16,7 @@ class Ok(Result[A], Left[A, Exception]):
 
 
 class Error(Result[A], Right[A, Exception]):
-    pass
+    b: Exception
 
 
 def result(f: Callable[..., B]) -> Callable[..., Result[B]]:
