@@ -12,14 +12,8 @@
 
 ## Development
 
-### Build
+Requires [poetry](https://poetry.eustace.io/)
 
-`poetry build`
-
-### Test
-
-`poetry run pytest`
-
-### Build docs
-
-`poetry run sphinx-build -b html docs/source docs/build`
+- Install dependencies with `poetry install`
+- Build documentation with `poetry run sphinx-build -b html docs/source docs/build`
+- Run tests with `poetry run pytest`
