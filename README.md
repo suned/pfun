@@ -1,9 +1,8 @@
 # ![pfun](https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true)
-Statically typed functional programming in Python 3.
-
-Build Status: 
-
 [![CircleCI](https://circleci.com/gh/suned/pfun/tree/master.svg?style=svg)](https://circleci.com/gh/suned/pfun/tree/master)
+
+
+Statically typed functional programming in Python 3.
 
 
 - [Documentation](https://pfun.readthedocs.io/en/latest/)
