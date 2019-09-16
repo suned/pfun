@@ -126,3 +126,4 @@ dmypy.json
 docs/build
 .idea
 .vscode
+.DS_Store
