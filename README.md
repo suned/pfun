@@ -5,13 +5,14 @@ Build Status:
 
 [![CircleCI](https://circleci.com/gh/suned/pfun/tree/master.svg?style=svg)](https://circleci.com/gh/suned/pfun/tree/master)
 
+
+- [Documentation](https://pfun.readthedocs.io/en/latest/)
+- [Examples](https://github.com/suned/pfun/tree/master/examples)
+- [Known issues](https://github.com/suned/pfun/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
+
 ## Install
 
 `pip install pfun`
-
-## Documentation
-
-at [read the docs](readthedocs.com).
 
 ## Development
 
