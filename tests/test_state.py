@@ -55,7 +55,7 @@ class TestState(MonadTest):
         )
     
     def test_get(self):
-        state.get().run('state') == ('state', 'state')
+        assert state.get().run('state') == ('state', 'state')
     
     def test_set(self):
-        state.put('new_state').run('state') == (None, 'new_state')
+        assert state.put('new_state').run('state') == (None, 'new_state')
