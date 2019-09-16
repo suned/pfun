@@ -196,7 +196,9 @@ class Dict(Immutable, Generic[K, V], init=False):
             return Nothing()
         return Just(v)
 
-    def update(self, other: Union[Mapping[K, V], 'Dict[K, V]']) -> 'Dict[K, V]':
+    def update(
+        self, other: Union[Mapping[K, V], 'Dict[K, V]']
+    ) -> 'Dict[K, V]':
         """
         Get a copy of this dictionary updated with key/value pairs
         from ``other``
