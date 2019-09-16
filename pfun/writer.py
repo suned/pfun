@@ -89,7 +89,7 @@ def value(a: A, m: M = ...) -> Writer[A, M]:  # type: ignore
     :param m: Optional monoid to associate with ``a``
     :return: :class:`Writer` with ``a`` and optionally ``m``
     """
-    return Writer(a, m)  # type: ignore
+    return Writer(a, m)
 
 
 def tell(m: M) -> Writer[None, M]:
@@ -107,7 +107,7 @@ def tell(m: M) -> Writer[None, M]:
     :param m: the monoid value
     :return: Writer with unit value and monoid value ``m``
     """
-    return Writer(None, m)  # type: ignore
+    return Writer(None, m)
 
 
 def sequence(iterable: Iterable[Writer[A, M]]) -> Writer[Iterable[A], M]:

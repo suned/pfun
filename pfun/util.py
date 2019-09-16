@@ -49,7 +49,7 @@ def compose(
     g: Callable[[Any], Any],
     *functions: Callable[[Any], Any]
 ) -> Callable[[Any], Any]:
-    return Composition((f, g) + functions)  # type: ignore
+    return Composition((f, g) + functions)
 
 
 def pipeline(
@@ -57,7 +57,7 @@ def pipeline(
     second: Callable[[Any], Any],
     *rest: Callable[[Any], Any]
 ):
-    return compose(*reversed(rest), second, first)  # type: ignore
+    return compose(*reversed(rest), second, first)
 
 
 __all__ = ['always', 'compose', 'pipeline', 'identity']

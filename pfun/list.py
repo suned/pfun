@@ -38,7 +38,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         """
         return reduce(f, self._iterable, initializer)  # type: ignore
 
-    def append(self, a: Iterable[A]) -> 'List[A]':  # type: ignore
+    def append(self, a: Iterable[A]) -> 'List[A]':
         """
         Add element to end of list
 
@@ -127,7 +127,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param f: Function to apply to elements of this :class:`List`
         :return: Concatenated results from applying ``f`` to all elements
         """
-        return self.reduce(lambda l, v: l + f(v), List())  # type: ignore
+        return self.reduce(lambda l, v: l + f(v), List())
 
     def zip(self, other: Iterable[B]) -> Iterable[Tuple[A, B]]:
         """

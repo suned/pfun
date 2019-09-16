@@ -46,7 +46,7 @@ class Reader(Immutable, Generic[Context, Result_], Monad):
                     lambda v: Call(lambda: f(v).f(a))  # type: ignore
                 )
             )
-        )  # type: ignore
+        )
 
     def map(self, f: Callable[[Result_], B]) -> 'Reader[Context, B]':
         """

@@ -49,7 +49,7 @@ class Put(IO[Tuple[str, IO[A]]]):
 
     def and_then(self, f: Callable[[A], IO[B]]) -> IO[B]:  # type: ignore
         text, action = self.a
-        new = (text, action.and_then(f))  # type: ignore
+        new = (text, action.and_then(f))
         return cast(IO[B], Put(new))
 
     def map(self, f: Callable[[A], B]) -> IO[B]:  # type: ignore
