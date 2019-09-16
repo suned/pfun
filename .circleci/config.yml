@@ -1,8 +1,12 @@
+defaults: &defaults
+  working_directory: ~/pfun
+  docker:
+    - image: jonatkinson/python-poetry:3.7
+
 version: 2
 jobs:
-  build:
-    docker:
-      - image: jonatkinson/python-poetry:3.7
+  test:
+    <<: *defaults
     steps:
       - checkout
       - restore_cache:
@@ -13,16 +17,31 @@ jobs:
       - run:
           name: Install dependencies
           command: poetry install
+      - run:
+          name: Test
+          command: poetry run tox
       - save_cache:
           key: dependency-cache-{{ checksum "poetry.lock" }}
           paths:
             - .venv
+            - .tox
       - run:
           name: Lint
           command: poetry run flake8 pfun tests examples
       - run:
-          name: Type-check
+          name: Typecheck
           command: poetry run mypy pfun tests examples
+  release:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+            at: /tmp/workspace
       - run:
-          name: Test
-          command: poetry run pytest -p no:sugar -n 4
+            name: Check version
+            command: poetry run python scripts/check_version.py pyproject.toml $CIRCLE_TAG
+      - run:
+            name: Build
+            command: poetry build
+      - run:
+            name: Release
+            command: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD

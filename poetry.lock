@@ -150,6 +150,14 @@ apipkg = ">=1.4"
 
 [[package]]
 category = "dev"
+description = "A platform independent file lock."
+name = "filelock"
+optional = false
+python-versions = "*"
+version = "3.0.12"
+
+[[package]]
+category = "dev"
 description = "the modular source code checker: pep8, pyflakes and co"
 name = "flake8"
 optional = false
@@ -676,6 +684,35 @@ version = "1.1.0"
 
 [[package]]
 category = "dev"
+description = "Python Library for Tom's Obvious, Minimal Language"
+name = "toml"
+optional = false
+python-versions = "*"
+version = "0.10.0"
+
+[[package]]
+category = "dev"
+description = "tox is a generic virtualenv management and test command line tool"
+name = "tox"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+version = "3.14.0"
+
+[package.dependencies]
+filelock = ">=3.0.0,<4"
+packaging = ">=14"
+pluggy = ">=0.12.0,<1"
+py = ">=1.4.17,<2"
+six = ">=1.0.0,<2"
+toml = ">=0.9.4"
+virtualenv = ">=14.0.0"
+
+[package.dependencies.importlib-metadata]
+python = "<3.8"
+version = ">=0.12,<1"
+
+[[package]]
+category = "dev"
 description = "Traitlets Python config system"
 name = "traitlets"
 optional = false
@@ -724,6 +761,14 @@ version = "1.25.3"
 
 [[package]]
 category = "dev"
+description = "Virtual Python Environment builder"
+name = "virtualenv"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+version = "16.7.5"
+
+[[package]]
+category = "dev"
 description = "Measures number of Terminal column cells of wide-character codes"
 name = "wcwidth"
 optional = false
@@ -747,7 +792,7 @@ python-versions = ">=2.7"
 version = "0.5.2"
 
 [metadata]
-content-hash = "5d92c1b6e76cb7e0ed3cf326c157848ca5382d37ea09145048d42332dfad219d"
+content-hash = "f19d205236bc86dfb6ca3cbd15542f6dbb9e1dc9696013e41181ec896146d112"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -768,6 +813,7 @@ decorator = ["86156361c50488b84a3f148056ea716ca587df2f0de1d34750d35c21312725de",
 docutils = ["6c4f696463b79f1fb8ba0c594b63840ebd41f059e92b31957c46b74a4599b6d0", "9e4d7ecfc600058e07ba661411a2b7de2fd0fafa17d1a7f7361cd47b1175c827", "a2aeea129088da402665e92e0b25b04b073c04b2dce4ab65caaa38b7ce2e1a99"]
 entrypoints = ["589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19", "c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"]
 execnet = ["0dd40ad3b960aae93bdad7fe1c3f049bbcc8fba47094655a4301f5b33e906816", "3839f3c1e9270926e7b3d9b0a52a57be89c302a3826a2b19c8d6e6c3d2b506d2"]
+filelock = ["18d82244ee114f543149c66a6e0c14e9c4f8a1044b5cdaadd0f82159d6a6ff59", "929b7d63ec5b7d6b71b0fa5ac14e030b3f70b75747cef1b10da9b879fef15836"]
 flake8 = ["19241c1cbc971b9962473e4438a2ca19749a7dd002dd1a946eaba171b4114548", "8e9dfa3cecb2400b3738a42c54c3043e821682b9c840b0448c0503f781130696"]
 future = ["67045236dcfd6816dc439556d009594abf643e5eb48992e36beac09c2ca659b8"]
 hypothesis = ["76638e3181761bd3a527e5b51b7a2ef8e30c3a3373128ba43d4462d8bf2a864f", "c6d4ba47bc97e4651fccd692d6cecca9c1ad673f114107e4d37419d5fc172ee2"]
@@ -817,11 +863,14 @@ sphinxcontrib-jsmath = ["2ec2eaebfb78f3f2078e73666b1415417a116cc848b72e5172e596c
 sphinxcontrib-qthelp = ["513049b93031beb1f57d4daea74068a4feb77aa5630f856fcff2e50de14e9a20", "79465ce11ae5694ff165becda529a600c754f4bc459778778c7017374d4d406f"]
 sphinxcontrib-serializinghtml = ["c0efb33f8052c04fd7a26c0a07f1678e8512e0faec19f4aa8f2473a8b81d5227", "db6615af393650bf1151a6cd39120c29abaf93cc60db8c48eb2dddbfdc3a9768"]
 termcolor = ["1d6d69ce66211143803fbc56652b41d73b4a400a2891d7bf7a1cdf4c02de613b"]
+toml = ["229f81c57791a41d65e399fc06bf0848bab550a9dfd5ed66df18ce5f05e73d5c", "235682dd292d5899d361a811df37e04a8828a5b1da3115886b73cf81ebc9100e", "f1db651f9657708513243e61e6cc67d101a39bad662eaa9b5546f789338e07a3"]
+tox = ["0bc216b6a2e6afe764476b4a07edf2c1dab99ed82bb146a1130b2e828f5bff5e", "c4f6b319c20ba4913dbfe71ebfd14ff95d1853c4231493608182f66e566ecfe1"]
 traitlets = ["9c4bd2d267b7153df9152698efb1050a5d84982d3384a37b2c1f7723ba3e7835", "c6cb5e6f57c5a9bdaa40fa71ce7b4af30298fbab9ece9815b5d995ab6217c7d9"]
 typed-ast = ["18511a0b3e7922276346bcb47e2ef9f38fb90fd31cb9223eed42c85d1312344e", "262c247a82d005e43b5b7f69aff746370538e176131c32dda9cb0f324d27141e", "2b907eb046d049bcd9892e3076c7a6456c93a25bebfe554e931620c90e6a25b0", "354c16e5babd09f5cb0ee000d54cfa38401d8b8891eefa878ac772f827181a3c", "4e0b70c6fc4d010f8107726af5fd37921b666f5b31d9331f0bd24ad9a088e631", "630968c5cdee51a11c05a30453f8cd65e0cc1d2ad0d9192819df9978984529f4", "66480f95b8167c9c5c5c87f32cf437d585937970f3fc24386f313a4c97b44e34", "71211d26ffd12d63a83e079ff258ac9d56a1376a25bc80b1cdcdf601b855b90b", "95bd11af7eafc16e829af2d3df510cecfd4387f6453355188342c3e79a2ec87a", "bc6c7d3fa1325a0c6613512a093bc2a2a15aeec350451cbdf9e1d4bffe3e3233", "cc34a6f5b426748a507dd5d1de4c1978f2eb5626d51326e43280941206c209e1", "d755f03c1e4a51e9b24d899561fec4ccaf51f210d52abdf8c07ee2849b212a36", "d7c45933b1bdfaf9f36c579671fec15d25b06c8398f113dab64c18ed1adda01d", "d896919306dd0aa22d0132f62a1b78d11aaf4c9fc5b3410d3c666b818191630a", "ffde2fbfad571af120fcbfbbc61c72469e72f550d676c3342492a9dfdefb8f12"]
 typing = ["38566c558a0a94d6531012c8e917b1b8518a41e418f7f15f00e129cc80162ad3", "53765ec4f83a2b720214727e319607879fec4acde22c4fbb54fa2604e79e44ce", "84698954b4e6719e912ef9a42a2431407fe3755590831699debda6fba92aac55"]
 typing-extensions = ["2ed632b30bb54fc3941c382decfd0ee4148f5c591651c9272473fea2c6397d95", "b1edbbf0652660e32ae780ac9433f4231e7339c7f9a8057d0f042fcbcea49b87", "d8179012ec2c620d3791ca6fe2bf7979d979acdbef1fca0bc56b37411db682ed"]
 urllib3 = ["b246607a25ac80bedac05c6f282e3cdaf3afb65420fd024ac94435cabe6e18d1", "dbe59173209418ae49d485b87d1681aefa36252ee85884c31346debd19463232"]
+virtualenv = ["680af46846662bb38c5504b78bad9ed9e4f3ba2d54f54ba42494fdf94337fe30", "f78d81b62d3147396ac33fc9d77579ddc42cc2a98dd9ea38886f616b33bc7fb2"]
 wcwidth = ["3df37372226d6e63e1b1e1eda15c594bca98a22d33a23832a90998faa96bc65e", "f4ebe71925af7b40a864553f761ed559b43544f8f71746c2d756c7fe788ade7c"]
 yapf = ["02ace10a00fa2e36c7ebd1df2ead91dbfbd7989686dc4ccbdc549e95d19f5780", "6f94b6a176a7c114cfa6bad86d40f259bbe0f10cf2fa7f2f4b3596fc5802a41b"]
 zipp = ["4970c3758f4e89a7857a973b1e2a5d75bcdc47794442f2e2dd4fe8e0466e809a", "8a5712cfd3bb4248015eb3b0b3c54a5f6ee3f2425963ef2a0125b8bc40aafaec"]
