@@ -14,20 +14,20 @@ Maybe
 .. autoclass:: pfun.maybe.Nothing
     :members: __init__,__eq__
 
-Result
+Either
 ------
-.. autofunction:: pfun.result.result
+.. autofunction:: pfun.either.either
 
 
-.. autoclass:: pfun.result.Result
+.. autoclass:: pfun.result.either
     :members:
     :special-members:
     :exclude-members: __init__,__setattr__,__weakref__
 
-.. autoclass:: pfun.result.Ok
+.. autoclass:: pfun.result.Right
     :members: __init__,__eq__
 
-.. autoclass:: pfun.result.Error
+.. autoclass:: pfun.result.Left
     :members: __init__,__eq__
 
 Reader

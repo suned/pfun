@@ -2,6 +2,7 @@ from pfun.free import (
     Functor, Free, More, Done, FreeInterpreter, FreeInterpreterElement
 )
 from pfun import Immutable, Dict, compose
+from pfun.state import State, get as get_, put as put_
 
 from typing import TypeVar, Callable
 
@@ -9,55 +10,66 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class KVStore(Functor, Immutable):
+class KVStoreF(Functor, Immutable):
     pass
 
 
-KVStoreInterpreter = FreeInterpreter[Dict[str, str], Dict[str, str]]
-KVStoreElement = FreeInterpreterElement[Dict[str, str], Dict[str, str]]
-KVStoreFree = Free[KVStore, A, Dict[str, str], Dict[str, str]]
+KVStore = Dict[str, str]
+KVStoreInterpreter = FreeInterpreter[KVStore, KVStore]
+KVStoreInterpreterState = State[A, KVStore]
+KVStoreElement = FreeInterpreterElement[KVStore, KVStore]
+KVStoreFree = Free[KVStoreF, A, KVStore, KVStore]
+get_state: Callable[[], KVStoreInterpreterState[KVStore]] = get_
+set_state: Callable[[KVStore], KVStoreInterpreterState[None]] = put_
 
 
-class Put(KVStore, KVStoreElement):
+class Put(KVStoreF, KVStoreElement):
     k: str
     v: str
     a: KVStoreFree
 
-    def map(self, f: Callable[[KVStoreFree], KVStoreFree]) -> KVStore:
+    def map(self, f: Callable[[KVStoreFree], KVStoreFree]) -> KVStoreF:
         return Put(self.k, self.v, f(self.a))
 
-    def accept(self, interpreter: KVStoreInterpreter,
-               table: Dict[str, str]) -> Dict[str, str]:
-        table = table.set(self.k, self.v)
-        return interpreter.interpret(self.a, table)
+    def accept(
+        self, interpreter: KVStoreInterpreter
+    ) -> KVStoreInterpreterState:
+        return get_state().and_then(
+            lambda s: set_state(s.set(self.k, self.v))
+        ).and_then(lambda _: interpreter.interpret(self.a))
 
 
-class Get(KVStore, KVStoreElement):
+class Get(KVStoreF, KVStoreElement):
     key: str
     h: Callable[[str], KVStoreFree]
 
-    def map(self, f: Callable[[KVStoreFree], KVStoreFree]) -> KVStore:
+    def map(self, f: Callable[[KVStoreFree], KVStoreFree]) -> KVStoreF:
         g = compose(f, self.h)  # type: ignore
         return Get(self.key, g)
 
-    def accept(self, interpreter: KVStoreInterpreter,
-               table: Dict[str, str]) -> Dict[str, str]:
-        v = table[self.key]
-        element = self.h(v)  # type: ignore
-        return interpreter.interpret(element, table)
+    def accept(
+        self, interpreter: KVStoreInterpreter
+    ) -> KVStoreInterpreterState:
+        return get_state().and_then(
+            lambda s: self.h(s[self.key])  # type: ignore
+        ).and_then(
+            interpreter.interpret
+        )  # yapf: disable
 
 
-class Delete(KVStore, KVStoreElement):
+class Delete(KVStoreF, KVStoreElement):
     key: str
     a: KVStoreFree
 
-    def map(self, f: Callable[[KVStoreFree], KVStoreFree]) -> KVStore:
+    def map(self, f: Callable[[KVStoreFree], KVStoreFree]) -> KVStoreF:
         return Delete(self.key, f(self.a))
 
-    def accept(self, interpreter: KVStoreInterpreter,
-               table: Dict[str, str]) -> Dict[str, str]:
-        table = table.without(self.key)
-        return interpreter.interpret(self.a, table)
+    def accept(
+        self, interpreter: KVStoreInterpreter
+    ) -> KVStoreInterpreterState:
+        return get_state().and_then(
+            lambda s: set_state(s.without(self.key))
+        ).and_then(lambda _: interpreter.interpret(self.a))
 
 
 def put(k: str, v: str) -> KVStoreFree[None]:
@@ -77,4 +89,5 @@ def modify(k: str, f: Callable[[str], str]) -> KVStoreFree[None]:
 
 
 def run(free: KVStoreFree, table: Dict[str, str]) -> Dict[str, str]:
-    return KVStoreInterpreter().interpret(free, table)
+    _, new_table = KVStoreInterpreter().interpret(free).run(table)
+    return new_table

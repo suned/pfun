@@ -31,6 +31,9 @@ def pure_input(world: int, message: Optional[str]) -> Tuple[int, str]:
 
 
 class IO(Generic[A], Monad, Immutable):
+    """
+    Pure IO value
+    """
     a: A
 
     def and_then(self, f: 'Callable[[A], IO[B]]') -> 'IO[B]':
