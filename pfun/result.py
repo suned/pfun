@@ -7,15 +7,15 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Result(Either[A, Exception]):
+class Result(Either[Exception, A]):
     pass
 
 
-class Ok(Result[A], Left[A, Exception]):
+class Ok(Result[A], Right[Exception, A]):
     pass
 
 
-class Error(Result[A], Right[A, Exception]):
+class Error(Result[A], Left[Exception, A]):
     b: Exception
 
 

@@ -61,4 +61,4 @@ class TestEither(MonadTest):
 
     def test_either_decorator(self):
         result_int = either(int)
-        assert result_int('1') == Left(1)
+        assert result_int('1') == Right(1)

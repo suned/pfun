@@ -170,28 +170,74 @@ class Left(Either[B, A]):
 
 def either(f: Callable[..., A]) -> Callable[..., Either[A, B]]:
     """
+    Turn ``f`` into a monadic function in the ``Either`` monad by wrapping
+    in it a :class:`Right`
 
+    :example:
+    >>> either(lambda v: v)(1)
+    Right(1)
+
+    :param f: function to wrap
+    :return: ``f`` wrapped with a ``Right``
     """
     @wraps(f)
     def decorator(*args, **kwargs):
-        return Left(f(*args, **kwargs))
+        return Right(f(*args, **kwargs))
 
     return decorator
 
 
 def sequence(iterable: Iterable[Either[A, B]]) -> Either[Iterable[A], B]:
+    """
+    Evaluate each ``Either`` in `iterable` from left to right
+    and collect the results
+
+    :example:
+    >>> sequence([Right(v) for v in range(3)])
+    Right((0, 1, 2))
+
+    :param iterable: The iterable to collect results from
+    :returns: ``Either`` of collected results
+    """
     return cast(Either[Iterable[A], B], sequence_(Left, iterable))
 
 
 @curry
 def map_m(f: Callable[[A], Either[B, C]],
           iterable: Iterable[A]) -> Either[Iterable[B], C]:
+    """
+    Map each in element in ``iterable`` to
+    an :class:`Either` by applying ``f``,
+    combine the elements by ``and_then``
+    from left to right and collect the results
+
+    :example:
+    >>> map_m(Right, range(3))
+    Right((0, 1, 2))
+
+    :param f: Function to map over ``iterable``
+    :param iterable: Iterable to map ``f`` over
+    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    """
     return cast(Either[Iterable[B], C], map_m_(Left, f, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], Either[bool, B]],
              iterable: Iterable[A]) -> Either[Iterable[A], B]:
+    """
+    Map each element in ``iterable`` by applying ``f``,
+    filter the results by the value returned by ``f``
+    and combine from left to right.
+
+    :example:
+    >>> filter_m(lambda v: Right(v % 2 == 0), range(2))
+    Right((0, 2))
+
+    :param f: Function to map ``iterable`` by
+    :param iterable: Iterable to map by ``f``
+    :return:
+    """
     return cast(Either[Iterable[A], B], filter_m_(Left, f, iterable))
 
 
