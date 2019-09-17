@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Callable, cast, Any, Iterable, cast
+from typing import Generic, TypeVar, Callable, cast, Iterable, cast
 from abc import ABC, abstractmethod
 
 from .immutable import Immutable
@@ -12,59 +12,72 @@ C = TypeVar('C')
 
 class Trampoline(Immutable, Generic[A], Monad, ABC):
     @abstractmethod
-    def resume(self) -> 'Trampoline[A]':
+    def _resume(self) -> 'Trampoline[A]':
         pass
 
+    @abstractmethod
+    def _handle_cont(
+        self, cont: Callable[[A], 'Trampoline[B]']
+    ) -> 'Trampoline[B]':
+        pass
+
+    @property
+    def _is_done(self) -> bool:
+        return isinstance(self, Done)
+
     def and_then(self, f: Callable[[A], 'Trampoline[B]']) -> 'Trampoline[B]':
-        return AndThen(self, f)  # type: ignore
+        return AndThen(self, f)
 
     def map(self, f: Callable[[A], B]) -> 'Trampoline[B]':
         return self.and_then(lambda a: Done(f(a)))
 
     def run(self) -> A:
         trampoline = self
-        while not isinstance(trampoline, Done):
-            trampoline = trampoline.resume()
+        while not trampoline._is_done:
+            trampoline = trampoline._resume()
 
-        return trampoline.a
+        return cast(Done[A], trampoline).a
 
 
 class Done(Trampoline[A]):
     a: A
 
-    def resume(self) -> Trampoline[A]:
+    def _resume(self) -> Trampoline[A]:
         return self
+
+    def _handle_cont(self,
+                     cont: Callable[[A], Trampoline[B]]) -> Trampoline[B]:
+        return cont(self.a)
 
 
 class Call(Trampoline[A]):
     thunk: Callable[[], Trampoline[A]]
 
-    def resume(self) -> Trampoline[A]:
+    def _handle_cont(self,
+                     cont: Callable[[A], Trampoline[B]]) -> Trampoline[B]:
+        return self.thunk().and_then(cont)  # type: ignore
+
+    def _resume(self) -> Trampoline[A]:
         return self.thunk()  # type: ignore
 
 
-class AndThen(Generic[A, B], Trampoline[A]):
+class AndThen(Generic[A, B], Trampoline[B]):
     sub: Trampoline[A]
     cont: Callable[[A], Trampoline[B]]
 
-    def resume(self) -> Trampoline[A]:
-        sub = self.sub
-        cont = self.cont
-        if isinstance(sub, Done):
-            return cont(sub.a)  # type: ignore
-        elif isinstance(sub, Call):
-            return sub.thunk().and_then(cont)  # type: ignore
-        else:
-            sub = cast(AndThen[Any, A], sub)
-            sub2 = sub.sub
-            cont2 = sub.cont
-        return sub2.and_then(lambda x: cont2(x).and_then(cont))  # type: ignore
+    def _handle_cont(self,
+                     cont: Callable[[B], Trampoline[C]]) -> Trampoline[C]:
+        return self.sub.and_then(self.cont).and_then(cont)  # type: ignore
+
+    def _resume(self) -> Trampoline[B]:
+        return self.sub._handle_cont(self.cont)  # type: ignore
 
     def and_then(  # type: ignore
         self, f: Callable[[A], Trampoline[B]]
     ) -> Trampoline[B]:
-        return AndThen(  # type: ignore
-            self.sub, lambda x: self.cont(x).and_then(f)  # type: ignore
+        return AndThen(
+            self.sub,
+            lambda x: self.cont(x).and_then(f)  # type: ignore
         )
 
 

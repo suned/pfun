@@ -11,28 +11,29 @@ B = TypeVar('B')
 C = TypeVar('C')
 
 
-class Either(Generic[A, B], Immutable, Monad, ABC):
+class Either(Generic[B, A], Immutable, Monad, ABC):
     """
-    Abstract class representing a potentially failed computation.
+    Abstract class representing a computation with either
+    ``A`` or ``B`` as its result.
     Should not be instantiated directly,
-    use :class:`Ok` or :class:`Error` instead
+    use :class:`Left` or :class:`Right` instead
     """
     @abstractmethod
-    def and_then(self, f: Callable[[A], 'Either[A, B]']) -> 'Either[A, B]':
+    def and_then(self, f: Callable[[A], 'Either[B, C]']) -> 'Either[B, C]':
         """
-        Chain together functions of potentially failed computations, keeping
+        Chain together functions of either computations, keeping
         track of whether or not any of them have failed
 
         :example:
-        >>> f = lambda i: Ok(1 / i) if i != 0 else Error('i was 0')
-        >>> Ok(1).and_then(f)
-        Ok(1.0)
-        >>> Ok(0).and_then(f)
-        Error('i was 0')
+        >>> f = lambda i: Right(1 / i) if i != 0 else Left('i was 0')
+        >>> Right(1).and_then(f)
+        Right(1.0)
+        >>> Right(0).and_then(f)
+        Left('i was 0')
 
         :param f: The function to call
-        :return: :class:`Ok` of type A if \
-        the computation was successful, :class:`Error` of type B otherwise.
+        :return: :class:`Right` of type A if \
+        the computation was successful, :class:`Left` of type B otherwise.
         """
         raise NotImplementedError()
 
@@ -42,129 +43,135 @@ class Either(Generic[A, B], Immutable, Monad, ABC):
         Convert this result to a boolean value
 
         :example:
-        >>> "Ok" if Ok(1) else "Error"
-        "Ok"
-        >>> "Ok" if Error("an error") else "Error"
-        "Error"
+        >>> "Right" if Right(1) else "Left"
+        "Right"
+        >>> "Right" if Left("an error") else "Left"
+        "Left"
 
-        :return: True if this as an :class:`Ok`,
-                 False if this is an :class:`Error`
+        :return: True if this as an :class:`Right`,
+                 False if this is an :class:`Left`
         """
         raise NotImplementedError()
 
     @abstractmethod
     def or_else(self, default: A) -> A:
         """
-        Try to get the result of possibly failed computation, return default
-        if the computation has failed
+        Try to get the result of this either computation, return default
+        if this is a ``Left`` value
 
         :example:
-        >>> Ok(1).or_else(2)
+        >>> Right(1).or_else(2)
         1
-        >>> Error(1).or_else(2)
+        >>> Left(1).or_else(2)
         2
 
-        :param default: Value to return if the computation has failed
-        :return: Result of computation if it was successful, default otherwise
+        :param default: Value to return if this is a ``Left`` value
+        :return: Result of computation if this is a ``Right`` value, \
+                 default otherwise
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def map(self, f: Callable[[A], C]) -> 'Either[C, B]':
+    def map(self, f: Callable[[A], C]) -> 'Either[B, C]':
         """
-        Map the result of a possibly failed computation
+        Map the result of this either computation
 
         :example:
-        >>> f = lambda i: Ok(1 / i) if i != 0 else Error('i was 0').map(str)
-        >>> Ok(1).and_then(f).map(str)
-        Ok('0.5')
+        >>> f = lambda i: Right(1 / i) if i != 0 else Left('i was 0').map(str)
+        >>> Right(1).and_then(f).map(str)
+        Right('0.5')
         >>> Ok(0).and_then(f).map(str)
-        Error('i was 0')
+        Left('i was 0')
 
         :param f: Function to apply to the result
-        :return: :class:`Ok` wrapping result of type C if the computation was \
-        successful, :class:`Error` of type B otherwise
+        :return: :class:`Right` wrapping result of type C  \
+                 if the computation was if this is a ``Right`` value, \
+                 :class:`Left` of type B otherwise
 
     """
         raise NotImplementedError()
 
 
-class Left(Either[A, B]):
+class Right(Either[B, A]):
     """
-    Represents a successful computation of type A
+    Represents one of the ``Right`` case of ``Either``
     """
     a: A
 
     def or_else(self, default: A) -> A:
         return self.a
 
-    def map(self, f):
-        return Left(f(self.a))
+    def map(self, f: Callable[[A], C]) -> Either[B, C]:
+        return Right(f(self.a))
 
     def and_then(self, f):
         return f(self.a)
 
     def __eq__(self, other: Any) -> bool:
         """
-        Test if ``other`` is an :class:`Ok` wrapping the same value as
+        Test if ``other`` is a :class:`Right` wrapping the same value as
         this instance
 
         :example:
-        >>> Ok('value') == Ok('value')
+        >>> Right('value') == Right('value')
         True
-        >>> Ok('another value') == Ok('value')
+        >>> Right('another value') == Right('value')
         False
 
         :param other: object to compare with
-        :return: True if other is an :class:`Ok` instance and wraps the same \
+        :return: True if other is a :class:`Right`
+                 instance and wraps the same \
         value as this instance, False otherwise
         """
-        return isinstance(other, Left) and self.a == other.a
+        return isinstance(other, Right) and self.a == other.a
 
     def __bool__(self) -> bool:
         return True
 
     def __repr__(self):
-        return f'Left({repr(self.a)})'
+        return f'Right({repr(self.a)})'
 
 
-class Right(Either[A, B]):
+class Left(Either[B, A]):
     b: B
 
     def or_else(self, default: A) -> A:
         return default
 
-    def map(self, f):
-        return self
+    def map(self, f: Callable[[A], C]) -> Either[B, C]:
+        return self  # type: ignore
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """
-        Test if ``other`` is an :class:`Error` wrapping the same value as
+        Test if ``other`` is an :class:`Left` wrapping the same value as
         this instance
 
         :example:
-        >>> Error('error message') == Error('error message')
+        >>> Left('error message') == Left('error message')
         True
-        >>> Error('error message') == Error('another message')
+        >>> Left('error message') == Left('another message')
         False
 
         :param other: object to compare with
-        :return: True if other is an :class:`Error` instance and wraps the same
+        :return: True if other is an :class:`Left` instance and wraps the same
         value as this instance, False otherwise
         """
-        return isinstance(other, Right) and other.b == self.b
+        return isinstance(other, Left) and other.b == self.b
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
 
-    def and_then(self, f):
-        return self
+    def and_then(self, f: Callable[[A], Either[B, C]]) -> Either[B, C]:
+        return self  # type: ignore
 
     def __repr__(self):
-        return f'Right({repr(self.b)})'
+        return f'Left({repr(self.b)})'
 
 
 def either(f: Callable[..., A]) -> Callable[..., Either[A, B]]:
+    """
+
+    """
     @wraps(f)
     def decorator(*args, **kwargs):
         return Left(f(*args, **kwargs))
