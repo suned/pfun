@@ -9,3 +9,6 @@ def f() -> maybe.Do[int, str]:
 
 
 reveal_type(f)
+
+maybe.Just(1).and_then(lambda a: maybe.Just(2)
+                       ).and_then(lambda b: maybe.Just(a + b))

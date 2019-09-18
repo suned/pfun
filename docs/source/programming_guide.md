@@ -245,7 +245,72 @@ print(state.run(()))  # outputs (None, ('second element',))
 ```
 The `None` value is the result of the computation (which is nothing, because all we do is change the state), and `('second element',)` is the final state.
 ### IO
+How do you make io operations referentially transparent? Is io not inherently stateful?
 
+### Automatically Unwrapping/Wrapping Monadic Values
+Sometimes you want to combine multiple unwrapped monadic values and combine them, 
+like in the example `get_full_name` function below:
+```python
+from pfun.maybe import Just, Maybe
+
+def get_first_name() -> Maybe[str]:
+    ...
+
+def get_last_name() -> Maybe[str]:
+    ...
+
+def get_full_name() -> Maybe[str]:
+    return get_first_name().and_then(
+        lambda first: get_last_name().and_then(
+            lambda last: return Just(first + ' ' + last)
+        )
+    )
+```
+Writing a lambda inside a lambda like this can be hard to read, and you need to make sure
+that your parentheses are in the right places, and not for example:
+
+```python
+def get_full_name() -> Maybe[str]:
+    return get_first_name().and_then(
+        lambda first: get_last_name()
+    ).and_then(
+        lambda last: return Just(first + ' ' + last)
+    )
+```
+Of course, if you use `mypy` it will warn you that `first` is not in scope in the last lambda, but
+it would still be nice if we could make this a little easier to read.
+
+The solution to this problem in other languages is syntactic sugar that will call `and_then` for you
+behind the scenes, and let you work with the 'unwrapped' monadic value directly. In Haskell for example,
+this is called `do` notation.
+
+We can achieve something similar in python using generators, which is what the `do` decorator
+does for you:
+
+```python
+from pfun.maybe import do, Do
+
+@do
+def get_full_name() -> Do[str, str]:
+    first = yield get_first_name()
+    last = yield get_last_name()
+    return first + ' ' + last
+```
+The `Do[A, B]` class is just a type alias for `Generator[Maybe[A], A, B]`.
+
+You may want to unwrap monadic values of heterogenous types inside a `do` function. However,
+the `Generator` type does not allow us to express that our function wants to receive, say first
+an `int` and then a `str`. So the best you can do is to add the types explicitly:
+
+```python
+from typing import Any
+
+@do
+def heterogenous_do() -> Do[Any, str]:
+    an_int = yield Just(1)  # type: int
+    a_str = yield Justh(str)  # type: str
+    return str(an_int) + a_str
+```
 ## Immutable Objects and Data Structures
 ### List
 `List` is a functional style wrapper around `list` that prevents mutation
