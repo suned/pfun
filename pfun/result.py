@@ -8,14 +8,23 @@ B = TypeVar('B')
 
 
 class Result(Either[Exception, A]):
+    """
+    Represents computations that may fail with an exception
+    """
     pass
 
 
 class Ok(Result[A], Right[Exception, A]):
+    """
+    Represents a succesful computation
+    """
     pass
 
 
 class Error(Result[A], Left[Exception, A]):
+    """
+    Represents a failed computation
+    """
     b: Exception
 
 

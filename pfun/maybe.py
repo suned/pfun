@@ -13,16 +13,12 @@ B = TypeVar('B')
 
 class Maybe(Generic[A], Immutable, Monad, ABC):
     """
-    Abstract super class for classes that represent computations that can fail.
-    Should not be instantiated directly.
-    Use :class:`Just` and :class:`Nothing` instead.
-
+    Represents computations that can fail.
     """
     @abstractmethod
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
         """
-        Chain together functional calls, carrying along the state of the
-        computation that may fail.
+        Chain together functions that may fail
 
         :example:
         >>> f = lambda i: Just(1 / i) if i != 0 else Nothing()
@@ -41,7 +37,7 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
     @abstractmethod
     def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
         """
-        Map the result of a possibly failed computation
+        Map the result of a possibly failed function
 
         :example:
         >>> f = lambda i: Just(1 / i) if i != 0 else Nothing()
@@ -51,7 +47,7 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
         Nothing()
 
         :param f: Function to apply to the result
-        :return: :class:`Just` wrapping result of type B if the computation was
+        :return: :class:`Maybe` mapped by ``f``
 
         """
         raise NotImplementedError()
@@ -77,7 +73,7 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
     @abstractmethod
     def __bool__(self):
         """
-        Convert possibly failed computation to a bool
+        Convert this :clas:`Maybe` to a bool
 
         :example:
         >>> "Just" if Just(1) else "Nothing"
@@ -93,12 +89,17 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
 
     @property
     def get(self) -> A:
+        """
+        Get the value wrapped by this :class:`Maybe`. Fails if this is a :class:`Nothing`
+
+        :return: [description]
+        """
         raise NotImplementedError()
 
 
 class Just(Maybe[A]):
     """
-    Subclass of :class:`Maybe` that represents a successful computation
+    Represents a successful computation
 
     """
     a: A
@@ -165,7 +166,7 @@ def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
 
 class Nothing(Maybe[Any]):
     """
-    Subclass of :class:`Maybe` that represents a failed computation
+    Represents a failed computation
 
     """
     @property
@@ -199,6 +200,14 @@ class Nothing(Maybe[Any]):
 
 
 def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
+    """
+    Extract value from each :class:`Maybe`, ignoring
+    elements that are :class:`Nothing`
+
+    :param maybes: Seqence of :class:`Maybe`
+    :return: :class:`List` of unwrapped values
+    :rtype: List[A]
+    """
     justs = [m for m in maybes if m]
     return List(j.get for j in justs)
 
@@ -206,16 +215,54 @@ def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
 @curry
 def map_m(f: Callable[[A], Maybe[B]],
           iterable: Iterable[A]) -> Maybe[Iterable[B]]:
+    """
+    Map each in element in ``iterable`` to
+    an :class:`Maybe` by applying ``f``,
+    combine the elements by ``and_then``
+    from left to right and collect the results
+
+    :example:
+    >>> map_m(Just, range(3))
+    Just((0, 1, 2))
+
+    :param f: Function to map over ``iterable``
+    :param iterable: Iterable to map ``f`` over
+    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    """
     return cast(Maybe[Iterable[B]], map_m_(Just, f, iterable))
 
 
 def sequence(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
+    """
+    Evaluate each :class:`Maybe` in `iterable` from left to right
+    and collect the results
+
+    :example:
+    >>> sequence([Just(v) for v in range(3)])
+    Just((0, 1, 2))
+
+    :param iterable: The iterable to collect results from
+    :returns: ``Maybe`` of collected results
+    """
     return cast(Maybe[Iterable[A]], sequence_(Just, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], Maybe[bool]],
              iterable: Iterable[A]) -> Maybe[Iterable[A]]:
+    """
+    Map each element in ``iterable`` by applying ``f``,
+    filter the results by the value returned by ``f``
+    and combine from left to right.
+
+    :example:
+    >>> filter_m(lambda v: Just(v % 2 == 0), range(2))
+    Just((0, 2))
+
+    :param f: Function to map ``iterable`` by
+    :param iterable: Iterable to map by ``f``
+    :return:
+    """
     return cast(Maybe[Iterable[A]], filter_m_(Just, f, iterable))
 
 

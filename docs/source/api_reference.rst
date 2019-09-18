@@ -64,11 +64,34 @@ State
     :special-members:
     :exclude-members: __weakref__,__setattr__,__repr__
 
+IO
+----
+
+.. automodule:: pfun.io
+    :members:
+    :special-members:
+    :exclude-members: __weakref__,__setattr__,__repr__
+
+Trampoline
+----------
+
+..autofunction:: pfun.trampoline
+    :members:
+    :special-members:
+    :exclude-members: __weakref__,__setattr__,__repr__
+
 
 Cont
 ----
 
 .. automodule:: pfun.cont
+    :members:
+    :special-members:
+    :exclude-members: __weakref__,__setattr__,__repr__
+
+Free
+----
+.. automodule:: pfun.free
     :members:
     :special-members:
     :exclude-members: __weakref__,__setattr__,__repr__
@@ -97,6 +120,18 @@ List
 curry
 -----
 .. autofunction:: pfun.curry
+
+compose
+-------
+.. autofunction:: pfun.compose
+
+always
+------
+.. autofunction:: pfun.always
+
+pipeline
+--------
+.. autofunction:: pfun.pipeline
 
 identity
 --------
