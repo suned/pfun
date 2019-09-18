@@ -222,10 +222,10 @@ def filter_m(f: Callable[[A], Maybe[bool]],
 
 S = TypeVar('S')
 R = TypeVar('R')
-Wrap = Generator[Maybe[S], S, R]
+Do = Generator[Maybe[S], S, R]
 
 
-def unwrap(f: Callable[..., Wrap[Any, R]]) -> Callable[..., Maybe[R]]:
+def do(f: Callable[..., Do[Any, R]]) -> Callable[..., Maybe[R]]:
     return monadic(Just, f)
 
 

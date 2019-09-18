@@ -22,7 +22,7 @@ _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 _MAYBE = 'pfun.maybe.maybe'
-_MAYBE_UNWRAP = 'pfun.maybe.unwrap'
+_MAYBE_DO = 'pfun.maybe.do'
 _RESULT = 'pfun.result.result'
 _IO = 'pfun.io.io'
 _READER = 'pfun.reader.reader'
@@ -217,7 +217,7 @@ class PFun(Plugin):
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
-        if fullname == _MAYBE_UNWRAP:
+        if fullname == _MAYBE_DO:
             return _variadic_decorator_hook
         if fullname == _MAYBE:
             return _variadic_decorator_hook

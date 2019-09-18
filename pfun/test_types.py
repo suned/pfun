@@ -1,11 +1,10 @@
-from .maybe import unwrap, Just, Wrap
-from typing import Any
+from . import maybe
 
 
-@unwrap
-def f() -> Wrap[int, str]:
-    a = yield Just(1)
-    b = yield Just(2)
+@maybe.do
+def f() -> maybe.Do[int, str]:
+    a = yield maybe.Just(1)
+    b = yield maybe.Just(2)
     return str(a + b)
 
 
