@@ -309,7 +309,7 @@ from typing import Any
 def heterogenous_do() -> Do[Any, str]:
     an_int = yield Just(1)  # type: int
     a_str = yield Just('an_int was: ')  # type: str
-    return str(an_str) + an_int
+    return str(a_str) + an_int
 ```
 ## Immutable Objects and Data Structures
 ### List
