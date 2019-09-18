@@ -247,9 +247,9 @@ The `None` value is the result of the computation (which is nothing, because all
 ### IO
 How do you make io operations referentially transparent? Is io not inherently stateful?
 
-### Automatically Unwrapping/Wrapping Monadic Values
-Sometimes you want to combine multiple unwrapped monadic values and combine them, 
-like in the example `get_full_name` function below:
+### Combining Unwrapped Values
+Sometimes you want to combine multiple unwrapped monadic values 
+like in the `get_full_name` function below:
 ```python
 from pfun.maybe import Just, Maybe
 
@@ -308,8 +308,8 @@ from typing import Any
 @do
 def heterogenous_do() -> Do[Any, str]:
     an_int = yield Just(1)  # type: int
-    a_str = yield Justh(str)  # type: str
-    return str(an_int) + a_str
+    a_str = yield Just('an_int was: ')  # type: str
+    return str(an_str) + an_int
 ```
 ## Immutable Objects and Data Structures
 ### List
