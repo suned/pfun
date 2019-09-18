@@ -11,7 +11,8 @@ from mypy.types import (
     TypeVarType,
     Overloaded,
     TypeVarId,
-    TypeVarDef
+    TypeVarDef,
+    AnyType
 )
 from mypy.nodes import ClassDef, ARG_POS
 from mypy import checkmember, infer
@@ -21,6 +22,7 @@ _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 _MAYBE = 'pfun.maybe.maybe'
+_MAYBE_UNWRAP = 'pfun.maybe.unwrap'
 _RESULT = 'pfun.result.result'
 _IO = 'pfun.io.io'
 _READER = 'pfun.reader.reader'
@@ -204,6 +206,10 @@ def _and_then_hook(context: FunctionContext) -> Type:
     return context.default_return_type
 
 
+def _do_hook(context: FunctionContext) -> Type:
+    return AnyType(6)
+
+
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
@@ -211,6 +217,8 @@ class PFun(Plugin):
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
+        if fullname == _MAYBE_UNWRAP:
+            return _variadic_decorator_hook
         if fullname == _MAYBE:
             return _variadic_decorator_hook
         if fullname == _RESULT:

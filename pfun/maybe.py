@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Callable, Any, Sequence, Iterable, cast
+from typing import Generic, TypeVar, Callable, Any, Sequence, Iterable, cast, Generator
 from functools import wraps
 from abc import ABC, abstractmethod
 
@@ -6,6 +6,7 @@ from .immutable import Immutable
 from .list import List
 from .curry import curry
 from .monad import Monad, map_m_, sequence_, filter_m_
+from .monadic import monadic
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -217,6 +218,15 @@ def sequence(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
 def filter_m(f: Callable[[A], Maybe[bool]],
              iterable: Iterable[A]) -> Maybe[Iterable[A]]:
     return cast(Maybe[Iterable[A]], filter_m_(Just, f, iterable))
+
+
+S = TypeVar('S')
+R = TypeVar('R')
+Wrap = Generator[Maybe[S], S, R]
+
+
+def unwrap(f: Callable[..., Wrap[Any, R]]) -> Callable[..., Maybe[R]]:
+    return monadic(Just, f)
 
 
 __all__ = [
