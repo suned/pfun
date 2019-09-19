@@ -4,6 +4,7 @@ from .immutable import Immutable
 from .monad import sequence_, map_m_, filter_m_, Monad
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
+from .monadic import monadic
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -120,6 +121,10 @@ def sequence(iterable: Iterable[State[A, B]]) -> State[Iterable[A], B]:
 def filter_m(f: Callable[[A], State[bool, B]],
              iterable: Iterable[A]) -> State[Iterable[A], B]:
     return cast(State[Iterable[A], B], filter_m_(value, f, iterable))
+
+
+def do(f):
+    return monadic(value, f)
 
 
 __all__ = ['State', 'put', 'get', 'value', 'map_m', 'sequence', 'filter_m']

@@ -5,6 +5,7 @@ from .immutable import Immutable
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
 from .monad import Monad, map_m_, sequence_, filter_m_
+from .monadic import monadic
 
 Context = TypeVar('Context')
 Result_ = TypeVar('Result_')
@@ -136,6 +137,10 @@ def sequence(iterable: Iterable[Reader[Context, B]]
 def filter_m(f: Callable[[A], Reader[Context, bool]],
              iterable: Iterable[A]) -> Reader[Context, Iterable[A]]:
     return cast(Reader[Context, Iterable[A]], filter_m_(value, f, iterable))
+
+
+def do(f):
+    return monadic(value, f)
 
 
 __all__ = ['Reader', 'reader', 'value', 'map_m', 'sequence', 'filter_m']
