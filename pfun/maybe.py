@@ -7,6 +7,8 @@ from .list import List
 from .curry import curry
 from .monad import Monad, map_m_, sequence_, filter_m_
 from .monadic import monadic
+from .trampoline import Done, Call, Trampoline
+from .either import Either
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -226,7 +228,21 @@ Do = Generator[Maybe[S], S, R]
 
 
 def do(f: Callable[..., Do[Any, R]]) -> Callable[..., Maybe[R]]:
-    return monadic(Just, f)
+    return monadic(Just, f, tail_rec)
+
+
+def tail_rec(f: Callable[[A], Maybe[Either[A, B]]],
+             a: A) -> Trampoline[Maybe[B]]:
+    maybe = f(a)
+    if not maybe:
+        # Nothing
+        return Done(maybe)
+    either = maybe.get
+    if either:
+        # Right
+        return Done(Just(either.b))
+    # Left
+    return Call(lambda: tail_rec(f, either.a))
 
 
 __all__ = [

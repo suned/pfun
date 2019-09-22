@@ -122,7 +122,7 @@ class Left(Either[A, B]):
         return isinstance(other, Left) and self.a == other.a
 
     def __bool__(self) -> bool:
-        return True
+        return False
 
     def __repr__(self):
         return f'Left({repr(self.a)})'
@@ -155,7 +155,7 @@ class Right(Either[A, B]):
         return isinstance(other, Right) and other.b == self.b
 
     def __bool__(self):
-        return False
+        return True
 
     def and_then(self, f):
         return self

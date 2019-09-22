@@ -1,6 +1,7 @@
 from functools import wraps
 from pfun.monad import Monad
-from pfun.trampoline import Call, Done
+from pfun.trampoline import Trampoline
+from pfun.either import Left, Right
 from pfun.curry import curry
 from typing import Generator, TypeVar, Callable, Any
 
@@ -9,7 +10,9 @@ M = TypeVar('M', bound=Monad)
 
 @curry
 def monadic(
-    value: Callable[[Any], M], f: Callable[..., Generator[M, Any, Any]]
+    value: Callable[[Any], M],
+    f: Callable[..., Generator[M, Any, Any]],
+    tail_rec: Callable[[Any], Trampoline[M]]
 ) -> Callable[..., M]:
     @wraps(f)
     def decorator(*args, **kwargs):
@@ -17,12 +20,11 @@ def monadic(
 
         def cont(v) -> M:
             try:
-                # TODO trampoline. BUT HOW??
-                return g.send(v).and_then(cont)
+                return g.send(v).map(Left)
             except StopIteration as e:
-                return value(e.value)
+                return value(Right(e.value))
 
         m = next(g)
-        return m.and_then(cont)
+        return m.and_then(lambda v: tail_rec(cont, v).run())
 
     return decorator

@@ -1,11 +1,11 @@
-from . import maybe
+from pfun.maybe import do, Just, Nothing, Do
 
 
-@maybe.do
-def f() -> maybe.Do[int, str]:
-    a = yield maybe.Just(1)
-    b = yield maybe.Just(2)
-    return str(a + b)
-
-
-reveal_type(f)
+@do
+def f(x) -> Do[int, int]:
+    l = []
+    for _ in range(x):
+        a = yield Just(1)
+        l.append(a)
+    a = yield Nothing()
+    return sum(l)
