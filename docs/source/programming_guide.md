@@ -19,9 +19,41 @@ plugins = pfun.mypy_plugin
 ## Immutable Objects and Data Structures
 ### Immutable
 
-`Immutable` is an abstract class to 
+`Immutable` makes a class (and all classes that inherit from it) immutable. The syntax is much the same
+as for `dataclass` or `NamedTuple`:
+
+```python
+class C(Immutable):
+    a: int
+
+class D(C):
+    b: int
+
+c = C(1)
+c.a = 2  # raises: FrozenInstanceError
+
+d = D(2, 2)  # 'D' inherits the members of C
+d.b = 2  # raises FrozenInstanceError
+```
+
+`Immutable` uses [dataclasses](https://docs.python.org/3/library/dataclasses.html) under the hood, so the entire `dataclasses` api is
+usable on `Immutable`:
+
+```python
+from dataclasses import field
+from typing import Tuple
+
+class C(Immutable):
+    l: Tuple[int] = field(default_factory=tuple)
+
+
+assert C().l == ()
+```
+In addition, if the `pfun` mypy plugin is enabled, mypy can check for assignments that will fail
+at runtime.
+
 ### List
-`List` is a functional style wrapper around `list` that prevents mutation
+`List` is a functional style list data structure.
 ```python
 from pfun import List
 
@@ -40,7 +72,7 @@ assert List(range(3)).reduce(sum) == 3
 assert List(range(3)).map(str) == ['0', '1', '2']
 ```
 ### Dict
-`Dict` is a functional style wrapper around `dict` that prevents mutation.
+`Dict` is a functional style dictionary.
 
 ```python
 from pfun import Dict
@@ -50,10 +82,41 @@ d2 = d.set('new_key', 'new_value')
 assert 'new_key' not in d and d2['new_key'] == 'new_value'
 ```
 
-## Utilities
-### compose
-### curry
+It supports the same api as `dict` which the exception of `__setitem__` which will raise an exception.
 
+## Useful Functions
+### compose
+
+`compose` makes it easy to compose functions while inferring the resulting type signature with mypy (if the `pfun` mypy plugin is enabled).
+`compose` composes functions right to left:
+
+```python
+from pfun import compose
+
+
+def f(x):
+    ...
+
+def g(x):
+    ...
+
+h = compose(f, g)  # h == lambda x: f(g(x))
+```
+
+### curry
+`curry` makes it easy to curry functions while inferring the resulting type signature with mypy (if the `pfun` mypy plugin is enabled).
+The functions returned by `curry` support both normal and curried call styles:
+
+```python
+from pfun import curry
+
+@curry
+def f(a: int, b: int, c: int = 2) -> int:
+    return a + b * c
+
+assert f(1, 1) == 3
+assert f(1)(1) == 3
+```
 
 ## Effectful (But Side-Effect Free) Functional Programming
 ### Maybe
@@ -185,9 +248,9 @@ def main():
 Ok, lets break that down: `Reader[Context, Result]` is an object holding a function that
 can take an object of type `Context` and produce a an object of type `Value`. So
 
-```Reader(lambda c: do_something(c.get_data())): Reader[Connection, str]```
+```ask().and_then(lambda c: do_something(c.get_data())): Reader[Connection, str]```
 
- means:
+means:
 make a `Reader` object that when given a `Connection` object produces a `str` by calling `do_something`.
 
 You can call `run` on a reader object to call the function it holds:
@@ -298,14 +361,36 @@ print(state.run(()))  # outputs (None, ('second element',))
 ```
 The `None` value is the result of the computation (which is nothing, because all we do is change the state), and `('second element',)` is the final state.
 ### IO
+A program that can't interact with the outside world isn't much use. But how can we keep our program pure and still interact with
+the outside world? The common solution is to use `IO` to separate the pure parts of our program from the unpure parts
 
+```python
+from pfun.io import get_line, put_line, IO
+
+name: IO[str] = get_line('What is you name? ')
+greeting: IO[str] = name.map(lambda s: 'Hello ' + s)
+print_: IO[None] = greeting.and_then(put_line)
+print_.run()
+```
+
+`get_line` creates an `IO` action that when run, will read a `str` from standard input. `IO` can be combined
+with `map` and `and_then` just like the other monads we have seen.
 ## Stack-Safefy and Recursion
+Its common to use recursion rather than looping in pure functional programming to avoid mutating a local variable.
+
+Consider e.g the following implementation of the factorial function:
+
 ```python
 def factorial(n: int) -> int:
     if n == 1:
         return 1
     return n * factorial(n - 1)
 ```
+Called with a large enough value for `n`, the recursive calls will overflow the python stack.
+
+A common solution to this problem in other languages that perform tail-call-optimisation is to rewrite the function
+to put the recursive call in tail-call position.
+
 ```python
 def factorial(n: int) -> int:
     
@@ -316,6 +401,12 @@ def factorial(n: int) -> int:
         
     return factorial_acc(n, 1)
 ```
+In Python however, this is not enough to solve the problem because Python does not perform tail-call-optimisation.
+
+In languages without tail-call-optimisation such as Python, its common to use a data structure called a trampoline
+to wrap the recursive calls into objects that can be interpreted in constant stack space, by letting the function
+return immediately at each recursive step.
+
 ```python
 from pfun.trampoline import Trampoline, Done, Call
 
@@ -329,6 +420,9 @@ def factorial(n: int) -> int:
 
     return factorial_acc(n, 1).run()
 ```
+However note that in most cases a recursive function can be rewritten into an iterative one
+that looks completely pure to the caller because it only mutates local variables:
+
 ```python
 def factorial(n: int) -> int:
     acc = 1
@@ -336,5 +430,6 @@ def factorial(n: int) -> int:
         acc *= i
     return acc
 ```
-Conclusion:
-- Use loops instead of recursion when its possible (and doesn't break referential transparency)
+This is the recommended
+way of solving recursive problems (when it doesn't break [referential transparency](https://en.wikipedia.org/wiki/Referential_transparency)), because it avoids overflowing the stack, and
+is often easier to understand.
