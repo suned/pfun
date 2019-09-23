@@ -139,35 +139,3 @@ def value(a: A) -> Cont[A, B]:
 
 
 __all__ = ['value', 'filter_m', 'sequence', 'map_m', 'Cont']
-
-lambda v: simply(1)
-return r(1)
-return of(1)
-return val(1)
-return unit(1)
-return bare(1)
-return only(1)
-return wrap(1)
-return just(1)  # might be confusing because its also used by Maybe monad
-return pure(1)
-return make(1)
-return naked(1)
-return plain(1)
-return value(1)
-return simply(1)
-return purely(1)
-return create(1)
-return merely(1)
-return result(1)  # might be confusing because its also used by Result monad
-return returns(1)
-
-
-@unwrap
-def change_password(user_id, old_password,
-                    new_password) -> Readers[User, Result[User]]:
-    user = yield get_user(user_id)
-    if user.check_password(old_password):
-        user = user.set_password(new_password)
-        yield add(user)
-        return Ok(user)
-    return Error(ValueError('Passwords did not match.'))
