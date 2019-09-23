@@ -6,7 +6,7 @@ from .immutable import Immutable
 from .list import List
 from .curry import curry
 from .monad import Monad, map_m_, sequence_, filter_m_
-from .monadic import monadic
+from .monadic import monadic_tail_rec
 from .trampoline import Done, Call, Trampoline
 from .either import Either
 
@@ -228,7 +228,7 @@ Do = Generator[Maybe[S], S, R]
 
 
 def do(f: Callable[..., Do[Any, R]]) -> Callable[..., Maybe[R]]:
-    return monadic(Just, f, tail_rec)
+    return monadic_tail_rec(Just, f, tail_rec)
 
 
 def tail_rec(f: Callable[[A], Maybe[Either[A, B]]],
@@ -236,13 +236,13 @@ def tail_rec(f: Callable[[A], Maybe[Either[A, B]]],
     maybe = f(a)
     if not maybe:
         # Nothing
-        return Done(maybe)
+        return Done(maybe)  # type: ignore
     either = maybe.get
     if either:
         # Right
-        return Done(Just(either.b))
+        return Done(Just(either.a))  # type: ignore
     # Left
-    return Call(lambda: tail_rec(f, either.a))
+    return Call(lambda: tail_rec(f, either.b))  # type: ignore
 
 
 __all__ = [
