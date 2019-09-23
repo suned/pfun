@@ -1,9 +1,10 @@
 from typing import Generic, Callable, TypeVar, Iterable, cast
 
-from .util import compose
 from .immutable import Immutable
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .trampoline import Trampoline, Done, Call
+from .util import identity
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -15,7 +16,7 @@ class Cont(Generic[A, B], Monad, Immutable):
     """
     Type that represents a function in continuation passing style.
     """
-    f: Callable[[Callable[[A], B]], B]
+    f: Callable[[Callable[[A], B]], Trampoline[B]]
 
     def and_then(self, f: 'Callable[[B], Cont[C, D]]') -> 'Cont[C, D]':
         """
@@ -29,7 +30,13 @@ class Cont(Generic[A, B], Monad, Immutable):
         the result of this function
         :return:
         """
-        return Cont(lambda c: self.run(lambda a: f(a).run(c)))  # type: ignore
+        return Cont(
+            lambda c: Call(
+                lambda: self.f(  # type: ignore
+                    lambda b: f(b).f(c)  # type: ignore
+                )
+            ).and_then(identity)
+        )  # yapf: disable
 
     def run(self, f: Callable[[A], B]) -> B:
         """
@@ -45,7 +52,7 @@ class Cont(Generic[A, B], Monad, Immutable):
         :return: the result of passing the return value
         of the wrapped function to ``f``
         """
-        return self.f(f)  # type: ignore
+        return self.f(f).run()  # type: ignore
 
     __call__ = run
 
@@ -61,7 +68,7 @@ class Cont(Generic[A, B], Monad, Immutable):
         :param f: The function to map over this continuation
         :return: Continuation mapped with ``f``
         """
-        return Cont(lambda c: self.run(compose(c, f)))  # type: ignore
+        return Cont(lambda c: self.f(c).map(f))  # type: ignore
 
 
 @curry
@@ -128,7 +135,39 @@ def value(a: A) -> Cont[A, B]:
     :param a: Constant value to wrap
     :return: :class:`Cont` wrapping the value
     """
-    return Cont(lambda cont: cont(a))
+    return Cont(lambda cont: Done(cont(a)))
 
 
 __all__ = ['value', 'filter_m', 'sequence', 'map_m', 'Cont']
+
+lambda v: simply(1)
+return r(1)
+return of(1)
+return val(1)
+return unit(1)
+return bare(1)
+return only(1)
+return wrap(1)
+return just(1)  # might be confusing because its also used by Maybe monad
+return pure(1)
+return make(1)
+return naked(1)
+return plain(1)
+return value(1)
+return simply(1)
+return purely(1)
+return create(1)
+return merely(1)
+return result(1)  # might be confusing because its also used by Result monad
+return returns(1)
+
+
+@unwrap
+def change_password(user_id, old_password,
+                    new_password) -> Readers[User, Result[User]]:
+    user = yield get_user(user_id)
+    if user.check_password(old_password):
+        user = user.set_password(new_password)
+        yield add(user)
+        return Ok(user)
+    return Error(ValueError('Passwords did not match.'))

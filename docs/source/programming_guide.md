@@ -2,6 +2,59 @@
 This section gives you an overview over functional programming and
 static type checking with `pfun`. This is a good place to start, especially if you're new to programming in monadic style.
 For a detailed documentation of all classes and functions, see [API Reference](api_reference.html).
+
+## MyPy Plugin
+
+The types provided by the Python `typing` module are often not flexible enough to provide
+precise typing of common functional design patterns. Fortunately, [mypy](http://mypy-lang.org/)
+(maybe the most widely used Python type-checker) makes it possible to write plugins that
+provide more precise types which enables you to find more bugs caused by
+type errors than would otherwise be possible. To enable the `pfun` mypy plugin,
+add the following to you mypy configuration:
+```
+[mypy]
+plugins = pfun.mypy_plugin
+```
+
+## Immutable Objects and Data Structures
+### Immutable
+
+`Immutable` is an abstract class to 
+### List
+`List` is a functional style wrapper around `list` that prevents mutation
+```python
+from pfun import List
+
+l = List(range(5))
+l2 = l.append(5)
+assert l == List(range(5)) and l2 == List(range(6))
+```
+It supports the same operations as `list`, with the exception of `__setitem__`, which
+will raise an Exception.
+
+In addition, `List` supplies functional operations such as `map` and `reduce` as
+instance methods
+
+```python
+assert List(range(3)).reduce(sum) == 3
+assert List(range(3)).map(str) == ['0', '1', '2']
+```
+### Dict
+`Dict` is a functional style wrapper around `dict` that prevents mutation.
+
+```python
+from pfun import Dict
+
+d = Dict(key='value')
+d2 = d.set('new_key', 'new_value')
+assert 'new_key' not in d and d2['new_key'] == 'new_value'
+```
+
+## Utilities
+### compose
+### curry
+
+
 ## Effectful (But Side-Effect Free) Functional Programming
 ### Maybe
 Say you have a function that can fail:
@@ -246,48 +299,42 @@ print(state.run(()))  # outputs (None, ('second element',))
 The `None` value is the result of the computation (which is nothing, because all we do is change the state), and `('second element',)` is the final state.
 ### IO
 
-## Immutable Objects and Data Structures
-### List
-`List` is a functional style wrapper around `list` that prevents mutation
+## Stack-Safefy and Recursion
 ```python
-from pfun import List
-
-l = List(range(5))
-l2 = l.append(5)
-assert l == List(range(5)) and l2 == List(range(6))
+def factorial(n: int) -> int:
+    if n == 1:
+        return 1
+    return n * factorial(n - 1)
 ```
-It supports the same operations as `list`, with the exception of `__setitem__`, which
-will raise an Exception.
-
-In addition, `List` supplies functional operations such as `map` and `reduce` as
-instance methods
-
 ```python
-assert List(range(3)).reduce(sum) == 3
-assert List(range(3)).map(str) == ['0', '1', '2']
+def factorial(n: int) -> int:
+    
+    def factorial_acc(n: int, acc: int) -> int:
+        if n == 1:
+            return acc
+        return factorial_acc(n - 1; n * acc)
+        
+    return factorial_acc(n, 1)
 ```
-### Dict
-`Dict` is a functional style wrapper around `dict` that prevents mutation.
-
 ```python
-from pfun import Dict
+from pfun.trampoline import Trampoline, Done, Call
 
-d = Dict(key='value')
-d2 = d.set('new_key', 'new_value')
-assert 'new_key' not in d and d2['new_key'] == 'new_value'
+
+def factorial(n: int) -> int:
+    
+    def factorial_acc(n: int, acc: int) -> Trampoline[int]:
+        if n == 1:
+            return Done(acc)
+        return Call(lambda: factorial_acc(n - 1, n * acc))
+
+    return factorial_acc(n, 1).run()
 ```
-### Immutable
-
-`Immutable` is an abstract class to 
-## Utilities
-### compose
-### curry
-
-
-## MyPy Plugin
-
-
+```python
+def factorial(n: int) -> int:
+    acc = 1
+    for i in range(1, n + 1):
+        acc *= i
+    return acc
 ```
-[mypy]
-plugins = pfun.mypy_plugin
-```
+Conclusion:
+- Use loops instead of recursion when its possible (and doesn't break referential transparency)
