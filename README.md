@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:100px ; height:100px "/>
+# <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:50% ; height:50% "/>
 
 
 - [Documentation](https://pfun.readthedocs.io/en/latest/)
