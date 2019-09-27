@@ -1,9 +1,13 @@
-# Programming Guide
+# Guide
 This section gives you an overview over functional programming and
 static type checking with `pfun`. This is a good place to start, especially if you're new to programming in monadic style.
 For a detailed documentation of all classes and functions, see [API Reference](api_reference.html).
 
-## MyPy Plugin
+## Install
+
+`pip install pfun`
+
+### MyPy Plugin
 
 The types provided by the Python `typing` module are often not flexible enough to provide
 precise typing of common functional design patterns. Fortunately, [mypy](http://mypy-lang.org/)
