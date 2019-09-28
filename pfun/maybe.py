@@ -6,7 +6,7 @@ from .immutable import Immutable
 from .list import List
 from .curry import curry
 from .monad import Monad, map_m_, sequence_, filter_m_
-from .monadic import monadic_tail_rec
+from .for_m import for_m_tail_rec
 from .trampoline import Done, Call, Trampoline
 from .either import Either
 
@@ -224,11 +224,26 @@ def filter_m(f: Callable[[A], Maybe[bool]],
 
 S = TypeVar('S')
 R = TypeVar('R')
-Do = Generator[Maybe[S], S, R]
+Maybes = Generator[Maybe[S], S, R]
 
 
-def do(f: Callable[..., Do[Any, R]]) -> Callable[..., Maybe[R]]:
-    return monadic_tail_rec(Just, f, tail_rec)
+def for_m(f: Callable[..., Maybes[Any, R]]) -> Callable[..., Maybe[R]]:
+    """
+    Decorator for functions that
+    return a generator of maybes and a final result.
+    Iteraters over the yielded maybes and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @for_m
+    ... def f() -> Maybes[int, int]:
+    ...     a = yield Just(2)
+    ...     b = yield Just(2)
+    ...     return a + b
+    >>> f()
+    Just(4)
+    """
+    return for_m_tail_rec(Just, f, tail_rec)
 
 
 def tail_rec(f: Callable[[A], Maybe[Either[A, B]]],
@@ -253,5 +268,6 @@ __all__ = [
     'flatten',
     'map_m',
     'sequence',
-    'filter_m'
+    'filter_m',
+    'for_m'
 ]

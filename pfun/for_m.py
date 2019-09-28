@@ -9,7 +9,7 @@ M = TypeVar('M', bound=Monad)
 
 
 @curry
-def monadic(
+def for_m_(
     value: Callable[[Any], M], f: Callable[..., Generator[M, Any, Any]]
 ) -> Callable[..., M]:
     @wraps(f)
@@ -29,7 +29,7 @@ def monadic(
 
 
 @curry
-def monadic_tail_rec(
+def for_m_tail_rec(
     value: Callable[[Any], M],
     f: Callable[..., Generator[M, Any, Any]],
     tail_rec: Callable[[Callable[[Any], Any], Any], Trampoline] = None
