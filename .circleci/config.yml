@@ -39,6 +39,9 @@ jobs:
             name: Check version
             command: poetry run python scripts/check_version.py pyproject.toml $CIRCLE_TAG
       - run:
+          name: Install dependencies
+          command: poetry install
+      - run:
             name: Build
             command: poetry build
       - run:
