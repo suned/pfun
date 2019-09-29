@@ -7,15 +7,24 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Result(Either[A, Exception]):
+class Result(Either[Exception, A]):
+    """
+    Represents computations that may fail with an exception
+    """
     pass
 
 
-class Ok(Result[A], Left[A, Exception]):
+class Ok(Result[A], Right[Exception, A]):
+    """
+    Represents a succesful computation
+    """
     pass
 
 
-class Error(Result[A], Right[A, Exception]):
+class Error(Result[A], Left[Exception, A]):
+    """
+    Represents a failed computation
+    """
     b: Exception
 
 

@@ -16,7 +16,7 @@ B = TypeVar('B')
 
 class Reader(Immutable, Generic[Context, Result_], Monad):
     """
-    Class that represents a computation that is not yet completed, but
+    Represents a computation that is not yet completed, but
     will complete once given an object of type ``Context``
 
     """
@@ -96,6 +96,11 @@ def value(v: Result_) -> Reader[Context, Result_]:
 
 
 def ask() -> Reader[Context, Context]:
+    """
+    Make a :class:`Reader` that just returns the context.
+
+    :return: :class:`Reader` that will return the context when run
+    """
     return Reader(lambda c: Done(c))
 
 
@@ -124,18 +129,56 @@ def reader(f: Callable[..., B]) -> Callable[..., Reader[Context, B]]:
 @curry
 def map_m(f: Callable[[A], Reader[Context, B]],
           iterable: Iterable[A]) -> Reader[Context, Iterable[B]]:
+    """
+    Map each in element in ``iterable`` to
+    a :class:`Reader` by applying ``f``,
+    combine the elements by ``and_then``
+    from left to right and collect the results
+
+    :example:
+    >>> map_m(value, range(3)).run(...)
+    (0, 1, 2)
+
+    :param f: Function to map over ``iterable``
+    :param iterable: Iterable to map ``f`` over
+    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    """
     return cast(Reader[Context, Iterable[B]], map_m_(value, f, iterable))
 
 
 def sequence(iterable: Iterable[Reader[Context, B]]
              ) -> Reader[Context, Iterable[B]]:
+    """
+    Evaluate each :class:`Reader` in `iterable` from left to right
+    and collect the results
+
+    :example:
+    >>> sequence([value(v) for v in range(3)]).run(...)
+    (0, 1, 2)
+
+    :param iterable: The iterable to collect results from
+    :returns: :class:`Reader` of collected results
+    """
     return cast(Reader[Context, Iterable[B]], sequence_(value, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], Reader[Context, bool]],
              iterable: Iterable[A]) -> Reader[Context, Iterable[A]]:
+    """
+    Map each element in ``iterable`` by applying ``f``,
+    filter the results by the value returned by ``f``
+    and combine from left to right.
+
+    :example:
+    >>> filter_m(lambda v: value(v % 2 == 0), range(3)).run(...)
+    (0, 2)
+
+    :param f: Function to map ``iterable`` by
+    :param iterable: Iterable to map by ``f``
+    :return:
+    """
     return cast(Reader[Context, Iterable[A]], filter_m_(value, f, iterable))
 
 
-__all__ = ['Reader', 'reader', 'value', 'map_m', 'sequence', 'filter_m']
+__all__ = ['Reader', 'reader', 'value', 'map_m', 'sequence', 'filter_m', 'ask']

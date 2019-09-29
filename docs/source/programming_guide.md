@@ -1,7 +1,126 @@
-# Programming Guide
+# Guide
 This section gives you an overview over functional programming and
-static type checking with `pfun`. This is a good place to start, especially if you're new to programming in monadic style.
+static type checking with `pfun`. This is a good place to start, especially if you're new to functional programming.
 For a detailed documentation of all classes and functions, see [API Reference](api_reference.html).
+
+## Install
+
+`pip install pfun`
+
+### MyPy Plugin
+
+The types provided by the Python `typing` module are often not flexible enough to provide
+precise typing of common functional design patterns. If you use [mypy](http://mypy-lang.org/), `pfun`
+provides a plugin that enables more precise types which can identify more bugs caused by
+type errors. To enable the `pfun` mypy plugin,
+add the following to you mypy configuration:
+```
+[mypy]
+plugins = pfun.mypy_plugin
+```
+
+## Immutable Objects and Data Structures
+### Immutable
+
+`Immutable` makes a class (and all classes that inherit from it) immutable. The syntax is much the same
+as for `dataclass` or `NamedTuple`:
+
+```python
+class C(Immutable):
+    a: int
+
+class D(C):
+    b: int
+
+c = C(1)
+c.a = 2  # raises: FrozenInstanceError
+
+d = D(2, 2)  # 'D' inherits the members of C
+d.b = 2  # raises FrozenInstanceError
+```
+
+`Immutable` uses [dataclasses](https://docs.python.org/3/library/dataclasses.html) under the hood, so for detailed
+usage documentation, see the official documentation. You can use the entire `dataclass` api.
+
+```python
+from dataclasses import field
+from typing import Tuple
+
+class C(Immutable):
+    l: Tuple[int] = field(default_factory=tuple)
+
+
+assert C().l == ()
+```
+In addition, if the `pfun` mypy plugin is enabled, mypy can check for assignments that will fail
+at runtime.
+
+### List
+`List` is a functional style list data structure.
+```python
+from pfun import List
+
+l = List(range(5))
+l2 = l.append(5)
+assert l == List(range(5)) and l2 == List(range(6))
+```
+It supports the same operations as `list`, with the exception of `__setitem__`, which
+will raise an Exception.
+
+In addition, `List` supplies functional operations such as `map` and `reduce` as
+instance methods
+
+```python
+assert List(range(3)).reduce(sum) == 3
+assert List(range(3)).map(str) == ['0', '1', '2']
+```
+### Dict
+`Dict` is a functional style dictionary.
+
+```python
+from pfun import Dict
+
+d = Dict(key='value')
+d2 = d.set('new_key', 'new_value')
+assert 'new_key' not in d and d2['new_key'] == 'new_value'
+```
+
+It supports the same api as `dict` which the exception of `__setitem__` which will raise an exception.
+
+## Useful Functions
+### compose
+
+`compose` makes it easy to compose functions while inferring the resulting type signature with mypy (if the `pfun` mypy plugin is enabled).
+`compose` composes functions right to left:
+
+```python
+from pfun import compose
+
+
+def f(x):
+    ...
+
+def g(x):
+    ...
+
+h = compose(f, g)  # h == lambda x: f(g(x))
+```
+
+### curry
+`curry` makes it easy to curry functions while inferring the resulting type signature with mypy (if the `pfun` mypy plugin is enabled).
+The functions returned by `curry` support both normal and curried call styles:
+
+```python
+from pfun import curry
+
+@curry
+def f(a: int, b: int, c: int = 2) -> int:
+    return a + b * c
+
+assert f(1, 1) == 3
+assert f(1)(1) == 3
+```
+
 ## Effectful (But Side-Effect Free) Functional Programming
 ### Maybe
 Say you have a function that can fail:
@@ -129,48 +248,6 @@ def main():
     result = calls_f().run(connection)
     print(result)
 ```
-Ok, lets break that down: `Reader[Context, Result]` is an object holding a function that
-can take an object of type `Context` and produce a an object of type `Value`. So
-
-```Reader(lambda c: do_something(c.get_data())): Reader[Connection, str]```
-
- means:
-make a `Reader` object that when given a `Connection` object produces a `str` by calling `do_something`.
-
-You can call `run` on a reader object to call the function it holds:
-
-```python
-connection = Connection('host:user:password')
-data = connection.get_data()
-assert do_something(data) == Reader(lambda c: do_something(c.get_data())).run(connection)
-```
-
-`value(v: Value): Reader[Any, Value]` is a function that simply makes a `Reader` object that returns `v` no matter the context.
-In other words:
-
-```python
-value(1) == Reader(lambda _: 1)
-```
-
-This is useful for making monadic functions, such as `f`.
-
-
-Finally `ask(): Reader[Context, Context]` is a function that simply returns the `Context`
-that will eventually be given by a caller of run. In other words
-
-```ask().run(1) == 1```
-
-Phew, that was kind of a lot to take in. Is this really better than just passing the `Connection` instance around?
-Well, notice that:
-
-- `calls_f` doesn't mention the connection at all (except for in the type signature).
-This may not seem like a big deal in this contrived example, but if `main`
-and `f` were separated not by 1 but many functions, passing around the `Connection`
-instance would be pretty tedious.
-- `calls_f` has no way of modifying the `Connection` that gets passed around. Even if
-`calls_f` tried to do all sorts of tricks by calling `ask`, the `Connection` instance that
-is eventually passed to `f` is unchanged. In other words, your program is guaranteed to be
-side-effect free.
 
 
 ### Writer
@@ -245,49 +322,79 @@ print(state.run(()))  # outputs (None, ('second element',))
 ```
 The `None` value is the result of the computation (which is nothing, because all we do is change the state), and `('second element',)` is the final state.
 ### IO
-
-## Immutable Objects and Data Structures
-### List
-`List` is a functional style wrapper around `list` that prevents mutation
-```python
-from pfun import List
-
-l = List(range(5))
-l2 = l.append(5)
-assert l == List(range(5)) and l2 == List(range(6))
-```
-It supports the same operations as `list`, with the exception of `__setitem__`, which
-will raise an Exception.
-
-In addition, `List` supplies functional operations such as `map` and `reduce` as
-instance methods
+A program that can't interact with the outside world isn't much use. But how can we keep our program pure and still interact with
+the outside world? The common solution is to use `IO` to separate the pure parts of our program from the unpure parts
 
 ```python
-assert List(range(3)).reduce(sum) == 3
-assert List(range(3)).map(str) == ['0', '1', '2']
+from pfun.io import get_line, put_line, IO
+
+name: IO[str] = get_line('What is you name? ')
+greeting: IO[str] = name.map(lambda s: 'Hello ' + s)
+print_: IO[None] = greeting.and_then(put_line)
+print_.run()
 ```
-### Dict
-`Dict` is a functional style wrapper around `dict` that prevents mutation.
+
+`get_line` creates an `IO` action that when run, will read a `str` from standard input. `IO` can be combined
+with `map` and `and_then` just like the other monads we have seen.
+
+> **WARNING**: `IO` is not stack-safe under all circumstances. Combining a large number of `IO`s with `and_then`
+> may lead to `RecursionError`
+
+## Stack-Safefy and Recursion
+Its common to use recursion rather than looping in pure functional programming to avoid mutating a local variable.
+
+Consider e.g the following implementation of the factorial function:
 
 ```python
-from pfun import Dict
-
-d = Dict(key='value')
-d2 = d.set('new_key', 'new_value')
-assert 'new_key' not in d and d2['new_key'] == 'new_value'
+def factorial(n: int) -> int:
+    if n == 1:
+        return 1
+    return n * factorial(n - 1)
 ```
-### Immutable
+Called with a large enough value for `n`, the recursive calls will overflow the python stack.
 
-`Immutable` is an abstract class to 
-## Utilities
-### compose
-### curry
+A common solution to this problem in other languages that perform tail-call-optimisation is to rewrite the function
+to put the recursive call in tail-call position.
 
-
-## MyPy Plugin
-
-
+```python
+def factorial(n: int) -> int:
+    
+    def factorial_acc(n: int, acc: int) -> int:
+        if n == 1:
+            return acc
+        return factorial_acc(n - 1; n * acc)
+        
+    return factorial_acc(n, 1)
 ```
-[mypy]
-plugins = pfun.mypy_plugin
+In Python however, this is not enough to solve the problem because Python does not perform tail-call-optimisation.
+
+In languages without tail-call-optimisation such as Python, its common to use a data structure called a trampoline
+to wrap the recursive calls into objects that can be interpreted in constant stack space, by letting the function
+return immediately at each recursive step.
+
+```python
+from pfun.trampoline import Trampoline, Done, Call
+
+
+def factorial(n: int) -> int:
+    
+    def factorial_acc(n: int, acc: int) -> Trampoline[int]:
+        if n == 1:
+            return Done(acc)
+        return Call(lambda: factorial_acc(n - 1, n * acc))
+
+    return factorial_acc(n, 1).run()
 ```
+However note that in most cases a recursive function can be rewritten into an iterative one
+that looks completely pure to the caller because it only mutates local variables:
+
+```python
+def factorial(n: int) -> int:
+    acc = 1
+    for i in range(1, n + 1):
+        acc *= i
+    return acc
+```
+This is the recommended
+way of solving recursive problems (when it doesn't break [referential transparency](https://en.wikipedia.org/wiki/Referential_transparency)), because it avoids overflowing the stack, and
+is often easier to understand.

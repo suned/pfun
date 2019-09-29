@@ -159,16 +159,54 @@ def value(a: A) -> List[A]:
 @curry
 def map_m(f: Callable[[A], List[B]],
           iterable: Iterable[A]) -> List[Iterable[B]]:
+    """
+    Map each in element in ``iterable`` to
+    an :class:`List` by applying ``f``,
+    combine the elements by ``and_then``
+    from left to right and collect the results
+
+    :example:
+    >>> map_m(Just, range(3))
+    Just((0, 1, 2))
+
+    :param f: Function to map over ``iterable``
+    :param iterable: Iterable to map ``f`` over
+    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    """
     return cast(List[Iterable[B]], map_m_(value, f, iterable))
 
 
 def sequence(iterable: Iterable[List[A]]) -> List[Iterable[A]]:
+    """
+    Evaluate each :class:`List` in `iterable` from left to right
+    and collect the results
+
+    :example:
+    >>> sequence([Just(v) for v in range(3)])
+    Just((0, 1, 2))
+
+    :param iterable: The iterable to collect results from
+    :returns: ``List`` of collected results
+    """
     return cast(List[Iterable[A]], sequence_(value, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], List[bool]],
              iterable: Iterable[A]) -> List[Iterable[A]]:
+    """
+    Map each element in ``iterable`` by applying ``f``,
+    filter the results by the value returned by ``f``
+    and combine from left to right.
+
+    :example:
+    >>> filter_m(lambda v: Just(v % 2 == 0), range(3))
+    Just((0, 2))
+
+    :param f: Function to map ``iterable`` by
+    :param iterable: Iterable to map by ``f``
+    :return:
+    """
     return cast(List[Iterable[A]], filter_m_(value, f, iterable))
 
 

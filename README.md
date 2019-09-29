@@ -1,5 +1,4 @@
-# ![pfun](https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true)
-[![CircleCI](https://circleci.com/gh/suned/pfun/tree/master.svg?style=svg)](https://circleci.com/gh/suned/pfun/tree/master)
+# <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:50px ; height:50px "/>
 
 
 - [Documentation](https://pfun.readthedocs.io/en/latest/)
