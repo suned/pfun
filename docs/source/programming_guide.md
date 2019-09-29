@@ -1,6 +1,6 @@
 # Guide
 This section gives you an overview over functional programming and
-static type checking with `pfun`. This is a good place to start, especially if you're new to programming in monadic style.
+static type checking with `pfun`. This is a good place to start, especially if you're new to functional programming.
 For a detailed documentation of all classes and functions, see [API Reference](api_reference.html).
 
 ## Install
@@ -10,10 +10,9 @@ For a detailed documentation of all classes and functions, see [API Reference](a
 ### MyPy Plugin
 
 The types provided by the Python `typing` module are often not flexible enough to provide
-precise typing of common functional design patterns. Fortunately, [mypy](http://mypy-lang.org/)
-(maybe the most widely used Python type-checker) makes it possible to write plugins that
-provide more precise types which enables you to find more bugs caused by
-type errors than would otherwise be possible. To enable the `pfun` mypy plugin,
+precise typing of common functional design patterns. If you use [mypy](http://mypy-lang.org/), `pfun`
+provides a plugin that enables more precise types which can identify more bugs caused by
+type errors. To enable the `pfun` mypy plugin,
 add the following to you mypy configuration:
 ```
 [mypy]
@@ -40,8 +39,8 @@ d = D(2, 2)  # 'D' inherits the members of C
 d.b = 2  # raises FrozenInstanceError
 ```
 
-`Immutable` uses [dataclasses](https://docs.python.org/3/library/dataclasses.html) under the hood, so the entire `dataclasses` api is
-usable on `Immutable`:
+`Immutable` uses [dataclasses](https://docs.python.org/3/library/dataclasses.html) under the hood, so for detailed
+usage documentation, see the official documentation. You can use the entire `dataclass` api.
 
 ```python
 from dataclasses import field
@@ -249,48 +248,6 @@ def main():
     result = calls_f().run(connection)
     print(result)
 ```
-Ok, lets break that down: `Reader[Context, Result]` is an object holding a function that
-can take an object of type `Context` and produce a an object of type `Value`. So
-
-```ask().and_then(lambda c: do_something(c.get_data())): Reader[Connection, str]```
-
-means:
-make a `Reader` object that when given a `Connection` object produces a `str` by calling `do_something`.
-
-You can call `run` on a reader object to call the function it holds:
-
-```python
-connection = Connection('host:user:password')
-data = connection.get_data()
-assert do_something(data) == Reader(lambda c: do_something(c.get_data())).run(connection)
-```
-
-`value(v: Value): Reader[Any, Value]` is a function that simply makes a `Reader` object that returns `v` no matter the context.
-In other words:
-
-```python
-value(1) == Reader(lambda _: 1)
-```
-
-This is useful for making monadic functions, such as `f`.
-
-
-Finally `ask(): Reader[Context, Context]` is a function that simply returns the `Context`
-that will eventually be given by a caller of run. In other words
-
-```ask().run(1) == 1```
-
-Phew, that was kind of a lot to take in. Is this really better than just passing the `Connection` instance around?
-Well, notice that:
-
-- `calls_f` doesn't mention the connection at all (except for in the type signature).
-This may not seem like a big deal in this contrived example, but if `main`
-and `f` were separated not by 1 but many functions, passing around the `Connection`
-instance would be pretty tedious.
-- `calls_f` has no way of modifying the `Connection` that gets passed around. Even if
-`calls_f` tried to do all sorts of tricks by calling `ask`, the `Connection` instance that
-is eventually passed to `f` is unchanged. In other words, your program is guaranteed to be
-side-effect free.
 
 
 ### Writer
@@ -379,6 +336,10 @@ print_.run()
 
 `get_line` creates an `IO` action that when run, will read a `str` from standard input. `IO` can be combined
 with `map` and `and_then` just like the other monads we have seen.
+
+> **WARNING**: `IO` is not stack-safe under all circumstances. Combining a large number of `IO`s with `and_then`
+> may lead to `RecursionError`
+
 ## Stack-Safefy and Recursion
 Its common to use recursion rather than looping in pure functional programming to avoid mutating a local variable.
 
