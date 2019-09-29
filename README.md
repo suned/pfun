@@ -1,28 +1,18 @@
-# `pfun`
-Statically typed functional programming in Python 3.
+# <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:50px ; height:50px "/>
 
-Build Status: 
 
-[![CircleCI](https://circleci.com/gh/suned/pfun/tree/master.svg?style=svg)](https://circleci.com/gh/suned/pfun/tree/master)
+- [Documentation](https://pfun.readthedocs.io/en/latest/)
+- [Examples](https://github.com/suned/pfun/tree/master/examples)
+- [Known issues](https://github.com/suned/pfun/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 ## Install
 
 `pip install pfun`
 
-## Documentation
-
-at [read the docs](readthedocs.com).
-
 ## Development
 
-### Build
+Requires [poetry](https://poetry.eustace.io/)
 
-`poetry build`
-
-### Test
-
-`poetry run pytest`
-
-### Build docs
-
-`poetry run sphinx-build -b html docs/source docs/build`
+- Install dependencies with `poetry install`
+- Build documentation with `poetry run sphinx-build -b html docs/source docs/build`
+- Run tests with `poetry run pytest`

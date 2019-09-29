@@ -6,8 +6,7 @@ from . import writer
 from . import state
 from . import result
 from . import io
-# from . import operator
-from .util import (identity, compose, Unary, Predicate)
+from .util import (identity, compose, pipeline, Unary, Predicate, always)
 from .dict import Dict
 from .list import List
 from .curry import curry
@@ -22,6 +21,8 @@ __all__ = [
     'io',
     'identity',
     'compose',
+    'pipeline',
+    'always',
     'Dict',
     'List',
     'curry',

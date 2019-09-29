@@ -7,6 +7,9 @@ from .curry import curry
 
 
 class Monad(Functor, ABC):
+    """
+    Base class for all monadic types
+    """
     @abstractmethod
     def and_then(self, f: Callable[[Any], Any]) -> 'Monad':
         pass

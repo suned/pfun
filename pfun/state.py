@@ -12,15 +12,14 @@ C = TypeVar('C')
 
 class State(Generic[B, A], Immutable, Monad):
     """
-    Class representing a computation that is not yet complete,
+    Represents a computation that is not yet complete,
     but will complete when given a state of type A
     """
     f: Callable[[A], Trampoline[Tuple[B, A]]]
 
     def and_then(self, f: 'Callable[[B], State[C, A]]') -> 'State[C, A]':
         """
-        Chain together state computations,
-        keeping track of state without mutable state
+        Chain together stateful computations
 
         :example:
         >>> get().and_then(
@@ -67,7 +66,7 @@ class State(Generic[B, A], Immutable, Monad):
 
 def put(a: A) -> State[None, A]:
     """
-    Update the state in the current computation
+    Update the current state
 
     :example:
     >>> put('state').run('')
@@ -76,7 +75,7 @@ def put(a: A) -> State[None, A]:
     :param a: The new state
     :return: :class:`State` with ``a`` as the new state
     """
-    return State(lambda state: (None, a))  # type: ignore
+    return State(lambda state: Done((None, a)))
 
 
 def get() -> State[A, A]:
@@ -109,16 +108,54 @@ def value(b: B) -> State[B, A]:
 @curry
 def map_m(f: Callable[[A], State[A, B]],
           iterable: Iterable[A]) -> State[Iterable[A], B]:
+    """
+    Map each in element in ``iterable`` to
+    an :class:`Maybe` by applying ``f``,
+    combine the elements by ``and_then``
+    from left to right and collect the results
+
+    :example:
+    >>> map_m(value, range(3)).run(None)
+    ((0, 1, 2), None)
+
+    :param f: Function to map over ``iterable``
+    :param iterable: Iterable to map ``f`` over
+    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    """
     return cast(State[Iterable[A], B], map_m_(value, f, iterable))
 
 
 def sequence(iterable: Iterable[State[A, B]]) -> State[Iterable[A], B]:
+    """
+    Evaluate each :class:`State` in `iterable` from left to right
+    and collect the results
+
+    :example:
+    >>> sequence([value(v) for v in range(3)]).run(None)
+    ((0, 1, 2), None)
+
+    :param iterable: The iterable to collect results from
+    :returns: ``Maybe`` of collected results
+    """
     return cast(State[Iterable[A], B], sequence_(value, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], State[bool, B]],
              iterable: Iterable[A]) -> State[Iterable[A], B]:
+    """
+    Map each element in ``iterable`` by applying ``f``,
+    filter the results by the value returned by ``f``
+    and combine from left to right.
+
+    :example:
+    >>> filter_m(lambda v: value(v % 2 == 0), range(3)).Run(None)
+    ((0, 2), None)
+
+    :param f: Function to map ``iterable`` by
+    :param iterable: Iterable to map by ``f``
+    :return:
+    """
     return cast(State[Iterable[A], B], filter_m_(value, f, iterable))
 
 
