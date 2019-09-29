@@ -70,14 +70,14 @@ class Get(IO[Callable[[str], IO[A]]]):
     message: str = ''
 
     def and_then(self, f: Callable[[A], IO[B]]) -> IO[B]:  # type: ignore
-        return Get(
-            lambda text: self.a(text).and_then(f), self.message
-        )  # type: ignore
+        return Get(  # type: ignore
+            lambda text: self.a(text).and_then(f), self.message  # type: ignore
+        )
 
     def map(self, f: Callable[[A], B]) -> IO[B]:  # type: ignore
-        return Get(
-            lambda text: self.a(text).map(f), self.message
-        )  # type: ignore
+        return Get(  # type: ignore
+            lambda text: self.a(text).map(f), self.message  # type: ignore
+        )
 
     def run(self, world: int = 0) -> A:  # type: ignore
         new_world, text = pure_input(world, self.message)
@@ -165,7 +165,8 @@ def write_file(filename: str, content: str) -> IO[None]:
 
     :param filename: the file to write to
     :param content: the content to write to the file
-    :return: :class:`IO` action that produces the content of `filename` when run
+    :return: :class:`IO` action that produces \
+        the content of `filename` when run
     """
     return WriteFile((filename, content, IO(None)))  # type: ignore
 

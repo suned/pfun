@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Callable, Any, Sequence, Iterable, cast
+from typing import (Generic, TypeVar, Callable, Any, Sequence, Iterable, cast)
 from functools import wraps
 from abc import ABC, abstractmethod
 
@@ -90,7 +90,8 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
     @property
     def get(self) -> A:
         """
-        Get the value wrapped by this :class:`Maybe`. Fails if this is a :class:`Nothing`
+        Get the value wrapped by this :class:`Maybe`. \
+            Fails if this is a :class:`Nothing`
 
         :return: [description]
         """
