@@ -171,7 +171,7 @@ def filter_m(f: Callable[[A], Reader[Context, bool]],
     and combine from left to right.
 
     :example:
-    >>> filter_m(lambda v: value(v % 2 == 0), range(2)).run(...)
+    >>> filter_m(lambda v: value(v % 2 == 0), range(3)).run(...)
     (0, 2)
 
     :param f: Function to map ``iterable`` by
