@@ -341,7 +341,7 @@ with `map` and `and_then` just like the other monads we have seen.
 > may lead to `RecursionError`
 
 
-### Combining Unwrapped Values
+### Combining Monadic Values
 Sometimes you want to combine multiple unwrapped monadic values 
 like in the `get_full_name` function below:
 ```python
@@ -382,25 +382,25 @@ We can achieve something similar in python using generators, which is what the `
 does for you:
 
 ```python
-from pfun.maybe import do, Do
+from pfun.maybe import for_m, Maybes
 
-@do
-def get_full_name() -> Do[str, str]:
+@for_m
+def get_full_name() -> Maybes[str, str]:
     first = yield get_first_name()
     last = yield get_last_name()
     return first + ' ' + last
 ```
-The `Do[A, B]` class is just a type alias for `Generator[Maybe[A], A, B]`.
+The `Maybes[A, B]` class is just a type alias for `Generator[Maybe[A], A, B]`.
 
-You may want to unwrap monadic values of heterogenous types inside a `do` function. However,
+You may want to unwrap monadic values of heterogenous types inside a `for_m` decorated function. However,
 the `Generator` type does not allow us to express that our function wants to receive, say first
 an `int` and then a `str`. So the best you can do is to add the types explicitly:
 
 ```python
 from typing import Any
 
-@do
-def heterogenous_do() -> Do[Any, str]:
+@for_m
+def heterogenous_do() -> Maybes[Any, str]:
     an_int = yield Just(1)  # type: int
     a_str = yield Just('an_int was: ')  # type: str
     return str(a_str) + an_int
@@ -463,3 +463,31 @@ def factorial(n: int) -> int:
 This is the recommended
 way of solving recursive problems (when it doesn't break [referential transparency](https://en.wikipedia.org/wiki/Referential_transparency)), because it avoids overflowing the stack, and
 is often easier to understand.
+
+Sometimes you'll find yourself in a situation where you want to write a recursive monadic function.
+For some monads this is not a problem since they are designed to be stack safe (`Reader`, `State` and `Cont`).
+But for other monads (`Maybe`, `Either` and `Writer`), this can lead to `RecursionError`. Consider `pow_writer` which computes integer powers by recursion:
+```python
+
+def pow_writer(n: int, m: int):
+    if m == 0:
+        return value(None)
+    return tell(n).and_then(lambda _: pow_writer(n, m - 1))
+    
+```
+`pow_writer` cannot easily be trampolined because the function passed to `and_then` which performs the recursion 
+must return a `Writer`, and not a `Trampoline`.
+
+In these cases the helper function `tail_rec` is provided which can help you trampoline you monadic function using `Either`:
+
+```python
+def pow_writer(n: int, m: int):
+    def _(n_m):
+        n, m = n_m
+        if m == 0:
+            return value(None).map(Right)
+        return tell(n).and_then(lambda _: (n, m - 1)).map(Left)
+    return tail_rec(_, (n, m)).run()
+```
+(Of course also in this example there are several ways of computing the same thing that does not
+rely on recursion.)
