@@ -1,4 +1,6 @@
-from typing import Generic, TypeVar, Callable, Any, Sequence, Iterable, cast, Generator
+from typing import (
+    Generic, TypeVar, Callable, Any, Sequence, Iterable, cast, Generator
+)
 from functools import wraps
 from abc import ABC, abstractmethod
 

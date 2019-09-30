@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Callable, Tuple, Iterable, cast
+from typing import Generic, TypeVar, Callable, Tuple, Iterable, cast, Generator
 
 from .immutable import Immutable
 from .monad import sequence_, map_m_, filter_m_, Monad
@@ -160,8 +160,11 @@ def filter_m(f: Callable[[A], State[bool, B]],
     return cast(State[Iterable[A], B], filter_m_(value, f, iterable))
 
 
-def for_m(f):
-    return for_m_(value, f)
+States = Generator[State[A, B], A, C]
+
+
+def for_m(f: Callable[..., States[A, B, C]]) -> Callable[..., State[C, B]]:
+    return for_m_(value, f)  # type: ignore
 
 
 __all__ = ['State', 'put', 'get', 'value', 'map_m', 'sequence', 'filter_m']

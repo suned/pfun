@@ -488,7 +488,7 @@ def pow_writer(n: int, m: int):
         n, m = n_m
         if m == 0:
             return value(None).map(Right)
-        return tell(n).and_then(lambda _: (n, m - 1)).map(Left)
+        return tell(n).and_then(lambda _: value((n, m - 1))).map(Left)
     return tail_rec(_, (n, m)).run()
 ```
 (Of course also in this example there are several ways of computing the same thing that does not

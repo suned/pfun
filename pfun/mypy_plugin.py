@@ -22,7 +22,7 @@ _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 _MAYBE = 'pfun.maybe.maybe'
-_MAYBE_DO = 'pfun.maybe.do'
+_MAYBE_FOR_M = 'pfun.maybe.for_m'
 _RESULT = 'pfun.result.result'
 _IO = 'pfun.io.io'
 _READER = 'pfun.reader.reader'
@@ -201,11 +201,6 @@ def _immutable_hook(context: ClassDefContext):
     transformer._freeze(attributes)
 
 
-def _and_then_hook(context: FunctionContext) -> Type:
-
-    return context.default_return_type
-
-
 def _do_hook(context: FunctionContext) -> Type:
     return AnyType(6)
 
@@ -217,7 +212,7 @@ class PFun(Plugin):
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
-        if fullname == _MAYBE_DO:
+        if fullname == _MAYBE_FOR_M:
             return _variadic_decorator_hook
         if fullname == _MAYBE:
             return _variadic_decorator_hook
@@ -229,11 +224,6 @@ class PFun(Plugin):
             return _variadic_decorator_hook
         if fullname == _READER:
             return _variadic_decorator_hook
-
-    def get_method_hook(self, fullname: str):
-        if fullname == _READER_AND_THEN:
-            return _and_then_hook
-        return None
 
     def get_base_class_hook(self, fullname: str):
         return _immutable_hook
