@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pfun"
-version = "0.3.2"
+version = "0.4.0"
 description = ""
 authors = ["Sune Debel <sad@archii.ai>"]
 
@@ -25,6 +25,7 @@ autopep8 = "^1.4"
 yapf = "^0.28.0"
 pytest-flake8 = "^1.0"
 pytest-mypy = "^0.3.3"
+tox = "^3.14"
 
 [build-system]
 requires = ["poetry>=0.12"]
