@@ -8,16 +8,12 @@ T = TypeVar('T')
 class Immutable:
     __immutable__ = True
     """
-    Abstract super class that makes subclasses immutable after ``__init__``
-    returns.
+    Super class that makes subclasses immutable using dataclasses
 
     >>> class A(Immutable):
-    ...     def __init__(self, a)
-    ...         self.a = a
+    ...     a: str
     >>> class B(A):
-    ...     def __init__(self, a, b):
-    ...         super().__init__(a)
-    ...         self.b = b
+    ...     b: str
     >>> b = B('a', 'b')
     >>> b.a = 'new value'
     AttributeError: <__main__.B object at 0x10f99a0f0> is immutable
@@ -33,13 +29,12 @@ class Immutable:
 
     def clone(self: T, **kwargs) -> T:
         """
-        Make a copy of an instance, potentially overwriting fields given by
-        ``kwargs``
+        Make a shallow copy of an instance, potentially overwriting
+        fields given by ``kwargs``
 
         :example:
         >>> class A(Immutable):
-        ...     def __init__(self, a):
-        ...         self.a = a
+        ...     a: str
         >>> a = A('a')
         >>> a2 = a.clone(a='new value')
         >>> a2.a

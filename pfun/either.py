@@ -231,7 +231,7 @@ def filter_m(f: Callable[[A], Either[bool, B]],
     and combine from left to right.
 
     :example:
-    >>> filter_m(lambda v: Right(v % 2 == 0), range(2))
+    >>> filter_m(lambda v: Right(v % 2 == 0), range(3))
     Right((0, 2))
 
     :param f: Function to map ``iterable`` by

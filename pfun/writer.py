@@ -10,9 +10,9 @@ B = TypeVar('B')
 
 class Writer(Generic[A, M], Immutable, Monad):
     """
-    Class that represents a value
+    Represents a value
     along with a monoid value that is accumulated as
-    a side effect
+    an effect
 
     """
     a: A
@@ -111,18 +111,56 @@ def tell(m: M) -> Writer[None, M]:
 
 
 def sequence(iterable: Iterable[Writer[A, M]]) -> Writer[Iterable[A], M]:
+    """
+    Evaluate each :class:`Writer` in `iterable` from left to right
+    and collect the results
+
+    :example:
+    >>> sequence([value(v) for v in range(3)])
+    Writer((0, 1, 2), ...)
+
+    :param iterable: The iterable to collect results from
+    :returns: ``Writer`` of collected results
+    """
     return cast(Writer[Iterable[A], M], sequence_(value, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], Writer[bool, M]],
              iterable: Iterable[A]) -> Writer[Iterable[A], M]:
+    """
+    Map each element in ``iterable`` by applying ``f``,
+    filter the results by the value returned by ``f``
+    and combine from left to right.
+
+    :example:
+    >>> filter_m(lambda v: value(v % 2 == 0), range(3))
+    Writer((0, 2), ...)
+
+    :param f: Function to map ``iterable`` by
+    :param iterable: Iterable to map by ``f``
+    :return:
+    """
     return cast(Writer[Iterable[A], M], filter_m_(value, f, iterable))
 
 
 @curry
 def map_m(f: Callable[[A], Writer[B, M]],
           iterable: Iterable[A]) -> Writer[Iterable[B], M]:
+    """
+    Map each in element in ``iterable`` to
+    an :class:`Writer` by applying ``f``,
+    combine the elements by ``and_then``
+    from left to right and collect the results
+
+    :example:
+    >>> map_m(value, range(3))
+    Writer((0, 1, 2), ...)
+
+    :param f: Function to map over ``iterable``
+    :param iterable: Iterable to map ``f`` over
+    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    """
     return cast(Writer[Iterable[B], M], map_m_(value, f, iterable))
 
 
