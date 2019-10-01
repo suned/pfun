@@ -3,6 +3,8 @@ from pfun.monoid import M, append, empty
 from .immutable import Immutable
 from .curry import curry
 from .monad import map_m_, Monad, sequence_, filter_m_
+from .either import Either
+from .trampoline import Trampoline, Done, Call
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -162,6 +164,16 @@ def map_m(f: Callable[[A], Writer[B, M]],
     :return: ``f`` mapped over ``iterable`` and combined from left to right.
     """
     return cast(Writer[Iterable[B], M], map_m_(value, f, iterable))
+
+
+def tail_rec(f: Callable[[A], Writer[Either[A, B], M]],
+             a: A) -> Trampoline[Writer[B, M]]:
+    writer = f(a)
+    either = writer.a
+    while not either:
+        writer = f(either.b)
+        either = writer.a
+    return Done(Writer(either.a, writer.m))
 
 
 __all__ = ['Writer', 'value', 'tell', 'sequence', 'map_m', 'filter_m']
