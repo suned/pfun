@@ -1,9 +1,10 @@
-from typing import Generic, TypeVar, Callable, cast, Iterable, cast
+from typing import Generic, TypeVar, Callable, cast, Iterable, cast, Generator
 from abc import ABC, abstractmethod
 
 from .immutable import Immutable
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -166,6 +167,14 @@ def filter_m(f: Callable[[A], Trampoline[bool]],
     :return:
     """
     return cast(Trampoline[Iterable[A]], filter_m_(Done, f, iterable))
+
+
+Trampolines = Generator[Trampoline[A], A, B]
+
+
+def with_effect(f: Callable[..., Trampolines[A, B]]
+                ) -> Callable[..., Trampoline[B]]:
+    return with_effect_(Done, f)  # type: ignore
 
 
 __all__ = [

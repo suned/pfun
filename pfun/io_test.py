@@ -1,21 +1,19 @@
 from __future__ import annotations
-from typing import Callable, TypeVar, Generic, Generator, Iterable, cast
+from typing import Callable, TypeVar, Generic
 import sys
-from functools import wraps
 
 from typing_extensions import Literal
 
 from .immutable import Immutable
 from .trampoline import Trampoline, Done, Call
-from .monad import Monad, sequence_, map_m_, filter_m_
+from .monad import sequence_
 from .curry import curry
-from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class IO(Monad, Immutable, Generic[A]):
+class IO(Immutable, Generic[A]):
     """
     Represents world changing actions
     """
@@ -102,7 +100,6 @@ def write_bytes(path: str, content: bytes,
     return IO(run)
 
 
-@curry
 def put_line(line: str = '', file=sys.stdout) -> IO[None]:
     """
     Print a line to standard out
@@ -112,7 +109,7 @@ def put_line(line: str = '', file=sys.stdout) -> IO[None]:
     :return: :class:`IO` action that prints `string` to standard out
     """
     def run() -> Trampoline[None]:
-        print(line, file=file)
+        print(line)
         return Done(None)
 
     return IO(run)
@@ -147,94 +144,5 @@ def read_bytes(path: str) -> IO[bytes]:
     return IO(run)
 
 
-def io(f: Callable[..., A]) -> Callable[..., IO[A]]:
-    """
-    Decorator to turn any non-monadic function into a monadic
-    one by wrapping its result in :class:`IO`
-
-    :param f: The function to wrap
-    :return: `f` wrapped by :class:`IO`
-    """
-    @wraps(f)
-    def decorator(*args, **kwargs):
-        v = f(*args, **kwargs)
-        return IO(v)
-
-    return decorator
-
-
-@curry
-def map_m(f: Callable[[A], IO[B]], iterable: Iterable[A]) -> IO[Iterable[B]]:
-    """
-    Map each in element in ``iterable`` to
-    an :class:`IO` by applying ``f``,
-    combine the elements by ``and_then``
-    from left to right and collect the results
-
-    :example:
-    >>> map_m(IO, range(3))
-    IO(a=(0, 1, 2))
-
-    :param f: Function to map over ``iterable``
-    :param iterable: Iterable to map ``f`` over
-    :return: ``f`` mapped over ``iterable`` and combined from left to right.
-    """
-    return cast(IO[Iterable[B]], map_m_(IO, f, iterable))
-
-
-def sequence(iterable: Iterable[IO[A]]) -> IO[Iterable[A]]:
-    """
-    Evaluate each :class:`IO` in `iterable` from left to right
-    and collect the results
-
-    :example:
-    >>> sequence([IO(v) for v in range(3)])
-    Just(a=(0, 1, 2))
-
-    :param iterable: The iterable to collect results from
-    :returns: ``Maybe`` of collected results
-    """
-    return cast(IO[Iterable[A]], sequence_(IO, iterable))
-
-
-@curry
-def filter_m(f: Callable[[A], IO[bool]],
-             iterable: Iterable[A]) -> IO[Iterable[A]]:
-    """
-    Map each element in ``iterable`` by applying ``f``,
-    filter the results by the value returned by ``f``
-    and combine from left to right.
-
-    :example:
-    >>> filter_m(lambda v: IO(v % 2 == 0), range(3))
-    IO(a=(0, 2))
-
-    :param f: Function to map ``iterable`` by
-    :param iterable: Iterable to map by ``f``
-    :return:
-    """
-    return cast(IO[Iterable[A]], filter_m_(IO, f, iterable))
-
-
-IOs = Generator[IO[A], A, B]
-
-
-def with_effect(f: Callable[..., IOs[A, B]]) -> Callable[..., IO[B]]:
-    return with_effect_(IO, f)  # type: ignore
-
-
-__all__ = [
-    'IO',
-    'get_line',
-    'put_line',
-    'read_str',
-    'write_bytes',
-    'write_str',
-    'read_bytes',
-    'io',
-    'map_m',
-    'sequence',
-    'filter_m',
-    'with_effect',
-    'IOs'
-]
+def sequence(ios):
+    return sequence_(value, ios)

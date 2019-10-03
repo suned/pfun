@@ -3,15 +3,11 @@ import sys
 from pfun.io import (
     put_line,
     get_line,
-    read_file,
-    read_file_bytes,
-    write_file,
-    write_file_bytes,
-    IO,
-    Put,
-    Get,
-    ReadFile,
-    WriteFile
+    read_str as read_file,
+    read_bytes as read_file_bytes,
+    write_str as write_file,
+    write_bytes as write_file_bytes,
+    value as IO
 )
 from pfun import identity, compose
 from .monad_test import MonadTest
@@ -58,16 +54,7 @@ class TestIO(MonadTest):
     @given(anything(), ios(), text())
     def test_equality(self, value, io, text):
         with mock_input(), mock_open(text), mock_print():
-            assert IO(value) == IO(value)
             assert IO(value).run() == IO(value).run()
-            assert Put((text, io)).run() == Put((text, io)).run()
-            assert Get(lambda _: io).run() == Get(lambda _: io).run()
-            assert ReadFile((text, lambda _: io)).run() == ReadFile(
-                (text, lambda _: io)
-            ).run()
-            assert WriteFile((text, text, io)).run() == WriteFile(
-                (text, text, io)
-            ).run()
 
     @given(ios(), text())
     def test_identity_law(self, io, text):
@@ -99,7 +86,7 @@ class TestIO(MonadTest):
     def test_read_file(self):
         with mock_open('Hello') as mocked_open:
             assert read_file('test.txt').run() == 'Hello'
-            mocked_open.assert_called_with('test.txt', 'r')
+            mocked_open.assert_called_with('test.txt')
 
     def test_read_file_bytes(self):
         with mock_open(b'Hello') as mocked_open:
