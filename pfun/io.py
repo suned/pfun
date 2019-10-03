@@ -7,7 +7,8 @@ from typing import (
     IO as TextIO,
     Optional,
     Iterable,
-    cast
+    cast,
+    Generator
 )
 import sys
 from functools import wraps
@@ -15,6 +16,7 @@ from functools import wraps
 from .immutable import Immutable
 from .curry import curry
 from .monad import Monad, sequence_, map_m_, filter_m_
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -263,6 +265,13 @@ def filter_m(f: Callable[[A], IO[bool]],
     return cast(IO[Iterable[A]], filter_m_(IO, f, iterable))
 
 
+IOs = Generator[IO[A], A, B]
+
+
+def with_effect(f: Callable[..., IOs[A, B]]) -> Callable[..., IO[B]]:
+    return with_effect_(IO, f)  # type: ignore
+
+
 __all__ = [
     'IO',
     'get_line',
@@ -274,5 +283,7 @@ __all__ = [
     'io',
     'map_m',
     'sequence',
-    'filter_m'
+    'filter_m',
+    'with_effect',
+    'IOs'
 ]
