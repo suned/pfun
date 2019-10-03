@@ -18,7 +18,15 @@ from hypothesis.strategies import (
 )
 
 from pfun.either import Left, Right
-from pfun.io import value as IO, read_bytes, read_str, put_line, get_line, write_bytes, write_str
+from pfun.io import (
+    value as IO,
+    read_bytes,
+    read_str,
+    put_line,
+    get_line,
+    write_bytes,
+    write_str
+)
 
 
 def _everything(allow_nan=False):
@@ -138,7 +146,7 @@ def puts():
 
 
 def gets():
-    return builds(get_Line, text())
+    return builds(get_line, text())
 
 
 def read_files():
@@ -154,4 +162,10 @@ def write_files():
 
 
 def ios(value_strategy=anything()):
-    return one_of(io_primitives(value_strategy), builds(read_bytes, text()))
+    return one_of(
+        io_primitives(value_strategy),
+        write_files(),
+        read_files(),
+        gets(),
+        puts()
+    )

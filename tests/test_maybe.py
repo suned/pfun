@@ -1,4 +1,3 @@
-import pytest
 from typing import Any
 from hypothesis import assume, given
 from pfun import Unary, identity, compose, List
@@ -87,12 +86,4 @@ class TestMaybe(MonadTest):
 
     @given(lists([maybes()]))
     def test_flatten(self, maybe_list):
-        assert flatten(maybe_list) == List(m.a for m in maybe_list if m)
-
-    @given(maybes())
-    def test_get(self, m):
-        if m:
-            assert m.get == m.a
-        else:
-            with pytest.raises(AttributeError):
-                _ = m.get
+        assert flatten(maybe_list) == List(m.get for m in maybe_list if m)

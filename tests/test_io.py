@@ -64,14 +64,7 @@ class TestIO(MonadTest):
     @given(anything(), anything(), text())
     def test_inequality(self, value1, value2, text):
         assume(value1 != value2)
-        assert IO(value1) != IO(value2)
         assert IO(value1).run() != IO(value2).run()
-        # assert Put((text, io1)).run() != Put((text, io2)).run()
-        # assert Get(lambda _: io1).run() != Get(lambda _: io2).run()
-        # assert ReadFile((text, lambda _: io1)).run() != ReadFile(
-        #     (text, lambda _: io2)).run()
-        # assert WriteFile((text, text, io1)).run() != WriteFile(
-        #     (text, text, io2)).run()
 
     def test_get_line(self):
         with mock_input() as mocked_input:
