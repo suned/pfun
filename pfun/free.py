@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Callable, Iterable, cast
+from typing import TypeVar, Generic, Callable, Iterable, cast, Generator
 
 from pfun.immutable import Immutable
 from abc import ABC, abstractmethod
@@ -7,6 +7,7 @@ from .functor import Functor
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
 from .state import State, get
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -160,6 +161,16 @@ def filter_m(f: Callable[[A], Free[F, bool, C, D]],
     :return:
     """
     return cast(Free[F, Iterable[A], C, D], filter_m_(Done, f, iterable))
+
+
+E = TypeVar('E')
+
+Frees = Generator[Free[F, A, C, D], A, E]
+
+
+def with_effect(f: Callable[..., Frees[F, A, C, D, E]]
+                ) -> Callable[..., Free[F, E, C, D]]:
+    return with_effect_(Done, f)  # type: ignore
 
 
 __all__ = [
