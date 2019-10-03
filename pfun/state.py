@@ -4,7 +4,7 @@ from .immutable import Immutable
 from .monad import sequence_, map_m_, filter_m_, Monad
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
-from .for_m import for_m_
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -163,8 +163,19 @@ def filter_m(f: Callable[[A], State[bool, B]],
 States = Generator[State[A, B], A, C]
 
 
-def for_m(f: Callable[..., States[A, B, C]]) -> Callable[..., State[C, B]]:
-    return for_m_(value, f)  # type: ignore
+def with_effect(f: Callable[..., States[A, B, C]]
+                ) -> Callable[..., State[C, B]]:
+    return with_effect_(value, f)  # type: ignore
 
 
-__all__ = ['State', 'put', 'get', 'value', 'map_m', 'sequence', 'filter_m']
+__all__ = [
+    'State',
+    'put',
+    'get',
+    'value',
+    'map_m',
+    'sequence',
+    'filter_m',
+    'with_effect',
+    'States'
+]

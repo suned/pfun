@@ -1,7 +1,5 @@
 from functools import wraps
 from pfun.monad import Monad
-from pfun.trampoline import Trampoline
-from pfun.either import Left, Right
 from pfun.curry import curry
 from typing import Generator, TypeVar, Callable, Any
 
@@ -9,7 +7,7 @@ M = TypeVar('M', bound=Monad)
 
 
 @curry
-def for_m_(
+def with_effect_(
     value: Callable[[Any], M], f: Callable[..., Generator[M, Any, Any]]
 ) -> Callable[..., M]:
     @wraps(f)
@@ -22,18 +20,24 @@ def for_m_(
             except StopIteration as e:
                 return value(e.value)
 
-        m = next(g)
-        return m.and_then(cont)
+        try:
+            m = next(g)
+            return m.and_then(cont)
+        except StopIteration as e:
+            return value(e.value)
 
     return decorator
 
 
 @curry
-def for_m_tail_rec(
+def with_effect_tail_rec(
     value: Callable[[Any], M],
     f: Callable[..., Generator[M, Any, Any]],
-    tail_rec: Callable[[Callable[[Any], Any], Any], Trampoline] = None
+    tail_rec: Callable[[Callable[[Any], Any], Any], Any] = None
 ) -> Callable[..., M]:
+
+    from .either import Left, Right
+
     @wraps(f)
     def decorator(*args, **kwargs):
         g = f(*args, **kwargs)
@@ -44,7 +48,10 @@ def for_m_tail_rec(
             except StopIteration as e:
                 return value(Right(e.value))
 
-        m = next(g)
-        return m.and_then(lambda v: tail_rec(cont, v).run())
+        try:
+            m = next(g)
+            return m.and_then(lambda v: tail_rec(cont, v))
+        except StopIteration as e:
+            return value(e.value)
 
     return decorator

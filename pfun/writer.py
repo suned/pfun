@@ -3,8 +3,8 @@ from pfun.monoid import M, append, empty
 from .immutable import Immutable
 from .curry import curry
 from .monad import map_m_, Monad, sequence_, filter_m_
-from .either import Either
-from .trampoline import Trampoline, Done, Call
+from .either import Either, Left
+from .with_effect import with_effect_tail_rec
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -166,14 +166,26 @@ def map_m(f: Callable[[A], Writer[B, M]],
     return cast(Writer[Iterable[B], M], map_m_(value, f, iterable))
 
 
-def tail_rec(f: Callable[[A], Writer[Either[A, B], M]],
-             a: A) -> Trampoline[Writer[B, M]]:
+def tail_rec(f: Callable[[A], Writer[Either[A, B], M]], a: A) -> Writer[B, M]:
     writer = f(a)
     either = writer.a
-    while not either:
-        writer = f(either.b)
+    while isinstance(either, Left):
+        writer = writer.and_then(lambda _: f(either.get))  # type: ignore
         either = writer.a
-    return Done(Writer(either.a, writer.m))
+    return writer.and_then(lambda _: value(either.get))  # type: ignore
 
 
-__all__ = ['Writer', 'value', 'tell', 'sequence', 'map_m', 'filter_m']
+def with_effect(f):
+    return with_effect_tail_rec(value, f, tail_rec)
+
+
+__all__ = [
+    'Writer',
+    'value',
+    'tell',
+    'sequence',
+    'map_m',
+    'filter_m',
+    'with_effect',
+    'tail_rec'
+]

@@ -5,7 +5,7 @@ from .immutable import Immutable
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
 from .monad import Monad, map_m_, sequence_, filter_m_
-from .for_m import for_m_
+from .with_effect import with_effect_
 
 Context = TypeVar('Context')
 Result_ = TypeVar('Result_')
@@ -185,9 +185,9 @@ def filter_m(f: Callable[[A], Reader[Context, bool]],
 Readers = Generator[Reader[Context, Result_], Result_, B]
 
 
-def for_m(f: Callable[..., Readers[Context, Any, B]]
-          ) -> Callable[..., Reader[Context, B]]:
-    return for_m_(value, f)
+def with_effect(f: Callable[..., Readers[Context, Any, B]]
+                ) -> Callable[..., Reader[Context, B]]:
+    return with_effect_(value, f)
 
 
 __all__ = [
@@ -198,5 +198,6 @@ __all__ = [
     'sequence',
     'filter_m',
     'ask',
-    'for_m'
+    'with_effect',
+    'Readers'
 ]

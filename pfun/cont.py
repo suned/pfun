@@ -1,10 +1,11 @@
-from typing import Generic, Callable, TypeVar, Iterable, cast
+from typing import Generic, Callable, TypeVar, Iterable, cast, Generator
 
 from .immutable import Immutable
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
 from .util import identity
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -138,4 +139,13 @@ def value(a: A) -> Cont[A, B]:
     return Cont(lambda cont: Done(cont(a)))
 
 
-__all__ = ['value', 'filter_m', 'sequence', 'map_m', 'Cont']
+Conts = Generator[Cont[A, B], B, C]
+
+
+def with_effect(f):
+    return with_effect_(value, f)
+
+
+__all__ = [
+    'value', 'filter_m', 'sequence', 'map_m', 'Cont', 'with_effect', 'Conts'
+]

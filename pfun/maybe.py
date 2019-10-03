@@ -1,5 +1,13 @@
 from typing import (
-    Generic, TypeVar, Callable, Any, Sequence, Iterable, cast, Generator
+    Generic,
+    TypeVar,
+    Callable,
+    Any,
+    Sequence,
+    Iterable,
+    cast,
+    Generator,
+    Union
 )
 from functools import wraps
 from abc import ABC, abstractmethod
@@ -8,15 +16,14 @@ from .immutable import Immutable
 from .list import List
 from .curry import curry
 from .monad import Monad, map_m_, sequence_, filter_m_
-from .for_m import for_m_tail_rec
-from .trampoline import Done, Call, Trampoline
-from .either import Either
+from .with_effect import with_effect_tail_rec
+from .either import Either, Left
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Maybe(Generic[A], Immutable, Monad, ABC):
+class Maybe_(Immutable, Monad, ABC):
     """
     Abstract super class for classes that represent computations that can fail.
     Should not be instantiated directly.
@@ -24,7 +31,7 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
 
     """
     @abstractmethod
-    def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
+    def and_then(self, f):
         """
         Chain together functional calls, carrying along the state of the
         computation that may fail.
@@ -44,7 +51,7 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
+    def map(self, f):
         """
         Map the result of a possibly failed computation
 
@@ -62,7 +69,7 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def or_else(self, default: A) -> A:
+    def or_else(self, default):
         """
         Try to get the result of the possibly failed computation if it was
         successful.
@@ -96,30 +103,22 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
         """
         raise NotImplementedError()
 
-    @property
-    def get(self) -> A:
-        raise NotImplementedError()
 
-
-class Just(Maybe[A]):
+class Just(Maybe_, Generic[A]):
     """
     Subclass of :class:`Maybe` that represents a successful computation
 
     """
-    a: A
-
-    @property
-    def get(self) -> A:
-        return self.a
+    get: A
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
-        return f(self.a)
+        return f(self.get)
 
     def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
-        return Just(f(self.a))
+        return Just(f(self.get))
 
     def or_else(self, default: A) -> A:
-        return self.a
+        return self.get
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -132,13 +131,47 @@ class Just(Maybe[A]):
         """
         if not isinstance(other, Just):
             return False
-        return other.a == self.a
+        return other.get == self.get
 
     def __repr__(self):
         return f'Just({repr(self.a)})'
 
     def __bool__(self):
         return True
+
+
+class Nothing(Maybe_):
+    """
+    Subclass of :class:`Maybe` that represents a failed computation
+
+    """
+    def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
+        return self
+
+    def __eq__(self, other: Any) -> bool:
+        """
+        Test if other is a ``Nothing``
+
+        :param other: Value to compare with
+        :return: True if other is a ``Nothing``, False otherwise
+
+        """
+        return isinstance(other, Nothing)
+
+    def __repr__(self):
+        return 'Nothing()'
+
+    def or_else(self, default: A) -> A:
+        return default
+
+    def map(self, f: Callable[[Any], B]) -> 'Maybe[B]':
+        return self
+
+    def __bool__(self):
+        return False
+
+
+Maybe = Union[Nothing, Just[A]]
 
 
 def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
@@ -168,43 +201,8 @@ def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
     return dec
 
 
-class Nothing(Maybe[Any]):
-    """
-    Subclass of :class:`Maybe` that represents a failed computation
-
-    """
-    @property
-    def get(self):
-        raise AttributeError('"Nothing" does not support "get"')
-
-    def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
-        return self
-
-    def __eq__(self, other: Any) -> bool:
-        """
-        Test if other is a ``Nothing``
-
-        :param other: Value to compare with
-        :return: True if other is a ``Nothing``, False otherwise
-
-        """
-        return isinstance(other, Nothing)
-
-    def __repr__(self):
-        return 'Nothing()'
-
-    def or_else(self, default: A) -> A:
-        return default
-
-    def map(self, f: Callable[[Any], B]) -> 'Maybe[B]':
-        return self
-
-    def __bool__(self):
-        return False
-
-
 def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
-    justs = [m for m in maybes if m]
+    justs = [m for m in maybes if isinstance(m, Just)]
     return List(j.get for j in justs)
 
 
@@ -229,7 +227,7 @@ R = TypeVar('R')
 Maybes = Generator[Maybe[S], S, R]
 
 
-def for_m(f: Callable[..., Maybes[Any, R]]) -> Callable[..., Maybe[R]]:
+def with_effect(f: Callable[..., Maybes[Any, R]]) -> Callable[..., Maybe[R]]:
     """
     Decorator for functions that
     return a generator of maybes and a final result.
@@ -245,21 +243,20 @@ def for_m(f: Callable[..., Maybes[Any, R]]) -> Callable[..., Maybe[R]]:
     >>> f()
     Just(4)
     """
-    return for_m_tail_rec(Just, f, tail_rec)
+    return with_effect_tail_rec(Just, f, tail_rec)
 
 
-def tail_rec(f: Callable[[A], Maybe[Either[A, B]]],
-             a: A) -> Trampoline[Maybe[B]]:
+def tail_rec(f: Callable[[A], Maybe[Either[A, B]]], a: A) -> Maybe[B]:
     maybe = f(a)
-    if not maybe:
-        # Nothing
-        return Done(maybe)  # type: ignore
+    if isinstance(maybe, Nothing):
+        return maybe
     either = maybe.get
-    if either:
-        # Right
-        return Done(Just(either.a))  # type: ignore
-    # Left
-    return Call(lambda: tail_rec(f, either.b))  # type: ignore
+    while isinstance(either, Left):
+        maybe = f(either.get)
+        if isinstance(maybe, Nothing):
+            return maybe
+        either = maybe.get
+    return Just(either.get)
 
 
 __all__ = [
@@ -271,5 +268,6 @@ __all__ = [
     'map_m',
     'sequence',
     'filter_m',
-    'for_m'
+    'with_effect',
+    'Maybes'
 ]
