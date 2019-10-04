@@ -178,5 +178,13 @@ def with_effect(f: Callable[..., Trampolines[A, B]]
 
 
 __all__ = [
-    'Trampoline', 'Done', 'Call', 'AndThen', 'map_m', 'sequence', 'filter_m'
+    'Trampoline',
+    'Done',
+    'Call',
+    'AndThen',
+    'map_m',
+    'sequence',
+    'filter_m',
+    'Trampolines',
+    'with_effect'
 ]

@@ -7,7 +7,8 @@ from typing import (
     Iterable,
     cast,
     Generator,
-    Union
+    Union,
+    Optional
 )
 from functools import wraps
 from abc import ABC, abstractmethod
@@ -104,6 +105,20 @@ class Maybe_(Immutable, Monad, ABC):
         raise NotImplementedError()
 
 
+def _invoke_optional_arg(
+    f: Union[Callable[[A], B], Callable[[], B]], arg: Optional[A]
+) -> B:
+    try:
+        return f(arg)  # type: ignore
+    except TypeError as e:
+        if arg is None:
+            try:
+                return f()  # type: ignore
+            except TypeError:
+                raise e
+        raise
+
+
 class Just(Maybe_, Generic[A]):
     """
     Subclass of :class:`Maybe` that represents a successful computation
@@ -112,7 +127,7 @@ class Just(Maybe_, Generic[A]):
     get: A
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
-        return f(self.get)
+        return _invoke_optional_arg(f, self.get)
 
     def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
         return Just(f(self.get))
@@ -134,7 +149,7 @@ class Just(Maybe_, Generic[A]):
         return other.get == self.get
 
     def __repr__(self):
-        return f'Just({repr(self.a)})'
+        return f'Just({repr(self.get)})'
 
     def __bool__(self):
         return True
@@ -247,6 +262,24 @@ def with_effect(f: Callable[..., Maybes[Any, R]]) -> Callable[..., Maybe[R]]:
 
 
 def tail_rec(f: Callable[[A], Maybe[Either[A, B]]], a: A) -> Maybe[B]:
+    """
+    Run a stack safe recursive monadic function `f`
+    by calling `f` with :class:`Left` values
+    until a :class:`Right` value is produced
+
+    :example:
+    >>> from pfun.either import Left, Right, Either
+    >>> def f(i: str) -> Maybe[Either[int, str]]:
+    ...     if i == 0:
+    ...         return Just(Right('Done'))
+    ...     return Just(Left(i - 1))
+    >>> tail_rec(f, 5000)
+    Just('Done')
+
+    :param f: function to run "recursively"
+    :param a: initial argument to `f`
+    :return: result of `f`
+    """
     maybe = f(a)
     if isinstance(maybe, Nothing):
         return maybe
