@@ -337,9 +337,6 @@ print_.run()
 `get_line` creates an `IO` action that when run, will read a `str` from standard input. `IO` can be combined
 with `map` and `and_then` just like the other monads we have seen.
 
-> **WARNING**: `IO` is not stack-safe under all circumstances. Combining a large number of `IO`s with `and_then`
-> may lead to `RecursionError`
-
 
 ### Combining Monadic Values
 Sometimes you want to combine multiple unwrapped monadic values 
@@ -413,7 +410,7 @@ the computation inside a `with_effect` decorated function under some conditions 
 ```python
 
 @with_effect
-def divide(a, b) -> Maybes[int, int]:
+def divide(a: int, b: int) -> Maybes[Any, float]:
     if b == 0:
         yield Nothing()
     return a / b
