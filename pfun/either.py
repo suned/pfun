@@ -253,6 +253,23 @@ def filter_m(f: Callable[[A], Either[bool, B]],
 
 
 def tail_rec(f: Callable[[A], Either[C, Either[A, B]]], a: A) -> Either[C, B]:
+    """
+    Run a stack safe recursive monadic function `f`
+    by calling `f` with :class:`Left` values
+    until a :class:`Right` value is produced
+
+    :example:
+    >>> def f(i: str) -> Either[Either[int, str]]:
+    ...     if i == 0:
+    ...         return Right(Right('Done'))
+    ...     return Right(Left(i - 1))
+    >>> tail_rec(f, 5000)
+    Right('Done')
+
+    :param f: function to run "recursively"
+    :param a: initial argument to `f`
+    :return: result of `f`
+    """
     outer_either = f(a)
     if isinstance(outer_either, Left):
         return outer_either
@@ -270,6 +287,25 @@ Eithers = Generator[Either[A, B], B, C]
 
 def with_effect(f: Callable[..., Eithers[A, B, C]]
                 ) -> Callable[..., Either[A, C]]:
+    """
+    Decorator for functions that
+    return a generator of maybes and a final result.
+    Iteraters over the yielded maybes and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @for_m
+    ... def f() -> Eithers[int, int]:
+    ...     a = yield Right(2)
+    ...     b = yield Right(2)
+    ...     return a + b
+    >>> f()
+    Right(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Either` \
+        will be chained together with `and_then`
+    """
     return with_effect_tail_rec(Right, f, tail_rec)  # type: ignore
 
 

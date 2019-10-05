@@ -475,7 +475,7 @@ way of solving recursive problems (when it doesn't break [referential transparen
 is often easier to understand.
 
 Sometimes you'll find yourself in a situation where you want to write a recursive monadic function.
-For some monads this is not a problem since they are designed to be stack safe (`Reader`, `State` and `Cont`).
+For some monads this is not a problem since they are designed to be stack safe (`Reader`, `State`, `IO`, and `Cont`).
 But for other monads (`Maybe`, `Either` and `Writer`), this can lead to `RecursionError`. Consider `pow_writer` which computes integer powers by recursion:
 ```python
 
@@ -500,4 +500,4 @@ def pow_writer(n: int, m: int):
     return tail_rec(_, (n, m))
 ```
 (Of course also in this example there are several ways of computing the same thing that does not
-rely on recursion.)
+rely on recursion and does not break referential transparency.)
