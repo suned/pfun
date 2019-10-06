@@ -158,7 +158,7 @@ def filter_m(f: Callable[[A], Free[F, bool, C, D]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Free[F, Iterable[A], C, D], filter_m_(Done, f, iterable))
 

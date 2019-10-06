@@ -141,7 +141,7 @@ def filter_m(f: Callable[[A], Writer[bool, M]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Writer[Iterable[A], M], filter_m_(value, f, iterable))
 

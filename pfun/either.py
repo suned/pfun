@@ -247,7 +247,7 @@ def filter_m(f: Callable[[A], Either[bool, B]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Either[Iterable[A], B], filter_m_(Right, f, iterable))
 

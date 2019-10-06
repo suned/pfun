@@ -217,6 +217,13 @@ def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
 
 
 def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
+    """
+    Extract value from each :class:`Maybe`, ignoring
+    elements that are :class:`Nothing`
+
+    :param maybes: Seqence of :class:`Maybe`
+    :return: :class:`List` of unwrapped values
+    """
     justs = [m for m in maybes if isinstance(m, Just)]
     return List(j.get for j in justs)
 
@@ -224,16 +231,54 @@ def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
 @curry
 def map_m(f: Callable[[A], Maybe[B]],
           iterable: Iterable[A]) -> Maybe[Iterable[B]]:
+    """
+    Map each in element in ``iterable`` to
+    an :class:`Maybe` by applying ``f``,
+    combine the elements by ``and_then``
+    from left to right and collect the results
+
+    :example:
+    >>> map_m(Just, range(3))
+    Just((0, 1, 2))
+
+    :param f: Function to map over ``iterable``
+    :param iterable: Iterable to map ``f`` over
+    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    """
     return cast(Maybe[Iterable[B]], map_m_(Just, f, iterable))
 
 
 def sequence(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
+    """
+    Evaluate each :class:`Maybe` in `iterable` from left to right
+    and collect the results
+
+    :example:
+    >>> sequence([Just(v) for v in range(3)])
+    Just((0, 1, 2))
+
+    :param iterable: The iterable to collect results from
+    :return: ``Maybe`` of collected results
+    """
     return cast(Maybe[Iterable[A]], sequence_(Just, iterable))
 
 
 @curry
 def filter_m(f: Callable[[A], Maybe[bool]],
              iterable: Iterable[A]) -> Maybe[Iterable[A]]:
+    """
+    Map each element in ``iterable`` by applying ``f``,
+    filter the results by the value returned by ``f``
+    and combine from left to right.
+
+    :example:
+    >>> filter_m(lambda v: Just(v % 2 == 0), range(3))
+    Just((0, 2))
+
+    :param f: Function to map ``iterable`` by
+    :param iterable: Iterable to map by ``f``
+    :return: `iterable` mapped and filtered by `f`
+    """
     return cast(Maybe[Iterable[A]], filter_m_(Just, f, iterable))
 
 

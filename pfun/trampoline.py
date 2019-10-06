@@ -164,7 +164,7 @@ def filter_m(f: Callable[[A], Trampoline[bool]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Trampoline[Iterable[A]], filter_m_(Done, f, iterable))
 
