@@ -172,8 +172,8 @@ def with_effect(f: Callable[..., Frees[F, A, C, D, E]]
                 ) -> Callable[..., Free[F, E, C, D]]:
     """
     Decorator for functions that
-    return a generator of maybes and a final result.
-    Iteraters over the yielded maybes and sends back the
+    return a generator of frees and a final result.
+    Iteraters over the yielded frees and sends back the
     unwrapped values using "and_then"
 
     :example:
@@ -187,7 +187,7 @@ def with_effect(f: Callable[..., Frees[F, A, C, D, E]]
     Done(4)
 
     :param f: generator function to decorate
-    :return: `f` decorated such that generated :class:`Maybe` \
+    :return: `f` decorated such that generated :class:`Free` \
         will be chained together with `and_then`
     """
     return with_effect_(Done, f)  # type: ignore
