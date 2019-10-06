@@ -289,8 +289,8 @@ def with_effect(f: Callable[..., Eithers[A, B, C]]
                 ) -> Callable[..., Either[A, C]]:
     """
     Decorator for functions that
-    return a generator of maybes and a final result.
-    Iteraters over the yielded maybes and sends back the
+    return a generator of eithers and a final result.
+    Iteraters over the yielded eithers and sends back the
     unwrapped values using "and_then"
 
     :example:
