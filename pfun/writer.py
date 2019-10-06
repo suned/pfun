@@ -203,8 +203,8 @@ def with_effect(f: Callable[..., Writers[A, M, B]]
                 ) -> Callable[..., Writer[B, M]]:
     """
     Decorator for functions that
-    return a generator of maybes and a final result.
-    Iteraters over the yielded maybes and sends back the
+    return a generator of writers and a final result.
+    Iteraters over the yielded writers and sends back the
     unwrapped values using "and_then"
 
     :example:

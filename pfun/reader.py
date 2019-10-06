@@ -187,6 +187,25 @@ Readers = Generator[Reader[Context, Result_], Result_, B]
 
 def with_effect(f: Callable[..., Readers[Context, Any, B]]
                 ) -> Callable[..., Reader[Context, B]]:
+    """
+    Decorator for functions that
+    return a generator of readers and a final result.
+    Iteraters over the yielded readers and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Readers[Any, int, int]:
+    ...     a = yield value(2)
+    ...     b = yield value(2)
+    ...     return a + b
+    >>> f().run()
+    4
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Maybe` \
+        will be chained together with `and_then`
+    """
     return with_effect_(value, f)
 
 

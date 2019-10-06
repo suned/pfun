@@ -165,6 +165,25 @@ States = Generator[State[A, B], A, C]
 
 def with_effect(f: Callable[..., States[A, B, C]]
                 ) -> Callable[..., State[C, B]]:
+    """
+    Decorator for functions that
+    return a generator of states and a final result.
+    Iteraters over the yielded states and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> States[int, Any, int]:
+    ...     a = yield value(2)
+    ...     b = yield value(2)
+    ...     return a + b
+    >>> f().run(None)
+    (4, None)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`State` \
+        will be chained together with `and_then`
+    """
     return with_effect_(value, f)  # type: ignore
 
 
