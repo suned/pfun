@@ -109,7 +109,7 @@ class Right(Either_, Generic[A]):
     def map(self, f: Callable[[A], C]) -> Either[B, C]:
         return Right(f(self.get))
 
-    def and_then(self, f):
+    def and_then(self, f: Callable[[A], Either[B, C]]) -> Either[B, C]:
         return f(self.get)
 
     def __eq__(self, other: Any) -> bool:
@@ -294,7 +294,7 @@ def with_effect(f: Callable[..., Eithers[A, B, C]]
     unwrapped values using "and_then"
 
     :example:
-    >>> @for_m
+    >>> @with_effect
     ... def f() -> Eithers[int, int]:
     ...     a = yield Right(2)
     ...     b = yield Right(2)

@@ -142,8 +142,28 @@ def value(a: A) -> Cont[A, B]:
 Conts = Generator[Cont[A, B], B, C]
 
 
-def with_effect(f):
-    return with_effect_(value, f)
+def with_effect(f: Callable[..., Conts[A, B, C]]) -> Callable[..., Cont[A, C]]:
+    """
+    Decorator for functions that
+    return a generator of maybes and a final result.
+    Iterates over the yielded maybes and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Conts[Any, int, int]:
+    ...     a = yield value(2)
+    ...     b = yield value(2)
+    ...     return a + b
+    >>> from pfun import identity
+    >>> f().run(identity)
+    Just(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Cont` \
+        will be chained together with `and_then`
+    """
+    return with_effect_(value, f)  # type: ignore
 
 
 __all__ = [

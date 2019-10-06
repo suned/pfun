@@ -170,6 +170,26 @@ Frees = Generator[Free[F, A, C, D], A, E]
 
 def with_effect(f: Callable[..., Frees[F, A, C, D, E]]
                 ) -> Callable[..., Free[F, E, C, D]]:
+    """
+    Decorator for functions that
+    return a generator of maybes and a final result.
+    Iteraters over the yielded maybes and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> from typing import Any
+    >>> @with_effect
+    ... def f() -> Frees[int, int, Any, Any]:
+    ...     a = yield Done(2)
+    ...     b = yield Done(2)
+    ...     return a + b
+    >>> f()
+    Done(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Maybe` \
+        will be chained together with `and_then`
+    """
     return with_effect_(Done, f)  # type: ignore
 
 

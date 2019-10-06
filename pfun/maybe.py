@@ -250,13 +250,17 @@ def with_effect(f: Callable[..., Maybes[Any, R]]) -> Callable[..., Maybe[R]]:
     unwrapped values using "and_then"
 
     :example:
-    >>> @for_m
+    >>> @with_effect
     ... def f() -> Maybes[int, int]:
     ...     a = yield Just(2)
     ...     b = yield Just(2)
     ...     return a + b
     >>> f()
     Just(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Maybe` \
+        will be chained together with `and_then`
     """
     return with_effect_tail_rec(Just, f, tail_rec)
 

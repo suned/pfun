@@ -22,6 +22,22 @@ class IO(Monad, Immutable, Generic[A]):
     run_io: Callable[[], Trampoline[A]]
 
     def and_then(self, f: Callable[[A], IO[B]]) -> IO[B]:
+        """
+        Chain together functions producting world changing actions.
+
+        :param f: function to compose with this action
+        :return: new :class:`IO` action that that composes \
+            this action with action produced by `f`
+
+        :example:
+        >>> read_str('file.txt').and_then(
+        ...    lambda content: value(content.upper())
+        ... ).run()
+        "CONTENTS OF FILE.TXT"
+
+        :param f: function to compose with this :class:`IO` action
+        :return: new :class:`IO` action composed with f
+        """
         def run() -> Trampoline[B]:
             def thunk() -> Trampoline[B]:
                 t = self.run_io()  # type: ignore
@@ -34,6 +50,19 @@ class IO(Monad, Immutable, Generic[A]):
         return IO(run)
 
     def map(self, f: Callable[[A], B]) -> IO[B]:
+        """
+        Map `f` over the value wrapped by this action
+
+        :example:
+        >>> read_str('file.txt').map(
+        ...    lambda content: content.upper()
+        ... ).run()
+        "CONTENTS OF FILE.TXT"
+
+        :param f: function to map over this :class:`IO` action
+        :return: new :class:`IO` action with `f` applied to the \
+            value wrapped by this one.
+        """
         return IO(lambda: Call(lambda: self.run_io().map(f)))  # type: ignore
 
     def run(self):
