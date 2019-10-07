@@ -413,12 +413,12 @@ def divide(a: int, b: int) -> Maybes[Any, float]:
         yield Nothing()
     return a / b
 ```
-This works because the above code is precisly the same as:
+This works because the above code is precisely the same as:
 
 ```python
 def divide(a: int, b: int) -> Maybe[int]:
     if b == 0:
-        return Nothing().and_then(lambda _: a / b)
+        return Nothing()
     return Just(a / b)
 ```
 ## Stack-Safefy and Recursion
