@@ -1,11 +1,13 @@
-from typing import TypeVar, Callable, Iterable, Tuple, Optional, Generic, cast
+from typing import (
+    TypeVar, Callable, Iterable, Tuple, Optional, Generic, cast, Generator
+)
 from functools import reduce
 
 from .monoid import Monoid
 from .immutable import Immutable
 from .curry import curry
 from .monad import map_m_, sequence_, filter_m_, Monad
-
+from .with_effect import with_effect_
 A = TypeVar('A')
 B = TypeVar('B')
 
@@ -210,4 +212,32 @@ def filter_m(f: Callable[[A], List[bool]],
     return cast(List[Iterable[A]], filter_m_(value, f, iterable))
 
 
-__all__ = ['List', 'value', 'map_m', 'sequence', 'filter_m']
+Lists = Generator[List[A], A, B]
+
+
+def with_effect(f: Callable[..., Lists[A, B]]) -> Callable[..., List[B]]:
+    """
+    Decorator for functions that
+    return a generator of lists and a final result.
+    Iteraters over the yielded lists and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Lists[int, int]:
+    ...     a = yield List([2])
+    ...     b = yield List([2])
+    ...     return a + b
+    >>> f()
+    List((4,))
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`List` \
+        will be chained together with `and_then`
+    """
+    return with_effect_(value, f)  # type: ignore
+
+
+__all__ = [
+    'List', 'value', 'map_m', 'sequence', 'filter_m', 'Lists', 'with_effect'
+]

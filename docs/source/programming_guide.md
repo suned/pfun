@@ -413,6 +413,14 @@ def divide(a: int, b: int) -> Maybes[Any, float]:
         yield Nothing()
     return a / b
 ```
+This works because the above code is precisly the same as:
+
+```python
+def divide(a: int, b: int) -> Maybe[int]:
+    if b == 0:
+        return Nothing().and_then(lambda _: a / b)
+    return Just(a / b)
+```
 ## Stack-Safefy and Recursion
 Its common to use recursion rather than looping in pure functional programming to avoid mutating a local variable.
 
@@ -475,19 +483,18 @@ is often easier to understand.
 Sometimes you'll find yourself in a situation where you want to write a recursive monadic function.
 For some monads this is not a problem since they are designed to be stack safe (`Reader`, `State`, `IO`, and `Cont`).
 But for other monads (`Maybe`, `Either` and `Writer`), this can lead to `RecursionError`. Consider `pow_writer` which computes integer powers by recursion:
-```python
 
+```python
 def pow_writer(n: int, m: int):
     if m == 0:
         return value(None)
     return tell(n).and_then(lambda _: pow_writer(n, m - 1))
-    
 ```
+
 `pow_writer` cannot easily be trampolined because the function passed to `and_then` which performs the recursion 
 must return a `Writer`, and not a `Trampoline`.
 
 In these cases the helper function `tail_rec` is provided which can help you trampoline you monadic function using `Either`:
-
 ```python
 def pow_writer(n: int, m: int):
     def _(n_m):
@@ -497,5 +504,6 @@ def pow_writer(n: int, m: int):
         return tell(n).and_then(lambda _: value((n, m - 1))).map(Left)
     return tail_rec(_, (n, m))
 ```
+
 (Of course also in this example there are several ways of computing the same thing that does not
 rely on recursion and does not break referential transparency.)
