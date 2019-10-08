@@ -3,6 +3,7 @@ from hypothesis import given, assume
 from tests.monad_test import MonadTest
 from pfun import state, identity, compose
 from tests.strategies import anything, unaries, states
+from .utils import recursion_limit
 
 
 class TestState(MonadTest):
@@ -59,3 +60,37 @@ class TestState(MonadTest):
 
     def test_set(self):
         assert state.put('new_state').run('state') == (None, 'new_state')
+
+    def test_with_effect(self):
+        @state.with_effect
+        def f():
+            a = yield state.value(2)
+            b = yield state.value(2)
+            return a + b
+
+        assert f().run(None) == (4, None)
+
+        @state.with_effect
+        def test_stack_safety():
+            for _ in range(500):
+                yield state.value(1)
+            return None
+
+        with recursion_limit(100):
+            test_stack_safety().run(None)
+
+    def test_sequence(self):
+        assert state.sequence([state.value(v) for v in range(3)]
+                              ).run(None) == ((0, 1, 2), None)
+
+    def test_stack_safety(self):
+        with recursion_limit(100):
+            state.sequence([state.value(v) for v in range(500)]).run(None)
+
+    def test_filter_m(self):
+        assert state.filter_m(lambda v: state.value(v % 2 == 0),
+                              range(3)).run(None) == ((0, 2), None)
+
+    def test_map_m(self):
+        assert state.map_m(state.value,
+                           range(3)).run(None) == ((0, 1, 2), None)

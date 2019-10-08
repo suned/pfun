@@ -27,6 +27,7 @@ def type_check(file):
 def test_positives(file):
     normal_report, error_report, exit_code = type_check(file)
     if normal_report or error_report or exit_code != 0:
+        import ipdb; ipdb.set_trace()
         pytest.fail(error_report)
 
 

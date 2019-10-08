@@ -3,6 +3,7 @@ from hypothesis import given, assume
 from pfun import cont, identity, compose
 from tests.monad_test import MonadTest
 from tests.strategies import anything, unaries, conts
+from .utils import recursion_limit
 
 
 class TestCont(MonadTest):
@@ -53,3 +54,38 @@ class TestCont(MonadTest):
             cont.value(value).map(h).run(identity) ==
             cont.value(value).map(g).map(f).run(identity)
         )
+
+    def test_with_effect(self):
+        @cont.with_effect
+        def f():
+            a = yield cont.value(2)
+            b = yield cont.value(2)
+            return a + b
+
+        assert f().run(identity) == 4
+
+        @cont.with_effect
+        def test_stack_safety():
+            for _ in range(500):
+                yield cont.value(1)
+            return None
+
+        with recursion_limit(100):
+            test_stack_safety().run(identity)
+
+    def test_sequence(self):
+        assert (
+            cont.sequence([cont.value(v)
+                           for v in range(3)]).run(identity) == (0, 1, 2)
+        )
+
+    def test_stack_safety(self):
+        with recursion_limit(100):
+            cont.sequence([cont.value(v) for v in range(500)]).run(identity)
+
+    def test_filter_m(self):
+        assert cont.filter_m(lambda v: cont.value(v % 2 == 0),
+                             range(3)).run(identity) == (0, 2)
+
+    def test_map_m(self):
+        assert cont.map_m(cont.value, range(3)).run(identity) == (0, 1, 2)
