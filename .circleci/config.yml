@@ -30,7 +30,7 @@ jobs:
           command: poetry run flake8 pfun tests examples
       - run:
           name: Typecheck
-          command: poetry run mypy pfun tests examples
+          command: poetry run mypy pfun examples
   release:
     <<: *defaults
     steps:
