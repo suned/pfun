@@ -4,7 +4,6 @@ from pfun import identity, compose
 
 from .strategies import trampolines, unaries, anything
 from .monad_test import MonadTest
-from .utils import recursion_limit
 
 
 class TestTrampoline(MonadTest):

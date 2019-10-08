@@ -48,7 +48,7 @@ class TestWriter(MonadTest):
     @given(monoids())
     def test_tell(self, monoid):
         assert writer.tell(monoid) == writer.value(None, monoid)
-    
+
     def test_with_effect(self):
         @writer.with_effect
         def f():
@@ -68,14 +68,16 @@ class TestWriter(MonadTest):
             test_stack_safety()
 
     def test_sequence(self):
-        assert writer.sequence([writer.value(v) for v in range(3)]) == writer.value((0, 1, 2))
+        assert writer.sequence([writer.value(v)
+                                for v in range(3)]) == writer.value((0, 1, 2))
 
     def test_stack_safety(self):
         with recursion_limit(100):
             writer.sequence([writer.value(v) for v in range(500)])
 
     def test_filter_m(self):
-        assert writer.filter_m(lambda v: writer.value(v % 2 == 0), range(3)) == writer.value((0, 2))
+        assert writer.filter_m(lambda v: writer.value(v % 2 == 0),
+                               range(3)) == writer.value((0, 2))
 
     def test_map_m(self):
         assert writer.map_m(writer.value, range(3)) == writer.value((0, 1, 2))

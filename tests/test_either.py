@@ -3,7 +3,9 @@ from typing import Any
 from hypothesis import given, assume
 
 from pfun import Unary, identity, compose
-from pfun.either import Either, Left, Right, either, with_effect, sequence, filter_m, map_m
+from pfun.either import (
+    Either, Left, Right, either, with_effect, sequence, filter_m, map_m
+)
 from tests.monad_test import MonadTest
 from tests.strategies import eithers, unaries, anything
 from .utils import recursion_limit
