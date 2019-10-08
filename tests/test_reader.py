@@ -2,6 +2,7 @@ from .monad_test import MonadTest
 from .strategies import anything, unaries, readers
 from hypothesis import given, assume
 from pfun import reader, identity, compose
+from .utils import recursion_limit
 
 
 class TestReader(MonadTest):
@@ -58,3 +59,36 @@ class TestReader(MonadTest):
 
     def test_ask(self):
         reader.ask().run('context') == 'context'
+
+    def test_with_effect(self):
+        @reader.with_effect
+        def f():
+            a = yield reader.value(2)
+            b = yield reader.value(2)
+            return a + b
+
+        assert f().run(None) == 4
+
+        @reader.with_effect
+        def test_stack_safety():
+            for _ in range(500):
+                yield reader.value(1)
+            return None
+
+        with recursion_limit(100):
+            test_stack_safety().run(None)
+
+    def test_sequence(self):
+        assert reader.sequence([reader.value(v)
+                                for v in range(3)]).run(None) == (0, 1, 2)
+
+    def test_stack_safety(self):
+        with recursion_limit(100):
+            reader.sequence([reader.value(v) for v in range(500)]).run(None)
+
+    def test_filter_m(self):
+        assert reader.filter_m(lambda v: reader.value(v % 2 == 0),
+                               range(3)).run(None) == (0, 2)
+
+    def test_map_m(self):
+        assert reader.map_m(reader.value, range(3)).run(None) == (0, 1, 2)

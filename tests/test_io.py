@@ -3,21 +3,22 @@ import sys
 from pfun.io import (
     put_line,
     get_line,
-    read_file,
-    read_file_bytes,
-    write_file,
-    write_file_bytes,
-    IO,
-    Put,
-    Get,
-    ReadFile,
-    WriteFile
+    read_str as read_file,
+    read_bytes as read_file_bytes,
+    write_str as write_file,
+    write_bytes as write_file_bytes,
+    value as IO,
+    with_effect,
+    sequence,
+    filter_m,
+    map_m
 )
 from pfun import identity, compose
 from .monad_test import MonadTest
 from .strategies import ios, unaries, anything
 from hypothesis import given, assume
 from hypothesis.strategies import text
+from .utils import recursion_limit
 
 
 def mock_input():
@@ -58,16 +59,7 @@ class TestIO(MonadTest):
     @given(anything(), ios(), text())
     def test_equality(self, value, io, text):
         with mock_input(), mock_open(text), mock_print():
-            assert IO(value) == IO(value)
             assert IO(value).run() == IO(value).run()
-            assert Put((text, io)).run() == Put((text, io)).run()
-            assert Get(lambda _: io).run() == Get(lambda _: io).run()
-            assert ReadFile((text, lambda _: io)).run() == ReadFile(
-                (text, lambda _: io)
-            ).run()
-            assert WriteFile((text, text, io)).run() == WriteFile(
-                (text, text, io)
-            ).run()
 
     @given(ios(), text())
     def test_identity_law(self, io, text):
@@ -77,14 +69,7 @@ class TestIO(MonadTest):
     @given(anything(), anything(), text())
     def test_inequality(self, value1, value2, text):
         assume(value1 != value2)
-        assert IO(value1) != IO(value2)
         assert IO(value1).run() != IO(value2).run()
-        # assert Put((text, io1)).run() != Put((text, io2)).run()
-        # assert Get(lambda _: io1).run() != Get(lambda _: io2).run()
-        # assert ReadFile((text, lambda _: io1)).run() != ReadFile(
-        #     (text, lambda _: io2)).run()
-        # assert WriteFile((text, text, io1)).run() != WriteFile(
-        #     (text, text, io2)).run()
 
     def test_get_line(self):
         with mock_input() as mocked_input:
@@ -99,7 +84,7 @@ class TestIO(MonadTest):
     def test_read_file(self):
         with mock_open('Hello') as mocked_open:
             assert read_file('test.txt').run() == 'Hello'
-            mocked_open.assert_called_with('test.txt', 'r')
+            mocked_open.assert_called_with('test.txt')
 
     def test_read_file_bytes(self):
         with mock_open(b'Hello') as mocked_open:
@@ -117,3 +102,34 @@ class TestIO(MonadTest):
             write_file_bytes('test.txt')(b'Hello').run()
             mocked_open.assert_called_with('test.txt', 'wb')
             mocked_open().write.assert_called_with(b'Hello')
+
+    def test_with_effect(self):
+        @with_effect
+        def f():
+            a = yield IO(2)
+            b = yield IO(2)
+            return a + b
+
+        assert f().run() == 4
+
+        @with_effect
+        def test_stack_safety():
+            for _ in range(500):
+                yield IO(1)
+            return None
+
+        with recursion_limit(100):
+            test_stack_safety().run()
+
+    def test_sequence(self):
+        assert sequence([IO(v) for v in range(3)]).run() == (0, 1, 2)
+
+    def test_stack_safety(self):
+        with recursion_limit(100):
+            sequence([IO(v) for v in range(500)]).run()
+
+    def test_filter_m(self):
+        assert filter_m(lambda v: IO(v % 2 == 0), range(3)).run() == (0, 2)
+
+    def test_map_m(self):
+        assert map_m(IO, range(3)).run() == (0, 1, 2)

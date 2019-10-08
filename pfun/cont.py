@@ -1,10 +1,11 @@
-from typing import Generic, Callable, TypeVar, Iterable, cast
+from typing import Generic, Callable, TypeVar, Iterable, cast, Generator
 
 from .immutable import Immutable
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
 from .util import identity
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -138,4 +139,33 @@ def value(a: A) -> Cont[A, B]:
     return Cont(lambda cont: Done(cont(a)))
 
 
-__all__ = ['value', 'filter_m', 'sequence', 'map_m', 'Cont']
+Conts = Generator[Cont[A, B], B, C]
+
+
+def with_effect(f: Callable[..., Conts[A, B, C]]) -> Callable[..., Cont[A, C]]:
+    """
+    Decorator for functions that
+    return a generator of maybes and a final result.
+    Iterates over the yielded maybes and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Conts[Any, int, int]:
+    ...     a = yield value(2)
+    ...     b = yield value(2)
+    ...     return a + b
+    >>> from pfun import identity
+    >>> f().run(identity)
+    Just(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Cont` \
+        will be chained together with `and_then`
+    """
+    return with_effect_(value, f)  # type: ignore
+
+
+__all__ = [
+    'value', 'filter_m', 'sequence', 'map_m', 'Cont', 'with_effect', 'Conts'
+]

@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Callable, Iterable, cast
+from typing import TypeVar, Generic, Callable, Iterable, cast, Generator
 
 from pfun.immutable import Immutable
 from abc import ABC, abstractmethod
@@ -7,6 +7,7 @@ from .functor import Functor
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
 from .state import State, get
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -157,9 +158,39 @@ def filter_m(f: Callable[[A], Free[F, bool, C, D]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Free[F, Iterable[A], C, D], filter_m_(Done, f, iterable))
+
+
+E = TypeVar('E')
+
+Frees = Generator[Free[F, A, C, D], A, E]
+
+
+def with_effect(f: Callable[..., Frees[F, A, C, D, E]]
+                ) -> Callable[..., Free[F, E, C, D]]:
+    """
+    Decorator for functions that
+    return a generator of frees and a final result.
+    Iteraters over the yielded frees and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> from typing import Any
+    >>> @with_effect
+    ... def f() -> Frees[int, int, Any, Any]:
+    ...     a = yield Done(2)
+    ...     b = yield Done(2)
+    ...     return a + b
+    >>> f()
+    Done(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Free` \
+        will be chained together with `and_then`
+    """
+    return with_effect_(Done, f)  # type: ignore
 
 
 __all__ = [

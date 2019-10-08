@@ -1,31 +1,25 @@
-from typing import TypeVar, Callable
+from typing import TypeVar, Callable, Union
 from functools import wraps
 
-from .either import Either, Left, Right
+from .either import Left, Right, with_effect, Eithers
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Result(Either[Exception, A]):
-    """
-    Represents computations that may fail with an exception
-    """
+class Ok(Right[A]):
     pass
 
 
-class Ok(Result[A], Right[Exception, A]):
-    """
-    Represents a succesful computation
-    """
-    pass
+class Error(Left[Exception]):
+    get: Exception
 
 
-class Error(Result[A], Left[Exception, A]):
-    """
-    Represents a failed computation
-    """
-    b: Exception
+Result = Union[Error, Ok[A]]
+
+Results = Eithers[Exception, A, B]
+
+with_effect = with_effect
 
 
 def result(f: Callable[..., B]) -> Callable[..., Result[B]]:

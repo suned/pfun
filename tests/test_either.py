@@ -3,9 +3,12 @@ from typing import Any
 from hypothesis import given, assume
 
 from pfun import Unary, identity, compose
-from pfun.either import Either, Left, Right, either
+from pfun.either import (
+    Either, Left, Right, either, with_effect, sequence, filter_m, map_m
+)
 from tests.monad_test import MonadTest
 from tests.strategies import eithers, unaries, anything
+from .utils import recursion_limit
 
 
 class TestEither(MonadTest):
@@ -62,3 +65,42 @@ class TestEither(MonadTest):
     def test_either_decorator(self):
         result_int = either(int)
         assert result_int('1') == Right(1)
+
+    def test_with_effect(self):
+        @with_effect
+        def f():
+            a = yield Right(2)
+            b = yield Right(2)
+            return a + b
+
+        assert f() == Right(4)
+
+        @with_effect
+        def g():
+            a = yield Right(2)
+            b = yield Left('error')
+            return a + b
+
+        assert g() == Left('error')
+
+        @with_effect
+        def test_stack_safety():
+            for _ in range(500):
+                yield Right(1)
+            return None
+
+        with recursion_limit(100):
+            test_stack_safety()
+
+    def test_sequence(self):
+        assert sequence([Right(v) for v in range(3)]) == Right((0, 1, 2))
+
+    def test_stack_safety(self):
+        with recursion_limit(100):
+            sequence([Right(v) for v in range(500)])
+
+    def test_filter_m(self):
+        assert filter_m(lambda v: Right(v % 2 == 0), range(3)) == Right((0, 2))
+
+    def test_map_m(self):
+        assert map_m(Right, range(3)) == Right((0, 1, 2))

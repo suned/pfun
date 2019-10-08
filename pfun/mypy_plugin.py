@@ -11,7 +11,8 @@ from mypy.types import (
     TypeVarType,
     Overloaded,
     TypeVarId,
-    TypeVarDef
+    TypeVarDef,
+    AnyType
 )
 from mypy.nodes import ClassDef, ARG_POS
 from mypy import checkmember, infer
@@ -21,6 +22,15 @@ _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 _MAYBE = 'pfun.maybe.maybe'
+_MAYBE_WITH_EFFECT = 'pfun.maybe.with_effect'
+_LIST_WITH_EFFECT = 'pfun.liste.with_effect'
+_EITHER_WITH_EFFECT = 'pfun.either.with_effect'
+_READER_WITH_EFFECT = 'pfun.reader.with_effect'
+_WRITER_WITH_EFFECT = 'pfun.writer.with_effect'
+_STATE_WITH_EFFECT = 'pfun.state.with_effect'
+_IO_WITH_EFFECT = 'pfun.io.with_effect'
+_TRAMPOLINE_WITH_EFFECT = 'pfun.trampoline.with_effect'
+_FREE_WITH_EFFECT = 'pfun.free.with_effect'
 _RESULT = 'pfun.result.result'
 _IO = 'pfun.io.io'
 _READER = 'pfun.reader.reader'
@@ -199,9 +209,8 @@ def _immutable_hook(context: ClassDefContext):
     transformer._freeze(attributes)
 
 
-def _and_then_hook(context: FunctionContext) -> Type:
-
-    return context.default_return_type
+def _do_hook(context: FunctionContext) -> Type:
+    return AnyType(6)
 
 
 class PFun(Plugin):
@@ -211,20 +220,23 @@ class PFun(Plugin):
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
-        if fullname == _MAYBE:
+        if fullname in (
+            _MAYBE,
+            _RESULT,
+            _EITHER,
+            _IO,
+            _READER,
+            _MAYBE_WITH_EFFECT,
+            _EITHER_WITH_EFFECT,
+            _LIST_WITH_EFFECT,
+            _READER_WITH_EFFECT,
+            _WRITER_WITH_EFFECT,
+            _STATE_WITH_EFFECT,
+            _IO_WITH_EFFECT,
+            _TRAMPOLINE_WITH_EFFECT,
+            _FREE_WITH_EFFECT
+        ):
             return _variadic_decorator_hook
-        if fullname == _RESULT:
-            return _variadic_decorator_hook
-        if fullname == _EITHER:
-            return _variadic_decorator_hook
-        if fullname == _IO:
-            return _variadic_decorator_hook
-        if fullname == _READER:
-            return _variadic_decorator_hook
-
-    def get_method_hook(self, fullname: str):
-        if fullname == _READER_AND_THEN:
-            return _and_then_hook
         return None
 
     def get_base_class_hook(self, fullname: str):

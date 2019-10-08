@@ -13,11 +13,20 @@ from hypothesis.strategies import (
     dictionaries,
     tuples,
     none,
-    composite
+    composite,
+    binary
 )
 
 from pfun.either import Left, Right
-from pfun.io import IO, Put, Get, ReadFile, WriteFile
+from pfun.io import (
+    value as IO,
+    read_bytes,
+    read_str,
+    put_line,
+    get_line,
+    write_bytes,
+    write_str
+)
 
 
 def _everything(allow_nan=False):
@@ -132,31 +141,31 @@ def io_primitives(value_strategy=anything()):
     return builds(IO, value_strategy)
 
 
-def puts(value_strategy=anything()):
-    return builds(Put, tuples(text(), io_primitives(value_strategy)))
+def puts():
+    return builds(put_line, text())
 
 
-def gets(value_strategy=anything()):
-    return builds(Get, unaries(io_primitives(value_strategy)), text())
+def gets():
+    return builds(get_line, text())
 
 
-def read_files(value_strategy=anything()):
-    return builds(
-        ReadFile, tuples(text(), unaries(io_primitives(value_strategy)))
-    )
+def read_files():
+    read_files = builds(read_str, text())
+    read_bytess = builds(read_bytes, text())
+    return one_of(read_files, read_bytess)
 
 
-def write_files(value_strategy=anything()):
-    return builds(
-        WriteFile, tuples(text(), text(), io_primitives(value_strategy))
-    )
+def write_files():
+    write_strs = builds(write_str, text(), text())
+    write_bytess = builds(write_bytes, text(), binary())
+    return one_of(write_bytess, write_strs)
 
 
 def ios(value_strategy=anything()):
     return one_of(
         io_primitives(value_strategy),
-        puts(value_strategy),
-        gets(value_strategy),
-        read_files(value_strategy),
-        write_files(value_strategy)
+        write_files(),
+        read_files(),
+        gets(),
+        puts()
     )

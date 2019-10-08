@@ -132,7 +132,7 @@ def i_can_fail(v: str) -> str:
     return 'Ok!'
 ```
 We already added type annotations to the `i_can_fail` function, but there is really no way for the caller
-to see that this function can fail from the type signature alone (and hence also no way for your favourite PEP 484 type-checker).
+to see that this function can fail from the type signature alone (and hence also no way for your favorite PEP 484 type-checker).
 
 Wouldn't it be nice if the type signature of `i_can_fail` could give you that information? Then you wouldn't need to read the
 entire function to know which error cases to cover,
@@ -153,7 +153,7 @@ def i_can_fail(v: str) -> Maybe[str]:
 
 Technically speaking, `Maybe` is a _monad_. In addition to making effects such as errors explicit
 by putting them in the type signature, all monadic types like `Maybe` supports a function called `and_then` which allows you to
-chain together effectul functions that keeps track of the effects along the way automatically
+chain together effectful functions that keeps track of the effects along the way automatically
 without any mutable state.
 
 ```python
@@ -215,7 +215,7 @@ But now you have to pass that parameter around through potentially many function
 that don't use it for anything other than passing to `f`
 
 ```python
-def calls_f(conncetion: Connection) -> str:
+def calls_f(connection: Connection) -> str:
     ...
     return f(connection)
 
@@ -259,7 +259,7 @@ in your program that needs to do logging
 from typing import Tuple
 def i_need_to_log_something(i: int, log: Tuple[str]) -> Tuple[int, Tuple[str]]:
     result = compute_something(i)
-    log = log + ('Something was sucessfully computed',)
+    log = log + ('Something was successfully computed',)
     return result, log
  
 def i_need_to_log_something_too(i: int, log: Tuple[str]) -> Tuple[int, Tuple[str]]:
@@ -271,7 +271,7 @@ def i_need_to_log_something_too(i: int, log: Tuple[str]) -> Tuple[int, Tuple[str
 def main():
     result, log = i_need_to_log_something(1, ())
     result, log = i_need_to_log_something_too(result, log)
-    print('reseult', result)
+    print('result', result)
     print('log', log)
 ```
 Well that obviously works, but there is a lot of logistics involved that seems
@@ -284,17 +284,17 @@ from pfun.writer import value, Writer
 
 def i_need_to_log_something(i: int) -> Writer[int, List[str]]:
     result = compute_something(i)
-    return Writer(result, ['Something was succesfully computed'])
+    return Writer(result, ['Something was successfully computed'])
     
     
 def i_need_to_log_something_too(i: int) -> Writer[int, List[str]]:
     result = compute_something_else(i)
-    return Writer(result, ['Something else was succesfully computed'])
+    return Writer(result, ['Something else was successfully computed'])
 
 
 def main():
     _, log = i_need_to_log_something(1).and_then(i_need_to_log_something_too)
-    print('log', log)  # output: ['Something was succesfully computed', 'Something else was successfully computed']
+    print('log', log)  # output: ['Something was successfully computed', 'Something else was successfully computed']
  
 ```
 `tuple` is not the only thing `Writer` can combine: in fact the only requirement on the second argument is that its a _monoid_. You can even tell writer
@@ -337,10 +337,93 @@ print_.run()
 `get_line` creates an `IO` action that when run, will read a `str` from standard input. `IO` can be combined
 with `map` and `and_then` just like the other monads we have seen.
 
-> **WARNING**: `IO` is not stack-safe under all circumstances. Combining a large number of `IO`s with `and_then`
-> may lead to `RecursionError`
 
-## Stack-Safefy and Recursion
+### Combining Monadic Values
+Sometimes you want to combine multiple unwrapped monadic values 
+like in the `get_full_name` function below:
+```python
+from pfun.maybe import Just, Maybe
+
+def get_first_name() -> Maybe[str]:
+    ...
+
+def get_last_name() -> Maybe[str]:
+    ...
+
+def get_full_name() -> Maybe[str]:
+    return get_first_name().and_then(
+        lambda first: get_last_name().and_then(
+            lambda last: return Just(first + ' ' + last)
+        )
+    )
+```
+Writing a lambda inside a lambda like this can be hard to read, and you need to make sure
+that your parentheses are in the right places, and not for example:
+
+```python
+def get_full_name() -> Maybe[str]:
+    return get_first_name().and_then(
+        lambda first: get_last_name()
+    ).and_then(
+        lambda last: return Just(first + ' ' + last)
+    )
+```
+Of course, if you use `mypy` it will warn you that `first` is not in scope in the last lambda, but
+it would still be nice if we could make this a little easier to read.
+
+The solution to this problem in other languages is syntactic sugar that will call `and_then` for you
+behind the scenes, and let you work with the 'unwrapped' monadic value directly. In Haskell for example,
+this is called `do` notation.
+
+We can achieve something similar in python using generators, which is what the `with_effect` decorator
+does for you:
+
+```python
+from pfun.maybe import with_effect, Maybes
+
+@with_effect
+def get_full_name() -> Maybes[str, str]:
+    first = yield get_first_name()
+    last = yield get_last_name()
+    return first + ' ' + last
+```
+The `Maybes[A, B]` type is just a type alias for `Generator[Maybe[A], A, B]`.
+
+You may want to unwrap monadic values of heterogenous types inside a `with_effect` decorated function. However,
+the `Generator` type does not allow us to express that our function wants to receive, say first
+an `int` and then a `str`. So the best you can do is to add the types explicitly:
+
+```python
+from typing import Any
+
+@with_effect
+def heterogenous_yield_types() -> Maybes[Any, str]:
+    an_int = yield Just(1)  # type: int
+    a_str = yield Just('an_int was: ')  # type: str
+    return str(a_str) + an_int
+```
+
+Some monads have a "failure" value, such as `Maybe` (`Nothing`), `Either` (`Left`) and `Result` (`Error`). You may want to terminate
+the computation inside a `with_effect` decorated function under some conditions using the failure value. This can be done like:
+```python
+
+@with_effect
+def divide(a: int, b: int) -> Maybes[Any, float]:
+    if b == 0:
+        yield Nothing()
+    return a / b
+```
+This works because if `b == 0`, a `Nothing` is yielded and control-flow is returned to the `with_effect` decorator. `with_effect` will then bind the rest of the function together
+with the `Nothing`, in effect:
+
+```python
+generator = divide(a, b)
+maybe = next(generator)
+maybe.and_then(lambda v: generator.send(v))
+... # with_effect then consumes any remaining yields, and finally wraps
+    # the return value in a "Just"
+```
+## Stack-Safety and Recursion
 Its common to use recursion rather than looping in pure functional programming to avoid mutating a local variable.
 
 Consider e.g the following implementation of the factorial function:
@@ -353,7 +436,7 @@ def factorial(n: int) -> int:
 ```
 Called with a large enough value for `n`, the recursive calls will overflow the python stack.
 
-A common solution to this problem in other languages that perform tail-call-optimisation is to rewrite the function
+A common solution to this problem in other languages that perform tail-call-optimization is to rewrite the function
 to put the recursive call in tail-call position.
 
 ```python
@@ -366,9 +449,9 @@ def factorial(n: int) -> int:
         
     return factorial_acc(n, 1)
 ```
-In Python however, this is not enough to solve the problem because Python does not perform tail-call-optimisation.
+In Python however, this is not enough to solve the problem because Python does not perform tail-call-optimization.
 
-In languages without tail-call-optimisation such as Python, its common to use a data structure called a trampoline
+In languages without tail-call-optimization such as Python, its common to use a data structure called a trampoline
 to wrap the recursive calls into objects that can be interpreted in constant stack space, by letting the function
 return immediately at each recursive step.
 
@@ -398,3 +481,36 @@ def factorial(n: int) -> int:
 This is the recommended
 way of solving recursive problems (when it doesn't break [referential transparency](https://en.wikipedia.org/wiki/Referential_transparency)), because it avoids overflowing the stack, and
 is often easier to understand.
+
+Sometimes you'll find yourself in a situation where you want to write a recursive monadic function.
+For some monads this is not a problem since they are designed to be stack safe (`Reader`, `State`, `IO`, and `Cont`).
+But for other monads (`Maybe`, `Either` and `Writer`), this can lead to `RecursionError`. Consider `pow_writer` which computes integer powers by recursion:
+
+```python
+from pfun.writer import value, tell
+
+def pow_writer(n: int, m: int) -> Writer[None, int]:
+    if m == 0:
+        return value(None)
+    return tell(n).and_then(lambda _: pow_writer(n, m - 1))
+```
+
+`pow_writer` cannot easily be trampolined because the function passed to `and_then` which performs the recursion 
+must return a `Writer`, and not a `Trampoline`.
+
+In these cases the helper function `tail_rec` is provided which can help you trampoline you monadic function using `Either`:
+```python
+from pfun.either import Either, Left, Right
+from typing import Tuple
+
+def pow_writer(n: int, m: int) -> Writer[Either[Tuple[int, int], None], int]:
+    def _(n_m):
+        n, m = n_m
+        if m == 0:
+            return value(None).map(Right)
+        return tell(n).and_then(lambda _: value((n, m - 1))).map(Left)
+    return tail_rec(_, (n, m))
+```
+
+(Of course also in this example there are several ways of computing the same thing that does not
+rely on recursion and does not break referential transparency.)

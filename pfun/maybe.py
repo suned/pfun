@@ -1,4 +1,15 @@
-from typing import (Generic, TypeVar, Callable, Any, Sequence, Iterable, cast)
+from typing import (
+    Generic,
+    TypeVar,
+    Callable,
+    Any,
+    Sequence,
+    Iterable,
+    cast,
+    Generator,
+    Union,
+    Optional
+)
 from functools import wraps
 from abc import ABC, abstractmethod
 
@@ -6,19 +17,25 @@ from .immutable import Immutable
 from .list import List
 from .curry import curry
 from .monad import Monad, map_m_, sequence_, filter_m_
+from .with_effect import with_effect_tail_rec
+from .either import Either, Left
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Maybe(Generic[A], Immutable, Monad, ABC):
+class Maybe_(Immutable, Monad, ABC):
     """
-    Represents computations that can fail.
+    Abstract super class for classes that represent computations that can fail.
+    Should not be instantiated directly.
+    Use :class:`Just` and :class:`Nothing` instead.
+
     """
     @abstractmethod
-    def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
+    def and_then(self, f):
         """
-        Chain together functions that may fail
+        Chain together functional calls, carrying along the state of the
+        computation that may fail.
 
         :example:
         >>> f = lambda i: Just(1 / i) if i != 0 else Nothing()
@@ -35,9 +52,9 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
+    def map(self, f):
         """
-        Map the result of a possibly failed function
+        Map the result of a possibly failed computation
 
         :example:
         >>> f = lambda i: Just(1 / i) if i != 0 else Nothing()
@@ -47,13 +64,13 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
         Nothing()
 
         :param f: Function to apply to the result
-        :return: :class:`Maybe` mapped by ``f``
+        :return: :class:`Just` wrapping result of type B if the computation was
 
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def or_else(self, default: A) -> A:
+    def or_else(self, default):
         """
         Try to get the result of the possibly failed computation if it was
         successful.
@@ -73,7 +90,7 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
     @abstractmethod
     def __bool__(self):
         """
-        Convert this :clas:`Maybe` to a bool
+        Convert possibly failed computation to a bool
 
         :example:
         >>> "Just" if Just(1) else "Nothing"
@@ -87,36 +104,36 @@ class Maybe(Generic[A], Immutable, Monad, ABC):
         """
         raise NotImplementedError()
 
-    @property
-    def get(self) -> A:
-        """
-        Get the value wrapped by this :class:`Maybe`. \
-            Fails if this is a :class:`Nothing`
 
-        :return: [description]
-        """
-        raise NotImplementedError()
+def _invoke_optional_arg(
+    f: Union[Callable[[A], B], Callable[[], B]], arg: Optional[A]
+) -> B:
+    try:
+        return f(arg)  # type: ignore
+    except TypeError as e:
+        if arg is None:
+            try:
+                return f()  # type: ignore
+            except TypeError:
+                raise e
+        raise
 
 
-class Just(Maybe[A]):
+class Just(Maybe_, Generic[A]):
     """
-    Represents a successful computation
+    Subclass of :class:`Maybe` that represents a successful computation
 
     """
-    a: A
-
-    @property
-    def get(self) -> A:
-        return self.a
+    get: A
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
-        return f(self.a)
+        return _invoke_optional_arg(f, self.get)
 
     def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
-        return Just(f(self.a))
+        return Just(f(self.get))
 
     def or_else(self, default: A) -> A:
-        return self.a
+        return self.get
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -129,13 +146,47 @@ class Just(Maybe[A]):
         """
         if not isinstance(other, Just):
             return False
-        return other.a == self.a
+        return other.get == self.get
 
     def __repr__(self):
-        return f'Just({repr(self.a)})'
+        return f'Just({repr(self.get)})'
 
     def __bool__(self):
         return True
+
+
+class Nothing(Maybe_):
+    """
+    Subclass of :class:`Maybe` that represents a failed computation
+
+    """
+    def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
+        return self
+
+    def __eq__(self, other: Any) -> bool:
+        """
+        Test if other is a ``Nothing``
+
+        :param other: Value to compare with
+        :return: True if other is a ``Nothing``, False otherwise
+
+        """
+        return isinstance(other, Nothing)
+
+    def __repr__(self):
+        return 'Nothing()'
+
+    def or_else(self, default: A) -> A:
+        return default
+
+    def map(self, f: Callable[[Any], B]) -> 'Maybe[B]':
+        return self
+
+    def __bool__(self):
+        return False
+
+
+Maybe = Union[Nothing, Just[A]]
 
 
 def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
@@ -165,41 +216,6 @@ def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
     return dec
 
 
-class Nothing(Maybe[Any]):
-    """
-    Represents a failed computation
-
-    """
-    @property
-    def get(self):
-        raise AttributeError('"Nothing" does not support "get"')
-
-    def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
-        return self
-
-    def __eq__(self, other: Any) -> bool:
-        """
-        Test if other is a ``Nothing``
-
-        :param other: Value to compare with
-        :return: True if other is a ``Nothing``, False otherwise
-
-        """
-        return isinstance(other, Nothing)
-
-    def __repr__(self):
-        return 'Nothing()'
-
-    def or_else(self, default: A) -> A:
-        return default
-
-    def map(self, f: Callable[[Any], B]) -> 'Maybe[B]':
-        return self
-
-    def __bool__(self):
-        return False
-
-
 def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
     """
     Extract value from each :class:`Maybe`, ignoring
@@ -207,9 +223,8 @@ def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
 
     :param maybes: Seqence of :class:`Maybe`
     :return: :class:`List` of unwrapped values
-    :rtype: List[A]
     """
-    justs = [m for m in maybes if m]
+    justs = [m for m in maybes if isinstance(m, Just)]
     return List(j.get for j in justs)
 
 
@@ -243,7 +258,7 @@ def sequence(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
     Just((0, 1, 2))
 
     :param iterable: The iterable to collect results from
-    :returns: ``Maybe`` of collected results
+    :return: ``Maybe`` of collected results
     """
     return cast(Maybe[Iterable[A]], sequence_(Just, iterable))
 
@@ -262,9 +277,68 @@ def filter_m(f: Callable[[A], Maybe[bool]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Maybe[Iterable[A]], filter_m_(Just, f, iterable))
+
+
+S = TypeVar('S')
+R = TypeVar('R')
+Maybes = Generator[Maybe[S], S, R]
+
+
+def with_effect(f: Callable[..., Maybes[Any, R]]) -> Callable[..., Maybe[R]]:
+    """
+    Decorator for functions that
+    return a generator of maybes and a final result.
+    Iteraters over the yielded maybes and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Maybes[int, int]:
+    ...     a = yield Just(2)
+    ...     b = yield Just(2)
+    ...     return a + b
+    >>> f()
+    Just(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Maybe` \
+        will be chained together with `and_then`
+    """
+    return with_effect_tail_rec(Just, f, tail_rec)
+
+
+def tail_rec(f: Callable[[A], Maybe[Either[A, B]]], a: A) -> Maybe[B]:
+    """
+    Run a stack safe recursive monadic function `f`
+    by calling `f` with :class:`Left` values
+    until a :class:`Right` value is produced
+
+    :example:
+    >>> from pfun.either import Left, Right, Either
+    >>> def f(i: str) -> Maybe[Either[int, str]]:
+    ...     if i == 0:
+    ...         return Just(Right('Done'))
+    ...     return Just(Left(i - 1))
+    >>> tail_rec(f, 5000)
+    Just('Done')
+
+    :param f: function to run "recursively"
+    :param a: initial argument to `f`
+    :return: result of `f`
+    """
+    maybe = f(a)
+    if isinstance(maybe, Nothing):
+        return maybe
+    either = maybe.get
+    while isinstance(either, Left):
+        maybe = f(either.get)
+        if isinstance(maybe, Nothing):
+            return maybe
+        either = maybe.get
+    return Just(either.get)
 
 
 __all__ = [
@@ -275,5 +349,7 @@ __all__ = [
     'flatten',
     'map_m',
     'sequence',
-    'filter_m'
+    'filter_m',
+    'with_effect',
+    'Maybes'
 ]

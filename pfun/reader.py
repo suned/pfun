@@ -1,10 +1,11 @@
 from functools import wraps
-from typing import Generic, TypeVar, Callable, Iterable, cast
+from typing import Generic, TypeVar, Callable, Iterable, cast, Generator, Any
 
 from .immutable import Immutable
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
 from .monad import Monad, map_m_, sequence_, filter_m_
+from .with_effect import with_effect_
 
 Context = TypeVar('Context')
 Result_ = TypeVar('Result_')
@@ -176,9 +177,46 @@ def filter_m(f: Callable[[A], Reader[Context, bool]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Reader[Context, Iterable[A]], filter_m_(value, f, iterable))
 
 
-__all__ = ['Reader', 'reader', 'value', 'map_m', 'sequence', 'filter_m', 'ask']
+Readers = Generator[Reader[Context, Result_], Result_, B]
+
+
+def with_effect(f: Callable[..., Readers[Context, Any, B]]
+                ) -> Callable[..., Reader[Context, B]]:
+    """
+    Decorator for functions that
+    return a generator of readers and a final result.
+    Iteraters over the yielded readers and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Readers[Any, int, int]:
+    ...     a = yield value(2)
+    ...     b = yield value(2)
+    ...     return a + b
+    >>> f().run()
+    4
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Maybe` \
+        will be chained together with `and_then`
+    """
+    return with_effect_(value, f)
+
+
+__all__ = [
+    'Reader',
+    'reader',
+    'value',
+    'map_m',
+    'sequence',
+    'filter_m',
+    'ask',
+    'with_effect',
+    'Readers'
+]

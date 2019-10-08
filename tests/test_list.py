@@ -3,11 +3,13 @@ import random
 import pytest
 
 from pfun import List, identity, compose
+from pfun.list import with_effect, sequence, filter_m, map_m, value
 from hypothesis.strategies import integers, lists as lists_
 from hypothesis import given, assume
 from .strategies import anything, unaries, lists
 from .monad_test import MonadTest
 from .monoid_test import MonoidTest
+from .utils import recursion_limit
 
 
 class TestList(MonadTest, MonoidTest):
@@ -102,3 +104,35 @@ class TestList(MonadTest, MonoidTest):
     @given(lists(), lists())
     def test_zip(self, l1, l2):
         assert List(l1.zip(l2)) == List(zip(l1, l2))
+
+    def test_with_effect(self):
+        @with_effect
+        def f():
+            a = yield value(2)
+            b = yield value(2)
+            return a + b
+
+        assert f() == value(4)
+
+        # TODO make stack safe
+        # @with_effect
+        # def test_stack_safety():
+        #     for _ in range(500):
+        #         yield value(1)
+        #     return None
+
+        # with recursion_limit(100):
+        #     test_stack_safety()
+
+    def test_sequence(self):
+        assert sequence([value(v) for v in range(3)]) == value((0, 1, 2))
+
+    def test_stack_safety(self):
+        with recursion_limit(100):
+            sequence([value(v) for v in range(500)])
+
+    def test_filter_m(self):
+        assert filter_m(lambda v: value(v % 2 == 0), range(3)) == value((0, 2))
+
+    def test_map_m(self):
+        assert map_m(value, range(3)) == value((0, 1, 2))

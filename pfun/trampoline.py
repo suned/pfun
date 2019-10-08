@@ -1,9 +1,10 @@
-from typing import Generic, TypeVar, Callable, cast, Iterable, cast
+from typing import Generic, TypeVar, Callable, cast, Iterable, Generator
 from abc import ABC, abstractmethod
 
 from .immutable import Immutable
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -163,11 +164,46 @@ def filter_m(f: Callable[[A], Trampoline[bool]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Trampoline[Iterable[A]], filter_m_(Done, f, iterable))
 
 
+Trampolines = Generator[Trampoline[A], A, B]
+
+
+def with_effect(f: Callable[..., Trampolines[A, B]]
+                ) -> Callable[..., Trampoline[B]]:
+    """
+    Decorator for functions that
+    return a generator of trampolines and a final result.
+    Iteraters over the yielded trampolines and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Trampolines[int, int]:
+    ...     a = yield Done(2)
+    ...     b = yield Done(2)
+    ...     return a + b
+    >>> f()
+    Done(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Trampoline` \
+        will be chained together with `and_then`
+    """
+    return with_effect_(Done, f)  # type: ignore
+
+
 __all__ = [
-    'Trampoline', 'Done', 'Call', 'AndThen', 'map_m', 'sequence', 'filter_m'
+    'Trampoline',
+    'Done',
+    'Call',
+    'AndThen',
+    'map_m',
+    'sequence',
+    'filter_m',
+    'Trampolines',
+    'with_effect'
 ]

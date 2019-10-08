@@ -1,8 +1,10 @@
-from typing import Generic, Callable, TypeVar, Iterable, cast
+from typing import Generic, Callable, TypeVar, Iterable, cast, Generator
 from pfun.monoid import M, append, empty
 from .immutable import Immutable
 from .curry import curry
 from .monad import map_m_, Monad, sequence_, filter_m_
+from .either import Either, Left
+from .with_effect import with_effect_tail_rec
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -74,6 +76,9 @@ class Writer(Generic[A, M], Immutable, Monad):
         m_repr = repr(self.m) if self.m is not ... else "..."
         return f'Writer({a_repr}, {m_repr})'
 
+    def __iter__(self):
+        return iter((self.a, self.m))
+
 
 def value(a: A, m: M = ...) -> Writer[A, M]:  # type: ignore
     """
@@ -139,7 +144,7 @@ def filter_m(f: Callable[[A], Writer[bool, M]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(Writer[Iterable[A], M], filter_m_(value, f, iterable))
 
@@ -164,4 +169,68 @@ def map_m(f: Callable[[A], Writer[B, M]],
     return cast(Writer[Iterable[B], M], map_m_(value, f, iterable))
 
 
-__all__ = ['Writer', 'value', 'tell', 'sequence', 'map_m', 'filter_m']
+def tail_rec(f: Callable[[A], Writer[Either[A, B], M]], a: A) -> Writer[B, M]:
+    """
+    Run a stack safe recursive monadic function `f`
+    by calling `f` with :class:`Left` values
+    until a :class:`Right` value is produced
+
+    :example:
+    >>> from pfun.either import Left, Right, Either
+    >>> def f(i: str) -> Writer[Either[int, str]]:
+    ...     if i == 0:
+    ...         return value(Right('Done'))
+    ...     return value(Left(i - 1))
+    >>> tail_rec(f, 5000)
+    Writer('Done', ...)
+
+    :param f: function to run "recursively"
+    :param a: initial argument to `f`
+    :return: result of `f`
+    """
+    writer = f(a)
+    either = writer.a
+    while isinstance(either, Left):
+        writer = writer.and_then(lambda _: f(either.get))  # type: ignore
+        either = writer.a
+    return writer.and_then(lambda _: value(either.get))  # type: ignore
+
+
+Writers = Generator[Writer[A, M], A, B]
+
+
+def with_effect(f: Callable[..., Writers[A, M, B]]
+                ) -> Callable[..., Writer[B, M]]:
+    """
+    Decorator for functions that
+    return a generator of writers and a final result.
+    Iteraters over the yielded writers and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Writers[int, List[str], int]:
+    ...     a = yield value(2, ['Got two'])
+    ...     b = yield value(2, ['Got two again'])
+    ...     return a + b
+    >>> f()
+    Writer(4, ['Got two', 'Got two again'])
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Writer` \
+        will be chained together with `and_then`
+    """
+    return with_effect_tail_rec(value, f, tail_rec)  # type: ignore
+
+
+__all__ = [
+    'Writer',
+    'value',
+    'tell',
+    'sequence',
+    'map_m',
+    'filter_m',
+    'Writers',
+    'with_effect',
+    'tail_rec'
+]

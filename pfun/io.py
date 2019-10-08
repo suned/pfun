@@ -1,178 +1,123 @@
-from typing import (
-    Generic,
-    TypeVar,
-    Callable,
-    Tuple,
-    cast,
-    IO as TextIO,
-    Optional,
-    Iterable,
-    cast
-)
+from __future__ import annotations
+from typing import Callable, TypeVar, Generic, Generator, Iterable, cast
 import sys
 from functools import wraps
 
+from typing_extensions import Literal
+
 from .immutable import Immutable
-from .curry import curry
+from .trampoline import Trampoline, Done, Call
 from .monad import Monad, sequence_, map_m_, filter_m_
+from .curry import curry
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-def pure_print(world: int, text: str, file_: TextIO) -> int:
-    print(text, file=file_)
-    return world + 1
-
-
-def pure_input(world: int, message: Optional[str]) -> Tuple[int, str]:
-    text = input(message)
-    return (world + 1, text)
-
-
-class IO(Generic[A], Monad, Immutable):
+class IO(Monad, Immutable, Generic[A]):
     """
-    Pure IO value
+    Represents world changing actions
     """
-    a: A
+    run_io: Callable[[], Trampoline[A]]
 
-    def and_then(self, f: 'Callable[[A], IO[B]]') -> 'IO[B]':
-        return f(self.a)
+    def and_then(self, f: Callable[[A], IO[B]]) -> IO[B]:
+        """
+        Chain together functions producting world changing actions.
 
-    def map(self, f: Callable[[A], B]) -> 'IO[B]':
-        return IO(f(self.a))
+        :param f: function to compose with this action
+        :return: new :class:`IO` action that that composes \
+            this action with action produced by `f`
 
-    def run(self, world: int = 0) -> A:
-        return self.a
+        :example:
+        >>> read_str('file.txt').and_then(
+        ...    lambda content: value(content.upper())
+        ... ).run()
+        "CONTENTS OF FILE.TXT"
 
+        :param f: function to compose with this :class:`IO` action
+        :return: new :class:`IO` action composed with f
+        """
+        def run() -> Trampoline[B]:
+            def thunk() -> Trampoline[B]:
+                t = self.run_io()  # type: ignore
+                return t.and_then(
+                    lambda a: Call(lambda: f(a).run_io())  # type: ignore
+                )
 
-class Put(IO[Tuple[str, IO[A]]]):
-    a: Tuple[str, IO[A]]
-    file_: TextIO = sys.stdout
+            return Call(thunk)
 
-    def and_then(self, f: Callable[[A], IO[B]]) -> IO[B]:  # type: ignore
-        text, action = self.a
-        new = (text, action.and_then(f))
-        return cast(IO[B], Put(new))
+        return IO(run)
 
-    def map(self, f: Callable[[A], B]) -> IO[B]:  # type: ignore
-        text, action = self.a
-        return Put((text, action.map(f)))  # type: ignore
+    def map(self, f: Callable[[A], B]) -> IO[B]:
+        """
+        Map `f` over the value wrapped by this action
 
-    def run(self, world: int = 0) -> A:  # type: ignore
-        text, action = self.a
-        new_world = pure_print(world, text, self.file_)
-        return action.run(new_world)
+        :example:
+        >>> read_str('file.txt').map(
+        ...    lambda content: content.upper()
+        ... ).run()
+        "CONTENTS OF FILE.TXT"
 
+        :param f: function to map over this :class:`IO` action
+        :return: new :class:`IO` action with `f` applied to the \
+            value wrapped by this one.
+        """
+        return IO(lambda: Call(lambda: self.run_io().map(f)))  # type: ignore
 
-class Get(IO[Callable[[str], IO[A]]]):
-    a: Callable[[str], IO[A]]
-    message: str = ''
-
-    def and_then(self, f: Callable[[A], IO[B]]) -> IO[B]:  # type: ignore
-        return Get(  # type: ignore
-            lambda text: self.a(text).and_then(f), self.message  # type: ignore
-        )
-
-    def map(self, f: Callable[[A], B]) -> IO[B]:  # type: ignore
-        return Get(  # type: ignore
-            lambda text: self.a(text).map(f), self.message  # type: ignore
-        )
-
-    def run(self, world: int = 0) -> A:  # type: ignore
-        new_world, text = pure_input(world, self.message)
-        action = self.a(text)  # type: ignore
-        return action.run(new_world)
-
-
-class ReadFile(IO[Tuple[str, Callable[[str], IO[A]]]]):
-    a: Tuple[str, Callable[[str], IO[A]]]
-    mode: str = 'r'
-
-    def and_then(self, f: Callable[[A], IO[B]]) -> IO[B]:  # type: ignore
-        filename, g = self.a
-        return ReadFile((filename, lambda s: g(s).and_then(f)))  # type: ignore
-
-    def map(self, f: Callable[[A], B]) -> IO[B]:  # type: ignore
-        filename, g = self.a
-        return Get(lambda text: g(text).map(f))  # type: ignore
-
-    def run(self, world: int = 0) -> A:  # type: ignore
-        filename, g = self.a
-        with open(filename, self.mode) as f:
-            data = f.read()
-        action = g(data)
-        return action.run(world + 1)
+    def run(self):
+        return self.run_io().run()
 
 
-class WriteFile(IO[Tuple[str, str, IO[A]]]):
-    a: Tuple[str, str, IO[A]]
-    mode: str = 'w'
-
-    def and_then(self, f: Callable[[A], IO[B]]) -> IO[B]:  # type: ignore
-        filename, content, action = self.a
-        return WriteFile(  # type: ignore
-            (filename, content, action.and_then(f)))
-
-    def map(self, f: Callable[[A], B]) -> IO[B]:  # type: ignore
-        filename, content, action = self.a
-        return WriteFile((filename, content, action.map(f)))  # type: ignore
-
-    def run(self, world: int = 0) -> A:  # type: ignore
-        filename, content, action = self.a
-        with open(filename, self.mode) as f:
-            f.write(content)
-        return action.run(world + 1)
-
-
-def get_line(message: str = '') -> IO[str]:
+def value(a: A) -> IO[A]:
     """
-    Create an :class:`IO` action that reads a line from standard input
-    when run
+    Create an :class:`IO` action that simply produces
+    `a` when run
 
-    :param message: The message to display to the user
-    :return: :class:`IO` action with the line read from standard in
+    :param a: The value to wrap in `IO`
     """
-    return Get(lambda text: IO(text), message)  # type: ignore
+    return IO(lambda: Done(a))
 
 
-@curry
-def put_line(string: str = None, file=sys.stdout) -> IO[None]:
-    """
-    Print a line to standard out
-
-    :param string: The line to print
-    :param file: The file to print to (`sys.stdout` by default)
-    :return: :class:`IO` action that prints `string` to standard out
-    """
-    return Put((string, IO(None)), file_=file)  # type: ignore
-
-
-def read_file(filename: str) -> IO[str]:
+def read_str(path: str) -> IO[str]:
     """
     Read the contents of a file as a `str`
 
-    :param filename: the name of the file
+    :param path: the name of the file
     :return: :class:`IO` action with the contents of `filename`
     """
-    return ReadFile((filename, lambda text: IO(text)))  # type: ignore
+    def run() -> Trampoline[str]:
+        with open(path) as f:
+            return Done(f.read())
+
+    return IO(run)
+
+
+# We pretend the next part doesn't exist...
 
 
 @curry
-def write_file(filename: str, content: str) -> IO[None]:
+def write_str(path: str, content: str,
+              mode: Literal['w', 'a'] = 'w') -> IO[None]:
     """
     Write a `str` to a file
 
-    :param filename: the file to write to
+    :param path: the file to write to
     :param content: the content to write to the file
     :return: :class:`IO` action that produces \
         the content of `filename` when run
     """
-    return WriteFile((filename, content, IO(None)))  # type: ignore
+    def run() -> Trampoline[None]:
+        with open(path, mode) as f:
+            f.write(content)
+        return Done(None)
+
+    return IO(run)
 
 
 @curry
-def write_file_bytes(filename: str, content: bytes) -> IO[None]:
+def write_bytes(path: str, content: bytes,
+                mode: Literal['w', 'a'] = 'w') -> IO[None]:
     """
     Write `bytes` to a file
 
@@ -180,18 +125,57 @@ def write_file_bytes(filename: str, content: bytes) -> IO[None]:
     :param content: the `bytes` to write to the file
     :return: :class:`IO` action that writes to the file when run
     """
-    return WriteFile((filename, content, IO(None)), mode='wb')  # type: ignore
+    def run() -> Trampoline[None]:
+        with open(path, mode + 'b') as f:
+            f.write(content)
+        return Done(None)
+
+    return IO(run)
 
 
-def read_file_bytes(filename: str) -> IO[bytes]:
+@curry
+def put_line(line: str = '', file=sys.stdout) -> IO[None]:
+    """
+    Print a line to standard out
+
+    :param string: The line to print
+    :param file: The file to print to (`sys.stdout` by default)
+    :return: :class:`IO` action that prints `string` to standard out
+    """
+    def run() -> Trampoline[None]:
+        print(line, file=file)
+        return Done(None)
+
+    return IO(run)
+
+
+def get_line(prompt: str = '') -> IO[str]:
+    """
+    Create an :class:`IO` action that reads a line from standard input
+    when run
+
+    :param prompt: The message to display to the user
+    :return: :class:`IO` action with the line read from standard in
+    """
+    def run() -> Trampoline[str]:
+        line = input(prompt)
+        return Done(line)
+
+    return IO(run)
+
+
+def read_bytes(path: str) -> IO[bytes]:
     """
     Read the contents of a file as `bytes`
 
-    :param filename: the filename to read bytes from
+    :param path: the filename to read bytes from
     :return: :class:`IO` action that reads the `bytes` of the file when run
     """
-    return ReadFile(  # type: ignore
-        (filename, lambda text: IO(text)), mode='rb')
+    def run() -> Trampoline[bytes]:
+        with open(path, 'rb') as f:
+            return Done(f.read())
+
+    return IO(run)
 
 
 def io(f: Callable[..., A]) -> Callable[..., IO[A]]:
@@ -205,7 +189,7 @@ def io(f: Callable[..., A]) -> Callable[..., IO[A]]:
     @wraps(f)
     def decorator(*args, **kwargs):
         v = f(*args, **kwargs)
-        return IO(v)
+        return value(v)
 
     return decorator
 
@@ -226,7 +210,7 @@ def map_m(f: Callable[[A], IO[B]], iterable: Iterable[A]) -> IO[Iterable[B]]:
     :param iterable: Iterable to map ``f`` over
     :return: ``f`` mapped over ``iterable`` and combined from left to right.
     """
-    return cast(IO[Iterable[B]], map_m_(IO, f, iterable))
+    return cast(IO[Iterable[B]], map_m_(value, f, iterable))
 
 
 def sequence(iterable: Iterable[IO[A]]) -> IO[Iterable[A]]:
@@ -241,7 +225,7 @@ def sequence(iterable: Iterable[IO[A]]) -> IO[Iterable[A]]:
     :param iterable: The iterable to collect results from
     :returns: ``Maybe`` of collected results
     """
-    return cast(IO[Iterable[A]], sequence_(IO, iterable))
+    return cast(IO[Iterable[A]], sequence_(value, iterable))
 
 
 @curry
@@ -258,21 +242,46 @@ def filter_m(f: Callable[[A], IO[bool]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
-    return cast(IO[Iterable[A]], filter_m_(IO, f, iterable))
+    return cast(IO[Iterable[A]], filter_m_(value, f, iterable))
+
+
+IOs = Generator[IO[A], A, B]
+
+
+def with_effect(f: Callable[..., IOs[A, B]]) -> Callable[..., IO[B]]:
+    """
+    Decorator for functions generating IOs. Will
+    chain together the generated IOs using `and_then`
+
+    :example:
+    >>> @with_effect
+    ... def put_file(path: str) -> IOs[str, None]:
+    ...     content = yield read_str(path)
+            yield put_line(content)
+    >>> put_file('file.txt').run()
+    Content of file.txt
+
+    :param f: the function to decorate
+    :return: new function that consumes `IO`s generated by `f`, \
+        chaining them together with `and_then`
+    """
+    return with_effect_(value, f)  # type: ignore
 
 
 __all__ = [
     'IO',
     'get_line',
     'put_line',
-    'read_file',
-    'write_file_bytes',
-    'write_file',
-    'read_file_bytes',
+    'read_str',
+    'write_bytes',
+    'write_str',
+    'read_bytes',
     'io',
     'map_m',
     'sequence',
-    'filter_m'
+    'filter_m',
+    'with_effect',
+    'IOs'
 ]

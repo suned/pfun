@@ -1,17 +1,22 @@
-from typing import Generic, TypeVar, Callable, Any, Iterable, cast
+from __future__ import annotations
+
+from typing import (
+    Generic, TypeVar, Callable, Any, Iterable, cast, Union, Generator
+)
 from functools import wraps
 from abc import ABC, abstractmethod
 
 from .immutable import Immutable
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .with_effect import with_effect_tail_rec
 
 A = TypeVar('A')
 B = TypeVar('B')
 C = TypeVar('C')
 
 
-class Either(Generic[B, A], Immutable, Monad, ABC):
+class Either_(Immutable, Monad, ABC):
     """
     Abstract class representing a computation with either
     ``A`` or ``B`` as its result.
@@ -19,7 +24,7 @@ class Either(Generic[B, A], Immutable, Monad, ABC):
     use :class:`Left` or :class:`Right` instead
     """
     @abstractmethod
-    def and_then(self, f: Callable[[A], 'Either[B, C]']) -> 'Either[B, C]':
+    def and_then(self, f):
         """
         Chain together functions of either computations, keeping
         track of whether or not any of them have failed
@@ -54,7 +59,7 @@ class Either(Generic[B, A], Immutable, Monad, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def or_else(self, default: A) -> A:
+    def or_else(self, default):
         """
         Try to get the result of this either computation, return default
         if this is a ``Left`` value
@@ -72,7 +77,7 @@ class Either(Generic[B, A], Immutable, Monad, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map(self, f: Callable[[A], C]) -> 'Either[B, C]':
+    def map(self, f):
         """
         Map the result of this either computation
 
@@ -92,20 +97,20 @@ class Either(Generic[B, A], Immutable, Monad, ABC):
         raise NotImplementedError()
 
 
-class Right(Either[B, A]):
+class Right(Either_, Generic[A]):
     """
-    Represents one of the ``Right`` case of ``Either``
+    Represents the ``Right`` case of ``Either``
     """
-    a: A
+    get: A
 
     def or_else(self, default: A) -> A:
-        return self.a
+        return self.get
 
     def map(self, f: Callable[[A], C]) -> Either[B, C]:
-        return Right(f(self.a))
+        return Right(f(self.get))
 
-    def and_then(self, f):
-        return f(self.a)
+    def and_then(self, f: Callable[[A], Either[B, C]]) -> Either[B, C]:
+        return f(self.get)
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -123,23 +128,26 @@ class Right(Either[B, A]):
                  instance and wraps the same \
         value as this instance, False otherwise
         """
-        return isinstance(other, Right) and self.a == other.a
+        return isinstance(other, Right) and self.get == other.get
 
     def __bool__(self) -> bool:
         return True
 
     def __repr__(self):
-        return f'Right({repr(self.a)})'
+        return f'Right({repr(self.get)})'
 
 
-class Left(Either[B, A]):
-    b: B
+class Left(Either_, Generic[B]):
+    """
+    Represents the ``Left`` case of ``Either``
+    """
+    get: B
 
     def or_else(self, default: A) -> A:
         return default
 
     def map(self, f: Callable[[A], C]) -> Either[B, C]:
-        return self  # type: ignore
+        return self
 
     def __eq__(self, other: object) -> bool:
         """
@@ -156,16 +164,19 @@ class Left(Either[B, A]):
         :return: True if other is an :class:`Left` instance and wraps the same
         value as this instance, False otherwise
         """
-        return isinstance(other, Left) and other.b == self.b
+        return isinstance(other, Left) and other.get == self.get
 
     def __bool__(self) -> bool:
         return False
 
     def and_then(self, f: Callable[[A], Either[B, C]]) -> Either[B, C]:
-        return self  # type: ignore
+        return self
 
     def __repr__(self):
-        return f'Left({repr(self.b)})'
+        return f'Left({repr(self.get)})'
+
+
+Either = Union[Left[B], Right[A]]
 
 
 def either(f: Callable[..., A]) -> Callable[..., Either[A, B]]:
@@ -199,7 +210,7 @@ def sequence(iterable: Iterable[Either[A, B]]) -> Either[Iterable[A], B]:
     :param iterable: The iterable to collect results from
     :returns: ``Either`` of collected results
     """
-    return cast(Either[Iterable[A], B], sequence_(Left, iterable))
+    return cast(Either[Iterable[A], B], sequence_(Right, iterable))
 
 
 @curry
@@ -219,7 +230,7 @@ def map_m(f: Callable[[A], Either[B, C]],
     :param iterable: Iterable to map ``f`` over
     :return: ``f`` mapped over ``iterable`` and combined from left to right.
     """
-    return cast(Either[Iterable[B], C], map_m_(Left, f, iterable))
+    return cast(Either[Iterable[B], C], map_m_(Right, f, iterable))
 
 
 @curry
@@ -236,11 +247,76 @@ def filter_m(f: Callable[[A], Either[bool, B]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
-    return cast(Either[Iterable[A], B], filter_m_(Left, f, iterable))
+    return cast(Either[Iterable[A], B], filter_m_(Right, f, iterable))
+
+
+def tail_rec(f: Callable[[A], Either[C, Either[A, B]]], a: A) -> Either[C, B]:
+    """
+    Run a stack safe recursive monadic function `f`
+    by calling `f` with :class:`Left` values
+    until a :class:`Right` value is produced
+
+    :example:
+    >>> def f(i: str) -> Either[Either[int, str]]:
+    ...     if i == 0:
+    ...         return Right(Right('Done'))
+    ...     return Right(Left(i - 1))
+    >>> tail_rec(f, 5000)
+    Right('Done')
+
+    :param f: function to run "recursively"
+    :param a: initial argument to `f`
+    :return: result of `f`
+    """
+    outer_either = f(a)
+    if isinstance(outer_either, Left):
+        return outer_either
+    inner_either = outer_either.get
+    while isinstance(inner_either, Left):
+        outer_either = f(inner_either.get)
+        if isinstance(outer_either, Left):
+            return outer_either
+        inner_either = outer_either.get
+    return inner_either
+
+
+Eithers = Generator[Either[A, B], B, C]
+
+
+def with_effect(f: Callable[..., Eithers[A, B, C]]
+                ) -> Callable[..., Either[A, C]]:
+    """
+    Decorator for functions that
+    return a generator of eithers and a final result.
+    Iteraters over the yielded eithers and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> Eithers[int, int]:
+    ...     a = yield Right(2)
+    ...     b = yield Right(2)
+    ...     return a + b
+    >>> f()
+    Right(4)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`Either` \
+        will be chained together with `and_then`
+    """
+    return with_effect_tail_rec(Right, f, tail_rec)  # type: ignore
 
 
 __all__ = [
-    'Either', 'Left', 'Right', 'either', 'map_m', 'sequence', 'filter_m'
+    'Either',
+    'Left',
+    'Right',
+    'either',
+    'map_m',
+    'sequence',
+    'filter_m',
+    'with_effect',
+    'Eithers'
 ]

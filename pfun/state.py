@@ -1,9 +1,10 @@
-from typing import Generic, TypeVar, Callable, Tuple, Iterable, cast
+from typing import Generic, TypeVar, Callable, Tuple, Iterable, cast, Generator
 
 from .immutable import Immutable
 from .monad import sequence_, map_m_, filter_m_, Monad
 from .curry import curry
 from .trampoline import Trampoline, Done, Call
+from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -154,9 +155,46 @@ def filter_m(f: Callable[[A], State[bool, B]],
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``
-    :return:
+    :return: `iterable` mapped and filtered by `f`
     """
     return cast(State[Iterable[A], B], filter_m_(value, f, iterable))
 
 
-__all__ = ['State', 'put', 'get', 'value', 'map_m', 'sequence', 'filter_m']
+States = Generator[State[A, B], A, C]
+
+
+def with_effect(f: Callable[..., States[A, B, C]]
+                ) -> Callable[..., State[C, B]]:
+    """
+    Decorator for functions that
+    return a generator of states and a final result.
+    Iteraters over the yielded states and sends back the
+    unwrapped values using "and_then"
+
+    :example:
+    >>> @with_effect
+    ... def f() -> States[int, Any, int]:
+    ...     a = yield value(2)
+    ...     b = yield value(2)
+    ...     return a + b
+    >>> f().run(None)
+    (4, None)
+
+    :param f: generator function to decorate
+    :return: `f` decorated such that generated :class:`State` \
+        will be chained together with `and_then`
+    """
+    return with_effect_(value, f)  # type: ignore
+
+
+__all__ = [
+    'State',
+    'put',
+    'get',
+    'value',
+    'map_m',
+    'sequence',
+    'filter_m',
+    'with_effect',
+    'States'
+]
