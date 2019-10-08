@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Callable, cast, Iterable, cast, Generator
+from typing import Generic, TypeVar, Callable, cast, Iterable, Generator
 from abc import ABC, abstractmethod
 
 from .immutable import Immutable

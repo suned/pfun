@@ -66,7 +66,7 @@ IO
 Trampoline
 ----------
 
-..autofunction:: pfun.trampoline
+.. automodule:: pfun.trampoline
     :members:
     :special-members:
     :exclude-members: __weakref__,__setattr__,__repr__

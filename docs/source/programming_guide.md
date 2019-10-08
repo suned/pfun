@@ -132,7 +132,7 @@ def i_can_fail(v: str) -> str:
     return 'Ok!'
 ```
 We already added type annotations to the `i_can_fail` function, but there is really no way for the caller
-to see that this function can fail from the type signature alone (and hence also no way for your favourite PEP 484 type-checker).
+to see that this function can fail from the type signature alone (and hence also no way for your favorite PEP 484 type-checker).
 
 Wouldn't it be nice if the type signature of `i_can_fail` could give you that information? Then you wouldn't need to read the
 entire function to know which error cases to cover,
@@ -153,7 +153,7 @@ def i_can_fail(v: str) -> Maybe[str]:
 
 Technically speaking, `Maybe` is a _monad_. In addition to making effects such as errors explicit
 by putting them in the type signature, all monadic types like `Maybe` supports a function called `and_then` which allows you to
-chain together effectul functions that keeps track of the effects along the way automatically
+chain together effectful functions that keeps track of the effects along the way automatically
 without any mutable state.
 
 ```python
@@ -215,7 +215,7 @@ But now you have to pass that parameter around through potentially many function
 that don't use it for anything other than passing to `f`
 
 ```python
-def calls_f(conncetion: Connection) -> str:
+def calls_f(connection: Connection) -> str:
     ...
     return f(connection)
 
@@ -259,7 +259,7 @@ in your program that needs to do logging
 from typing import Tuple
 def i_need_to_log_something(i: int, log: Tuple[str]) -> Tuple[int, Tuple[str]]:
     result = compute_something(i)
-    log = log + ('Something was sucessfully computed',)
+    log = log + ('Something was successfully computed',)
     return result, log
  
 def i_need_to_log_something_too(i: int, log: Tuple[str]) -> Tuple[int, Tuple[str]]:
@@ -271,7 +271,7 @@ def i_need_to_log_something_too(i: int, log: Tuple[str]) -> Tuple[int, Tuple[str
 def main():
     result, log = i_need_to_log_something(1, ())
     result, log = i_need_to_log_something_too(result, log)
-    print('reseult', result)
+    print('result', result)
     print('log', log)
 ```
 Well that obviously works, but there is a lot of logistics involved that seems
@@ -284,17 +284,17 @@ from pfun.writer import value, Writer
 
 def i_need_to_log_something(i: int) -> Writer[int, List[str]]:
     result = compute_something(i)
-    return Writer(result, ['Something was succesfully computed'])
+    return Writer(result, ['Something was successfully computed'])
     
     
 def i_need_to_log_something_too(i: int) -> Writer[int, List[str]]:
     result = compute_something_else(i)
-    return Writer(result, ['Something else was succesfully computed'])
+    return Writer(result, ['Something else was successfully computed'])
 
 
 def main():
     _, log = i_need_to_log_something(1).and_then(i_need_to_log_something_too)
-    print('log', log)  # output: ['Something was succesfully computed', 'Something else was successfully computed']
+    print('log', log)  # output: ['Something was successfully computed', 'Something else was successfully computed']
  
 ```
 `tuple` is not the only thing `Writer` can combine: in fact the only requirement on the second argument is that its a _monoid_. You can even tell writer
@@ -423,7 +423,7 @@ maybe.and_then(lambda v: generator.send(v))
 ... # with_effect then consumes any remaining yields, and finally wraps
     # the return value in a "Just"
 ```
-## Stack-Safefy and Recursion
+## Stack-Safety and Recursion
 Its common to use recursion rather than looping in pure functional programming to avoid mutating a local variable.
 
 Consider e.g the following implementation of the factorial function:
@@ -436,7 +436,7 @@ def factorial(n: int) -> int:
 ```
 Called with a large enough value for `n`, the recursive calls will overflow the python stack.
 
-A common solution to this problem in other languages that perform tail-call-optimisation is to rewrite the function
+A common solution to this problem in other languages that perform tail-call-optimization is to rewrite the function
 to put the recursive call in tail-call position.
 
 ```python
@@ -449,9 +449,9 @@ def factorial(n: int) -> int:
         
     return factorial_acc(n, 1)
 ```
-In Python however, this is not enough to solve the problem because Python does not perform tail-call-optimisation.
+In Python however, this is not enough to solve the problem because Python does not perform tail-call-optimization.
 
-In languages without tail-call-optimisation such as Python, its common to use a data structure called a trampoline
+In languages without tail-call-optimization such as Python, its common to use a data structure called a trampoline
 to wrap the recursive calls into objects that can be interpreted in constant stack space, by letting the function
 return immediately at each recursive step.
 
