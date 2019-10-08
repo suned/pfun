@@ -11,7 +11,7 @@
 
 ## Support
 
-[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z5159GJ)
+On [ko-fi](https://ko-fi.com/python_pfun)
 
 ## Development
 
