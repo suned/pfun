@@ -413,13 +413,15 @@ def divide(a: int, b: int) -> Maybes[Any, float]:
         yield Nothing()
     return a / b
 ```
-This works because the above code is precisely the same as:
+This works because if `b == 0`, a `Nothing` is yielded and control-flow is returned to the `with_effect` decorator. `with_effect` will then bind the rest of the function together
+with the `Nothing`, in effect:
 
 ```python
-def divide(a: int, b: int) -> Maybe[int]:
-    if b == 0:
-        return Nothing()
-    return Just(a / b)
+generator = divide(a, b)
+maybe = next(generator)
+maybe.and_then(lambda v: generator.send(v))
+... # with_effect then consumes any remaining yields, and finally wraps
+    # the return value in a "Just"
 ```
 ## Stack-Safefy and Recursion
 Its common to use recursion rather than looping in pure functional programming to avoid mutating a local variable.
@@ -485,7 +487,9 @@ For some monads this is not a problem since they are designed to be stack safe (
 But for other monads (`Maybe`, `Either` and `Writer`), this can lead to `RecursionError`. Consider `pow_writer` which computes integer powers by recursion:
 
 ```python
-def pow_writer(n: int, m: int):
+from pfun.writer import value, tell
+
+def pow_writer(n: int, m: int) -> Writer[None, int]:
     if m == 0:
         return value(None)
     return tell(n).and_then(lambda _: pow_writer(n, m - 1))
@@ -496,7 +500,10 @@ must return a `Writer`, and not a `Trampoline`.
 
 In these cases the helper function `tail_rec` is provided which can help you trampoline you monadic function using `Either`:
 ```python
-def pow_writer(n: int, m: int):
+from pfun.either import Either, Left, Right
+from typing import Tuple
+
+def pow_writer(n: int, m: int) -> Writer[Either[Tuple[int, int], None], int]:
     def _(n_m):
         n, m = n_m
         if m == 0:
