@@ -9,6 +9,10 @@
 
 `pip install pfun`
 
+## Support
+
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z5159GJ)
+
 ## Development
 
 Requires [poetry](https://poetry.eustace.io/)
