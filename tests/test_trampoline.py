@@ -4,6 +4,7 @@ from pfun import identity, compose
 
 from .strategies import trampolines, unaries, anything
 from .monad_test import MonadTest
+from .utils import recursion_limit
 
 
 class TestTrampoline(MonadTest):
@@ -47,23 +48,21 @@ class TestTrampoline(MonadTest):
 
         assert f().run() == 4
 
-        # TODO fix stack safety
-        # @with_effect
-        # def test_stack_safety():
-        #     for _ in range(500):
-        #         yield Done(1)
-        #     return None
+        @with_effect
+        def test_stack_safety():
+            for _ in range(500):
+                yield Done(1)
+            return None
 
-        # with recursion_limit(100):
-        #     test_stack_safety().run()
+        with recursion_limit(100):
+            test_stack_safety().run()
 
     def test_sequence(self):
         assert sequence([Done(v) for v in range(3)]).run() == (0, 1, 2)
 
-    # TODO fix stack safety
-    # def test_stack_safety(self):
-    #     with recursion_limit(100):
-    #         sequence([Done(v) for v in range(500)]).run()
+    def test_stack_safety(self):
+        with recursion_limit(100):
+            sequence([Done(v) for v in range(500)]).run()
 
     def test_filter_m(self):
         assert filter_m(lambda v: Done(v % 2 == 0), range(3)).run() == (0, 2)
