@@ -1,6 +1,8 @@
 import os
 import sys
 
+sys.path.insert(0, os.path.abspath('../..'))
+
 project = 'pfun'
 copyright = '2019, Sune Debel'
 author = 'Sune Debel'
