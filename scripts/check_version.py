@@ -1,7 +1,7 @@
 import re
 import sys
 
-from pfun.io import read_file, IO
+from pfun.io import read_str, IO, value
 
 
 class MalformedTomlError(Exception):
@@ -20,8 +20,8 @@ def check_version(toml: str) -> IO[None]:
     actual_version = get_version(toml)
     expected_version = sys.argv[2]
     assert actual_version == expected_version, f'version "{actual_version}"" in pyproject.toml did not match "{expected_version}""'
-    return IO(None)
+    return value(None)
 
 
 if __name__ == '__main__':
-    read_file(sys.argv[1]).and_then(check_version).run()
+    read_str(sys.argv[1]).and_then(check_version).run()
