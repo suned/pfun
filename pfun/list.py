@@ -235,7 +235,7 @@ def with_effect(f: Callable[..., Lists[A, B]]) -> Callable[..., List[B]]:
     :return: `f` decorated such that generated :class:`List` \
         will be chained together with `and_then`
     """
-    return with_effect_eager(value, f)
+    return with_effect_eager(value, f)  # type: ignore
 
 
 __all__ = [
