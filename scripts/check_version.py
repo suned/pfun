@@ -1,7 +1,8 @@
 import re
-import sys
 
-from pfun.io import read_str, IO, value
+from main_dec import main
+
+from pfun.io import read_str, with_effect, IOs
 
 
 class MalformedTomlError(Exception):
@@ -16,12 +17,17 @@ def get_version(toml: str) -> str:
         return match[1]
 
 
-def check_version(toml: str) -> IO[None]:
+@with_effect
+def check_version(toml_path: str, expected_version: str) -> IOs[str, None]:
+    toml = yield read_str(toml_path)
     actual_version = get_version(toml)
-    expected_version = sys.argv[2]
-    assert actual_version == expected_version, f'version "{actual_version}"" in pyproject.toml did not match "{expected_version}""'
-    return value(None)
+    message = (
+        f'version "{actual_version}" in pyproject.toml '
+        f'did not match "{expected_version}"'
+    )
+    assert actual_version == expected_version, message
 
 
-if __name__ == '__main__':
-    read_str(sys.argv[1]).and_then(check_version).run()
+@main
+def run(toml_path: str, expected_version: str) -> None:
+    check_version(toml_path, expected_version).run()
