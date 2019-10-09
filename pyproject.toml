@@ -3,6 +3,7 @@ name = "pfun"
 version = "0.5.0"
 description = ""
 authors = ["Sune Debel <sad@archii.ai>"]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.7"
