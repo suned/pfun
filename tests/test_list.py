@@ -114,15 +114,14 @@ class TestList(MonadTest, MonoidTest):
 
         assert f() == value(4)
 
-        # TODO make stack safe
-        # @with_effect
-        # def test_stack_safety():
-        #     for _ in range(500):
-        #         yield value(1)
-        #     return None
+        @with_effect
+        def test_stack_safety():
+            for _ in range(500):
+                yield value(1)
+            return None
 
-        # with recursion_limit(100):
-        #     test_stack_safety()
+        with recursion_limit(100):
+            test_stack_safety()
 
     def test_sequence(self):
         assert sequence([value(v) for v in range(3)]) == value((0, 1, 2))

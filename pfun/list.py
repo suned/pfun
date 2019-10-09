@@ -7,7 +7,7 @@ from .monoid import Monoid
 from .immutable import Immutable
 from .curry import curry
 from .monad import map_m_, sequence_, filter_m_, Monad
-from .with_effect import with_effect_
+from .with_effect import with_effect_eager
 A = TypeVar('A')
 B = TypeVar('B')
 
@@ -235,7 +235,7 @@ def with_effect(f: Callable[..., Lists[A, B]]) -> Callable[..., List[B]]:
     :return: `f` decorated such that generated :class:`List` \
         will be chained together with `and_then`
     """
-    return with_effect_(value, f)  # type: ignore
+    return with_effect_eager(value, f)
 
 
 __all__ = [

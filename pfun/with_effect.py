@@ -30,6 +30,27 @@ def with_effect_(
 
 
 @curry
+def with_effect_eager(
+    value: Callable[[Any], M], f: Callable[..., Generator[M, Any, Any]]
+) -> Callable[..., M]:
+    """
+    DANGER! This approach only works for monads that bind functions
+    eagerly such as Maybe, Either, Writer and List
+    """
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        g = f(*args, **kwargs)
+        m = next(g)
+        try:
+            while True:
+                m = m.and_then(lambda v: g.send(v))
+        except StopIteration as e:
+            return value(e.value)
+
+    return decorator
+
+
+@curry
 def with_effect_tail_rec(
     value: Callable[[Any], M],
     f: Callable[..., Generator[M, Any, Any]],
