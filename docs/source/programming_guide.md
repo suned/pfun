@@ -82,7 +82,7 @@ from pfun import Dict
 
 d = Dict(key='value')
 d2 = d.set('new_key', 'new_value')
-assert 'new_key' not in d and d2['new_key'] == 'new_value'
+assert 'new_key' not in d and d2['new_key'] == Just('new_value')
 ```
 
 It supports the same api as `dict` which the exception of `__setitem__` which will raise an exception.
