@@ -171,18 +171,18 @@ The only requirement for the function argument to `and_then` is that it returns 
 monadic type that you started with (a `Maybe` in this case).
 A function that returns a monadic value is called a _monadic function_.
 
-### Result
+### Either
 `Maybe` allowed us to put the failure effect in the type signature, but
-it doesn't tell the caller _what_ went wrong. `Result` will do that:
+it doesn't tell the caller _what_ went wrong. `Either` will do that:
 
 ```python
-from pfun.result import Result, Ok, Error
+from pfun.Either import Right, Left, Either
 
 
-def i_can_fail(s: str) -> Result[str, ValueError]:
+def i_can_fail(s: str) -> Either[ValueError, str]:
     if s == 'illegal value':
-        return Error(ValueError())
-    return Ok('Ok!')
+        return Left(ValueError())
+    return Right('Ok!')
 ```
 
 ### Reader
