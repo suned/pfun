@@ -401,7 +401,7 @@ from typing import Any
 def heterogenous_yield_types() -> Maybes[Any, str]:
     an_int = yield Just(1)  # type: int
     a_str = yield Just('an_int was: ')  # type: str
-    return str(a_str) + an_int
+    return a_str + str(an_int)
 ```
 
 Some monads have a "failure" value, such as `Maybe` (`Nothing`), `Either` (`Left`) and `Result` (`Error`). You may want to terminate
