@@ -7,6 +7,7 @@ from typing import (
     Generator,
     Awaitable,
     Union,
+    NoReturn,
     TYPE_CHECKING
 )
 import asyncio
@@ -15,7 +16,7 @@ from typing_extensions import final
 
 from ..immutable import Immutable
 from ..either import Either, Right, Left, sequence as sequence_eithers
-from ..aio_trampoline import Done, Call, Trampoline
+from ..aio_trampoline import Done, Call, Trampoline, sequence as sequence_trampolines
 
 R = TypeVar('R', contravariant=True)
 E = TypeVar('E', covariant=True)
@@ -122,7 +123,7 @@ def get_environment() -> Effect[Any, Never, Any]:
 
 def from_awaitable(awaitable: Awaitable[A1]) -> Effect[Any, Never, A1]:
     async def run_e(_):
-        return Right(await awaitable)
+        return Done(Right(await awaitable))
 
     return Effect(run_e)
 
