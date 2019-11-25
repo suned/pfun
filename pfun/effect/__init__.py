@@ -8,6 +8,7 @@ from typing import (
     Awaitable,
     Union,
     NoReturn,
+    Type,
     TYPE_CHECKING
 )
 import asyncio
@@ -17,6 +18,7 @@ from typing_extensions import final
 from ..immutable import Immutable
 from ..either import Either, Right, Left, sequence as sequence_eithers
 from ..aio_trampoline import Done, Call, Trampoline, sequence as sequence_trampolines
+from ..curry import curry
 
 R = TypeVar('R', contravariant=True)
 E = TypeVar('E', covariant=True)
@@ -198,5 +200,20 @@ def lift(f: Callable[..., A1]) -> Callable[..., Effect[Any, Any, A1]]:
     def _(*effects: Effect) -> Effect[Any, Any, A1]:
         effect = sequence_async(effects)
         return effect.map(lambda seq: f(*seq))
+
+    return _
+
+
+EX = TypeVar('EX', bound=Exception)
+
+
+# @curry
+def catch(error_type: Type[EX],
+          ) -> Callable[[Callable[[], A1]], Effect[Any, EX, A1]]:
+    def _(f):
+        try:
+            return wrap(f())
+        except error_type as e:
+            return fail(e)
 
     return _

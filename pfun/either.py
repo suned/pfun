@@ -104,7 +104,7 @@ class Right(Either_, Generic[A]):
     """
     get: A
 
-    def or_else(self, default: A) -> A:
+    def or_else(self, default: C) -> A:
         return self.get
 
     def map(self, f: Callable[[A], C]) -> Either[Any, C]:
@@ -144,7 +144,7 @@ class Left(Either_, Generic[B]):
     """
     get: B
 
-    def or_else(self, default: A) -> A:
+    def or_else(self, default: C) -> C:
         return default
 
     def map(self, f: Callable[[A], C]) -> Either[B, C]:
@@ -317,6 +317,7 @@ def catch(f: Callable[..., A]) -> Callable[..., Either[Exception, A]]:
             return Right(f(*args, **kwargs))
         except Exception as e:
             return Left(e)
+
     return decorator
 
 
