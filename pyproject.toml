@@ -12,7 +12,7 @@ typing-extensions = "^3.7"
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
 hypothesis = "^4.32"
-mypy = "^0.720.0"
+mypy = "^0.740.0"
 ipython = "^7.7"
 ipdb = "^0.12.2"
 sphinx = "^2.1"
