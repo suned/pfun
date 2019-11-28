@@ -25,7 +25,7 @@ Unary = Callable[[A], B]
 Predicate = Callable[[A], bool]
 
 
-class always(Generic[A], Immutable):
+class always(Generic[A], Immutable):  # type: ignore
     """
     A Callable that always returns the same value
     regardless of the arguments
@@ -44,7 +44,7 @@ class always(Generic[A], Immutable):
         return self.value
 
 
-class Composition(Immutable):
+class Composition(Immutable):  # type: ignore
     functions: Tuple[Callable, ...]
 
     def __call__(self, *args, **kwargs):

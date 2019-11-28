@@ -5,7 +5,7 @@ import inspect
 from .immutable import Immutable
 
 
-class Curry(Immutable):
+class Curry(Immutable):  # type: ignore
     f: Callable
 
     def __repr__(self):

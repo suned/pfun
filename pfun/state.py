@@ -11,7 +11,7 @@ B = TypeVar('B')
 C = TypeVar('C')
 
 
-class State(Generic[B, A], Immutable, Monad):
+class State(Generic[B, A], Immutable, Monad):  # type: ignore
     """
     Represents a computation that is not yet complete,
     but will complete when given a state of type A

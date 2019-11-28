@@ -7,11 +7,11 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Ok(Right[A]):
+class Ok(Right[A]):  # type: ignore
     pass
 
 
-class Error(Left[Exception]):
+class Error(Left[Exception]):  # type: ignore
     get: Exception
 
 

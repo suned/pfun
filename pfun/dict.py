@@ -17,7 +17,7 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-class Dict(Immutable, Generic[K, V], init=False):
+class Dict(Immutable, Generic[K, V], init=False):  # type: ignore
     """
     Immutable dictionary class with functional helper methods
     """
