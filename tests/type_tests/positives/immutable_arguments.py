@@ -1,7 +1,7 @@
 from pfun import Immutable
 
 
-class C(Immutable):
+class C(Immutable):  # type: ignore
     a: int
 
 

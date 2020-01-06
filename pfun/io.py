@@ -15,7 +15,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class IO(Monad, Immutable, Generic[A]):
+class IO(Monad, Immutable, Generic[A]):  # type: ignore
     """
     Represents world changing actions
     """

@@ -17,7 +17,7 @@ C = TypeVar('C')
 D = TypeVar('D')
 
 
-class Either_(Immutable, Monad, ABC):
+class Either_(Immutable, Monad, ABC):  # type: ignore
     """
     Abstract class representing a computation with either
     ``A`` or ``B`` as its result.
@@ -98,7 +98,7 @@ class Either_(Immutable, Monad, ABC):
         raise NotImplementedError()
 
 
-class Right(Either_, Generic[A]):
+class Right(Either_, Generic[A]):  # type: ignore
     """
     Represents the ``Right`` case of ``Either``
     """
@@ -138,7 +138,7 @@ class Right(Either_, Generic[A]):
         return f'Right({repr(self.get)})'
 
 
-class Left(Either_, Generic[B]):
+class Left(Either_, Generic[B]):  # type: ignore
     """
     Represents the ``Left`` case of ``Either``
     """

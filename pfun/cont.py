@@ -13,7 +13,7 @@ C = TypeVar('C')
 D = TypeVar('D')
 
 
-class Cont(Generic[A, B], Monad, Immutable):
+class Cont(Generic[A, B], Monad, Immutable):  # type: ignore
     """
     Type that represents a function in continuation passing style.
     """

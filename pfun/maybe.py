@@ -24,7 +24,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Maybe_(Immutable, Monad, ABC):
+class Maybe_(Immutable, Monad, ABC):  # type: ignore
     """
     Abstract super class for classes that represent computations that can fail.
     Should not be instantiated directly.
@@ -119,7 +119,7 @@ def _invoke_optional_arg(
         raise
 
 
-class Just(Maybe_, Generic[A]):
+class Just(Maybe_, Generic[A]):  # type: ignore
     """
     Subclass of :class:`Maybe` that represents a successful computation
 
@@ -155,7 +155,7 @@ class Just(Maybe_, Generic[A]):
         return True
 
 
-class Nothing(Maybe_):
+class Nothing(Maybe_):  # type: ignore
     """
     Subclass of :class:`Maybe` that represents a failed computation
 

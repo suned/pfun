@@ -10,7 +10,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Writer(Generic[A, M], Immutable, Monad):
+class Writer(Generic[A, M], Immutable, Monad):  # type: ignore
     """
     Represents a value
     along with a monoid value that is accumulated as

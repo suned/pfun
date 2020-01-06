@@ -11,7 +11,7 @@ B = TypeVar('B')
 C = TypeVar('C')
 
 
-class Trampoline(Immutable, Generic[A], Monad, ABC):
+class Trampoline(Immutable, Generic[A], Monad, ABC):  # type: ignore
     """
     Base class for Trampolines. Useful for writing stack safe-safe
     recursive functions.
@@ -63,7 +63,7 @@ class Trampoline(Immutable, Generic[A], Monad, ABC):
         return cast(Done[A], trampoline).a
 
 
-class Done(Trampoline[A]):
+class Done(Trampoline[A]):  # type: ignore
     """
     Represents the result of a recursive computation.
     """
@@ -77,7 +77,7 @@ class Done(Trampoline[A]):
         return cont(self.a)
 
 
-class Call(Trampoline[A]):
+class Call(Trampoline[A]):  # type: ignore
     """
     Represents a recursive call.
     """
@@ -91,7 +91,7 @@ class Call(Trampoline[A]):
         return self.thunk()  # type: ignore
 
 
-class AndThen(Generic[A, B], Trampoline[B]):
+class AndThen(Generic[A, B], Trampoline[B]):  # type: ignore
     """
     Represents monadic bind for trampolines as a class to avoid
     deep recursive calls to ``Trampoline.run`` during interpretation.

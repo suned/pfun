@@ -15,7 +15,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Reader(Immutable, Generic[Context, Result_], Monad):
+class Reader(Immutable, Generic[Context, Result_], Monad):  # type: ignore
     """
     Represents a computation that is not yet completed, but
     will complete once given an object of type ``Context``

@@ -18,7 +18,7 @@ class Transaction:
         ...
 
 
-class User(Immutable):
+class User(Immutable):  # type: ignore
     user_id: int
     password: str
 

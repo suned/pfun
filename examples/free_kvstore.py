@@ -10,7 +10,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class KVStoreF(Functor, Immutable):
+class KVStoreF(Functor, Immutable):  # type: ignore
     pass
 
 
@@ -23,7 +23,7 @@ get_state: Callable[[], KVStoreInterpreterState[KVStore]] = get_
 set_state: Callable[[KVStore], KVStoreInterpreterState[None]] = put_
 
 
-class Put(KVStoreF, KVStoreElement):
+class Put(KVStoreF, KVStoreElement):  # type: ignore
     k: str
     v: str
     a: KVStoreFree
@@ -39,7 +39,7 @@ class Put(KVStoreF, KVStoreElement):
         ).and_then(lambda _: interpreter.interpret(self.a))
 
 
-class Get(KVStoreF, KVStoreElement):
+class Get(KVStoreF, KVStoreElement):  # type: ignore
     key: str
     h: Callable[[str], KVStoreFree]
 
@@ -57,7 +57,7 @@ class Get(KVStoreF, KVStoreElement):
         )  # yapf: disable
 
 
-class Delete(KVStoreF, KVStoreElement):
+class Delete(KVStoreF, KVStoreElement):  # type: ignore
     key: str
     a: KVStoreFree
 

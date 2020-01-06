@@ -54,7 +54,7 @@ class FreeInterpreterElement(Functor, Generic[C, D], ABC):
 F = TypeVar('F', bound=Functor)
 
 
-class Free(
+class Free(  # type: ignore
     Generic[F, A, C, D], FreeInterpreterElement[C, D], Monad, Immutable
 ):
     """
@@ -70,7 +70,7 @@ class Free(
         return self.and_then(lambda v: Done(f(v)))
 
 
-class Done(Free[F, A, C, D]):
+class Done(Free[F, A, C, D]):  # type: ignore
     """
     Pure ``Free`` value
     """
@@ -95,7 +95,7 @@ class Done(Free[F, A, C, D]):
         return interpreter.interpret_done(self)
 
 
-class More(Free[F, A, C, D]):
+class More(Free[F, A, C, D]):  # type: ignore
     """
     A ``Free`` value wrapping a `Functor` value
     """
