@@ -135,3 +135,6 @@ class TestList(MonadTest, MonoidTest):
 
     def test_map_m(self):
         assert map_m(value, range(3)) == value((0, 1, 2))
+    
+    def test_list_append_one_element(self):
+        assert List().append(1) == List([1])

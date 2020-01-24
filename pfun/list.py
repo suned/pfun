@@ -1,5 +1,5 @@
 from typing import (
-    TypeVar, Callable, Iterable, Tuple, Optional, Generic, cast, Generator
+    TypeVar, Callable, Iterable, Tuple, Optional, Generic, cast, Generator, Union
 )
 from functools import reduce
 
@@ -45,7 +45,7 @@ class List(Monoid,  # type: ignore
         """
         return reduce(f, self._iterable, initializer)  # type: ignore
 
-    def append(self, a: Iterable[A]) -> 'List[A]':
+    def append(self, a: Union[A, Iterable[A]]) -> 'List[A]':
         """
         Add element to end of list
 
@@ -56,7 +56,11 @@ class List(Monoid,  # type: ignore
         :param a: Element to append
         :return: New :class:`List` with ``a`` appended
         """
-        return List(self._iterable + tuple(a))
+        try:
+            iterable = self._iterable + tuple(a)
+        except TypeError:
+            iterable = self._iterable + (a,)
+        return List(iterable)
 
     def extend(self, iterable: Iterable[A]) -> 'List[A]':
         """
