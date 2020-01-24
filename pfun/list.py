@@ -12,7 +12,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class List(Monoid,  # type: ignore
+class List(Monoid,
            Monad,
            Generic[A],
            Iterable[A],
