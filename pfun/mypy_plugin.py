@@ -229,12 +229,12 @@ def _never_hook(context: FunctionContext) -> Type:
 
 def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     def base_repr(base):
-        if 'pfun.effect.Intersection' in base.type.fullname():
+        if 'pfun.effect.Intersection' in base.type.fullname:
             return ', '.join([repr(b) for b in base.type.bases])
         return repr(base)
 
     def get_bases(base):
-        if 'pfun.effect.Intersection' in base.type.fullname():
+        if 'pfun.effect.Intersection' in base.type.fullname:
             bases = set()
             for b in base.type.bases:
                 bases |= get_bases(b)
@@ -252,7 +252,7 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
         name,
         Block([]),
         p1.type.defn.type_vars + p2.type.defn.type_vars,
-        [NameExpr(p1.type.fullname()), NameExpr(p2.type.fullname())],
+        [NameExpr(p1.type.fullname), NameExpr(p2.type.fullname)],
         None,
         list(keywords.items())
     )
@@ -269,7 +269,7 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
 def _flatten_error_type(e: Instance) -> Instance:
     if not isinstance(e, UnionType):
         return e
-    items = [item for item in e.items if not item.type.fullname() == 'pfun.effect.Never']
+    items = [item for item in e.items if not item.type.fullname == 'pfun.effect.Never']
     if len(items) == 1:
         return items[0]
     return UnionType(items)
@@ -310,7 +310,7 @@ def _get_environment_hook(context: FunctionContext):
     if context.api.return_types == []:
         return context.default_return_type
     type_context = context.api.return_types[-1]
-    if type_context.type.fullname() == 'pfun.effect.Effect':
+    if type_context.type.fullname == 'pfun.effect.Effect':
         type_context = get_proper_type(type_context)
         args = context.default_return_type.args
         inferred_r = type_context.args[0]
@@ -368,6 +368,46 @@ def _combine_hook(context: FunctionContext):
     )
 
 
+def _effect_recover_hook(context: MethodContext) -> Type:
+    return_type = context.default_return_type
+    return_type_args = return_type.args
+    return_type = return_type.copy_modified(args=return_type_args)
+    try:
+        e1 = context.type
+        r1 = e1.args[0]
+        e2 = context.arg_types[0][0].ret_type
+        r2 = e2.args[0]
+        if r1 == r2:
+            r3 = r1.copy_modified()
+            return_type_args[0] = r3
+            return return_type.copy_modified(args=return_type_args)
+        elif isinstance(r1, AnyType):
+            return_type_args[0] = r2.copy_modified()
+            return return_type.copy_modified(args=return_type_args)
+        elif isinstance(r2, AnyType):
+            return_type_args[0] = r1.copy_modified()
+            return return_type.copy_modified(args=return_type_args)
+        elif r1.type.is_protocol and r2.type.is_protocol:
+            intersection = _combine_protocols(r1, r2)
+            return_type_args[0] = intersection
+            return return_type.copy_modified(args=return_type_args)
+        else:
+            return return_type
+    except AttributeError:
+        return return_type
+    
+
+
+def _lift_hook(context: FunctionContext) -> Type:
+    return_type = context.default_return_type
+    arg_types = context.arg_types
+    return_type_args = []
+    for arg_type in arg_types[0]:
+        if not arg_type.type.fullname == 'pfun.effect.Effect':
+            return return_type
+        return_type_args.append(arg_type.args[-1])
+    import ipdb; ipdb.set_trace()
+
 
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
@@ -400,11 +440,15 @@ class PFun(Plugin):
             return _get_environment_hook
         if fullname == 'pfun.effect.combine':
             return _combine_hook
+        if fullname == 'pfun.effect.lift':
+            return _lift_hook
         return None
 
     def get_method_hook(self, fullname):
         if fullname == 'pfun.effect.Effect.and_then':
             return _effect_and_then_hook
+        if fullname == 'pfun.effect.Effect.recover':
+            return _effect_recover_hook
 
     def get_base_class_hook(self, fullname: str):
         return _immutable_hook

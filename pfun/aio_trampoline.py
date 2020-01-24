@@ -1,8 +1,9 @@
-from typing import Generic, TypeVar, Callable, cast, Iterable, Generator, Awaitable
+from typing import Generic, TypeVar, Callable, cast, Iterable, Generator, Awaitable, Union
 from abc import ABC, abstractmethod
 
 from .monad import Monad, sequence_, map_m_, filter_m_
 from .immutable import Immutable
+from asyncio import iscoroutine
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -72,7 +73,10 @@ class Done(Trampoline[A]):
 
     async def _handle_cont(self,
                      cont: Callable[[A], Trampoline[B]]) -> Trampoline[B]:
-        return cont(self.a)
+        result = cont(self.a)
+        if iscoroutine(result):
+            return await result
+        return result
 
 
 class Call(Trampoline[A]):
@@ -96,7 +100,7 @@ class AndThen(Generic[A, B], Trampoline[B]):
     deep recursive calls to ``Trampoline.run`` during interpretation.
     """
     sub: Trampoline[A]
-    cont: Callable[[A], Trampoline[B]]
+    cont: Callable[[A], Union[Trampoline[B], Awaitable[Trampoline[B]]]]
 
     async def _handle_cont(self,
                      cont: Callable[[B], Trampoline[C]]) -> Trampoline[C]:
@@ -110,7 +114,14 @@ class AndThen(Generic[A, B], Trampoline[B]):
     ) -> Trampoline[B]:
         def cont(x):
             async def thunk():
-                return self.cont(x).and_then(f)
+                t = self.cont(x)
+                print(t)
+                if iscoroutine(t):
+                    print('awaiting')
+                    t = await t
+                print(t)
+                return t.and_then(f)
+
             return Call(thunk)
         return AndThen(
             self.sub,

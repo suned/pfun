@@ -78,6 +78,19 @@ class Effect(Generic[R, E, A], Immutable):
 
         return Effect(run_e)
 
+    def recover(self,
+                f: Callable[[E], Effect[Any, E2, A]]) -> Effect[Any, E2, A]:
+        async def run_e(r: R) -> Trampoline[Either[E2, B]]:
+            async def k(either: Either) -> Trampoline[Either[E2, A]]:
+                if isinstance(either, Left):
+                    return await f(either.get).run_e(r)  # type: ignore
+                return Done(either)
+
+            trampoline = await self.run_e(r)  # type: ignore
+            return trampoline.and_then(k)
+
+        return Effect(run_e)
+
     def run(self, r: R, asyncio_run=asyncio.run) -> Either[E, A]:
         async def _run():
             trampoline = await self.run_e(r)
@@ -217,3 +230,13 @@ def catch(error_type: Type[EX],
             return fail(e)
 
     return _
+
+
+def catch_all(f: Callable[[], A1]) -> Effect[Any, Exception, A1]:
+    async def run_e(_: Any) -> Trampoline[Either[Exception, A1]]:
+        try:
+            return Done(Right(f()))
+        except Exception as e:
+            return Done(Left(e))
+
+    return Effect(run_e)
