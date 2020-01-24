@@ -47,19 +47,19 @@ class List(Monoid,  # type: ignore
 
     def append(self, a: Union[A, Iterable[A]]) -> 'List[A]':
         """
-        Add element to end of list
+        Add one or more elements to end of list
 
         :example:
         >>> List(range(3)).append(3)
         [1, 2, 3]
 
-        :param a: Element to append
+        :param a: Element or iterable of elements to append
         :return: New :class:`List` with ``a`` appended
         """
         try:
-            iterable = self._iterable + tuple(a)
+            iterable = self._iterable + tuple(a)  # type: ignore
         except TypeError:
-            iterable = self._iterable + (a,)
+            iterable = self._iterable + (a,)  # type: ignore
         return List(iterable)
 
     def extend(self, iterable: Iterable[A]) -> 'List[A]':
