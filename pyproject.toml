@@ -27,7 +27,7 @@ pytest-flake8 = "^1.0"
 pytest-mypy = "^0.3.3"
 tox = "^3.14"
 main-dec = "^0.1.1"
-mypy = "0.750"
+mypy = "0.770"
 
 [build-system]
 requires = ["poetry>=0.12"]

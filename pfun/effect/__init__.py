@@ -26,19 +26,6 @@ E2 = TypeVar('E2')
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
 
-if TYPE_CHECKING:
-
-    @final
-    class Never(Any):
-        def __init__(self):
-            raise TypeError('Cannot instantiate "Never" type')
-else:
-
-    @final
-    class Never:
-        def __init__(self):
-            raise TypeError('Cannot instantiate "Never" type')
-
 
 class Effect(Generic[R, E, A], Immutable):
     run_e: Callable[[R], Awaitable[Trampoline[Either[E, A]]]]
@@ -71,8 +58,8 @@ class Effect(Generic[R, E, A], Immutable):
 
         return Effect(run_e)
 
-    def either(self) -> Effect[R, Never, Either[E, A]]:
-        async def run_e(r: R) -> Trampoline[Either[Never, Either[E, A]]]:
+    def either(self) -> Effect[R, NoReturn, Either[E, A]]:
+        async def run_e(r: R) -> Trampoline[Either[NoReturn, Either[E, A]]]:
             trampoline = await self.run_e(r)  # type: ignore
             return trampoline.and_then(lambda either: Done(Right(either)))
 
@@ -91,10 +78,18 @@ class Effect(Generic[R, E, A], Immutable):
 
         return Effect(run_e)
 
-    def run(self, r: R, asyncio_run=asyncio.run) -> Either[E, A]:
-        async def _run():
-            trampoline = await self.run_e(r)
-            return await trampoline.run()
+    def run(self, r: R, asyncio_run=asyncio.run) -> A:
+        async def _run() -> A:
+            trampoline = await self.run_e(r)  # type: ignore
+            result = await trampoline.run()
+            if isinstance(result, Left):
+                error = result.get
+                if isinstance(error, Exception):
+                    raise error
+                else:
+                    raise Exception(f'Run error: {error}' )
+            else:
+                return result.get
 
         return asyncio_run(_run())
 
@@ -122,21 +117,21 @@ E1 = TypeVar('E1')
 A1 = TypeVar('A1')
 
 
-def wrap(value: A1) -> Effect[Any, Never, A1]:
+def wrap(value: A1) -> Effect[Any, NoReturn, A1]:
     async def run_e(_):
         return Done(Right(value))
 
     return Effect(run_e)
 
 
-def get_environment() -> Effect[Any, Never, Any]:
+def get_environment() -> Effect[Any, NoReturn, Any]:
     async def run_e(r):
         return Done(Right(r))
 
     return Effect(run_e)
 
 
-def from_awaitable(awaitable: Awaitable[A1]) -> Effect[Any, Never, A1]:
+def from_awaitable(awaitable: Awaitable[A1]) -> Effect[Any, NoReturn, A1]:
     async def run_e(_):
         return Done(Right(await awaitable))
 
@@ -185,7 +180,7 @@ def map_m(f, iterable):
     return sequence(effects)
 
 
-def absolve(effect: Effect[Any, Never, Either[E1, A1]]) -> Effect[Any, E1, A1]:
+def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]) -> Effect[Any, E1, A1]:
     async def run_e(r) -> Trampoline[Either[E1, A1]]:
         trampoline = await effect.run_e(r)  # type: ignore
         return trampoline.and_then(lambda either: Done(either.get))

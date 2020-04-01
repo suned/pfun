@@ -42,7 +42,6 @@ _IO = 'pfun.io.io'
 _READER = 'pfun.reader.reader'
 _EITHER = 'pfun.either.either'
 _READER_AND_THEN = 'pfun.reader.Reader.and_then'
-_NEVER = 'pfun.effect.Never'
 _EFFECT_COMBINE = 'pfun.effect.combine'
 _EITHER_CATCH = 'pfun.either.catch'
 
@@ -222,11 +221,6 @@ def _do_hook(context: FunctionContext) -> Type:
     return AnyType(6)
 
 
-def _never_hook(context: FunctionContext) -> Type:
-    context.api.fail('Cannot instantiate "Never" type', context.context)
-    return context.default_return_type
-
-
 def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     def base_repr(base):
         if 'pfun.effect.Intersection' in base.type.fullname:
@@ -266,20 +260,10 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     return Instance(info, p1.args + p2.args)
 
 
-def _flatten_error_type(e: Instance) -> Instance:
-    if not isinstance(e, UnionType):
-        return e
-    items = [item for item in e.items if not item.type.fullname == 'pfun.effect.Never']
-    if len(items) == 1:
-        return items[0]
-    return UnionType(items)
-
-
 def _effect_and_then_hook(context: MethodContext) -> Type:
     return_type = context.default_return_type
     return_type_args = return_type.args
     e = return_type_args[1]
-    return_type_args[1] = _flatten_error_type(e)
     return_type = return_type.copy_modified(args=return_type_args)
     try:
         e1 = context.type
@@ -434,8 +418,6 @@ class PFun(Plugin):
             _EITHER_CATCH
         ):
             return _variadic_decorator_hook
-        if fullname == _NEVER:
-            return _never_hook
         if fullname == 'pfun.effect.get_environment':
             return _get_environment_hook
         if fullname == 'pfun.effect.combine':

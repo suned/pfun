@@ -5,7 +5,7 @@ from .monad import Monad, sequence_, map_m_, filter_m_
 from .immutable import Immutable
 from asyncio import iscoroutine
 
-A = TypeVar('A')
+A = TypeVar('A', covariant=True)
 B = TypeVar('B')
 C = TypeVar('C')
 
@@ -46,7 +46,7 @@ class Trampoline(Immutable, Monad, Generic[A], ABC):
         :param f: function to wrap over this trampoline
         :return: new trampoline wrapping the result of ``f``
         """
-        return self.and_then(lambda a: Done(f(a)))
+        return self.and_then(lambda a: Done(f(a)))  # type: ignore
 
     async def run(self) -> A:
         """
@@ -72,11 +72,11 @@ class Done(Trampoline[A]):
         return self
 
     async def _handle_cont(self,
-                     cont: Callable[[A], Trampoline[B]]) -> Trampoline[B]:
+                     cont: Callable[[A], Union[Awaitable[Trampoline[B]], Trampoline[B]]]) -> Trampoline[B]:
         result = cont(self.a)
         if iscoroutine(result):
-            return await result
-        return result
+            return await result  # type: ignore
+        return result  # type: ignore
 
 
 class Call(Trampoline[A]):
@@ -115,11 +115,9 @@ class AndThen(Generic[A, B], Trampoline[B]):
         def cont(x):
             async def thunk():
                 t = self.cont(x)
-                print(t)
                 if iscoroutine(t):
                     print('awaiting')
                     t = await t
-                print(t)
                 return t.and_then(f)
 
             return Call(thunk)

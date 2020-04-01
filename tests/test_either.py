@@ -25,7 +25,7 @@ class TestEither(MonadTest):
         self, either: Either, f: Unary[Any, Either], g: Unary[Any, Either]
     ):
 
-        assert either.and_then(f).and_then(g) == either.and_then(
+        assert either.and_then(f).and_then(g) == either.and_then(  # type: ignore
             lambda x: f(x).and_then(g)
         )
 

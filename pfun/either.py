@@ -253,7 +253,7 @@ def filter_m(f: Callable[[A], Either[bool, B]],
     return cast(Either[Iterable[A], B], filter_m_(Right, f, iterable))
 
 
-def tail_rec(f: Callable[[A], Either[C, Either[A, B]]], a: A) -> Either[C, B]:
+def tail_rec(f: Callable[[D], Either[C, Either[D, B]]], a: D) -> Either[C, B]:
     """
     Run a stack safe recursive monadic function `f`
     by calling `f` with :class:`Left` values

@@ -1,26 +1,23 @@
-from typing import Any
+from typing import Any, NoReturn
 from typing_extensions import Protocol
 import asyncio
 
-from . import Effect, Never, get_environment
+from . import Effect, get_environment
 from ..immutable import Immutable
 from ..either import Either, Right
 from ..aio_trampoline import Trampoline, Done
 
-_print = print
-_input = input
-
 
 class Console(Immutable):
-    def print(self, msg: str = '') -> Effect[Any, Never, None]:
-        async def run_e(_) -> Trampoline[Either[Never, None]]:
+    def print(self, msg: str = '') -> Effect[Any, NoReturn, None]:
+        async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
             loop = asyncio.get_running_loop()
-            await loop.run_in_executor(None, _print, msg)
+            await loop.run_in_executor(None, print, msg)
             return Done(Right(None))
 
         return Effect(run_e)
 
-    def input(self, prompt: str = '') -> Effect[Any, Never, str]:
+    def input(self, prompt: str = '') -> Effect[Any, NoReturn, str]:
         async def run_e(_):
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(None, _input, prompt)
@@ -39,9 +36,9 @@ class HasConsole(Protocol):
     console: Console
 
 
-def print(msg: str = '') -> Effect[HasConsole, Never, None]:
+def print_line(msg: str = '') -> Effect[HasConsole, NoReturn, None]:
     return get_environment().and_then(lambda env: env.console.print(msg))
 
 
-def input(prompt: str = '') -> Effect[HasConsole, Never, str]:
+def get_line(prompt: str = '') -> Effect[HasConsole, NoReturn, str]:
     return get_environment().and_then(lambda env: env.console.input(prompt))

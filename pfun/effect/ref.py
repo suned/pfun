@@ -1,7 +1,7 @@
-from typing import Generic, TypeVar, Any, Callable
+from typing import Generic, TypeVar, Any, Callable, NoReturn
 from asyncio import Lock
 
-from . import Effect, Never
+from . import Effect
 from ..immutable import Immutable
 from ..either import Either, Left, Right
 from ..aio_trampoline import Done, Trampoline
@@ -14,8 +14,8 @@ class Ref(Immutable, Generic[A]):
     value: A
     lock: Lock = Lock()
 
-    def get(self) -> Effect[Any, Never, A]:
-        async def run_e(_) -> Trampoline[Either[Never, A]]:
+    def get(self) -> Effect[Any, NoReturn, A]:
+        async def run_e(_) -> Trampoline[Either[NoReturn, A]]:
             async with self.lock:
                 return Done(Right(self.value))
 
@@ -24,8 +24,8 @@ class Ref(Immutable, Generic[A]):
     def __repr__(self):
         return f'Ref({repr(self.value)})'
 
-    def put(self, value: A) -> Effect[Any, Never, None]:
-        async def run_e(_) -> Trampoline[Either[Never, None]]:
+    def put(self, value: A) -> Effect[Any, NoReturn, None]:
+        async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
             async with self.lock:
                 # purists avert your eyes
                 object.__setattr__(self, 'value', value)
@@ -33,8 +33,8 @@ class Ref(Immutable, Generic[A]):
 
         return Effect(run_e)
 
-    def modify(self, f: Callable[[A], A]) -> Effect[Any, Never, None]:
-        async def run_e(_) -> Trampoline[Either[Never, None]]:
+    def modify(self, f: Callable[[A], A]) -> Effect[Any, NoReturn, None]:
+        async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
             async with self.lock:
                 new = f(self.value)
                 object.__setattr__(self, 'value', new)

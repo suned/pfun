@@ -42,7 +42,7 @@ class TestMaybe(MonadTest):
     def test_associativity_law(
         self, maybe: Maybe, f: Unary[Any, Maybe], g: Unary[Any, Maybe]
     ):
-        assert maybe.and_then(f).and_then(g) == maybe.and_then(
+        assert maybe.and_then(f).and_then(g) == maybe.and_then(  # type: ignore
             lambda x: f(x).and_then(g)
         )
 
