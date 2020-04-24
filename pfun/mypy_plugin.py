@@ -217,10 +217,6 @@ def _immutable_hook(context: ClassDefContext):
     transformer._freeze(attributes)
 
 
-def _do_hook(context: FunctionContext) -> Type:
-    return AnyType(6)
-
-
 def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     def base_repr(base):
         if 'pfun.effect.Intersection' in base.type.fullname:

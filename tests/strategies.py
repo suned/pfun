@@ -1,5 +1,5 @@
 from pfun import (
-    maybe, List, reader, state, Dict, cont, writer, trampoline, free
+    maybe, List, reader, state, Dict, cont, writer, trampoline, free, effect
 )
 from hypothesis.strategies import (
     integers,
@@ -169,3 +169,6 @@ def ios(value_strategy=anything()):
         gets(),
         puts()
     )
+
+def effects(value_strategy=anything()):
+    return builds(effect.wrap, value_strategy)

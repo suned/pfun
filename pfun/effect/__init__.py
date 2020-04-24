@@ -9,14 +9,14 @@ from typing import (
     Union,
     NoReturn,
     Type,
-    TYPE_CHECKING
+    Iterable
 )
 import asyncio
 from functools import wraps
 from typing_extensions import final
 
 from ..immutable import Immutable
-from ..either import Either, Right, Left, sequence as sequence_eithers
+from ..either import Either, Right, Left, sequence as sequence_eithers, filter_m as filter_eithers
 from ..aio_trampoline import Done, Call, Trampoline, sequence as sequence_trampolines
 from ..curry import curry
 
@@ -174,10 +174,27 @@ def sequence_async(iterable):
 
     return Effect(run_e)
 
-
+@curry
 def map_m(f, iterable):
     effects = (f(x) for x in iterable)
-    return sequence(effects)
+    return sequence_async(effects)
+
+
+@curry
+def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
+             iterable: Iterable[A]) -> Effect[R1, E1, Iterable[A]]:
+    async def run_e(r):
+        awaitables = [f(a).run_e(r) for a in iterable]
+        trampolines = await asyncio.gather(*awaitables)
+        trampoline = sequence_trampolines(trampolines)
+        return trampoline.map(
+            lambda eithers: sequence_eithers(eithers).map(
+                lambda bs: tuple(a for a, b in zip(iterable, bs) if b)
+            )
+        )
+    return Effect(run_e)
+    
+    
 
 
 def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]) -> Effect[Any, E1, A1]:
@@ -188,7 +205,7 @@ def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]) -> Effect[Any, E1, A1
     return Effect(run_e)
 
 
-def fail(error: E1) -> Effect[Any, E1, Any]:
+def fail(error: E1) -> Effect[Any, E1, NoReturn]:
     async def run_e(r):
         return Done(Left(error))
 

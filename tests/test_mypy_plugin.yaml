@@ -1,0 +1,71 @@
+- case: curry_nullary_function
+  main: |
+    from pfun import curry
+
+    @curry
+    def f() -> int:
+      pass
+    
+    reveal_type(f)  # N: Revealed type is 'def () -> builtins.int'
+- case: curry_unary_function
+  main: |
+    from pfun import curry
+
+    @curry
+    def f(a: int) -> int:
+      pass
+    
+    reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> builtins.int, def (a: builtins.int) -> builtins.int)'
+- case: curry_binary_function
+  main: |
+    from pfun import curry
+    
+    @curry
+    def f(a: int, b: int) -> int:
+      pass
+    
+    reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> def (b: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int) -> builtins.int)'
+- case: curry_trinary_function
+  main: |
+    from pfun import curry
+
+    @curry
+    def f(a: int, b: int, c: int) -> int:
+      pass
+    
+    reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> def (b: builtins.int) -> def (c: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int, c: builtins.int) -> builtins.int)'
+- case: compose_simple_functions
+  main: |
+    from pfun import compose
+
+    def f(a: str) -> int:
+      pass
+
+    def g(a: int) -> float:
+      pass
+    
+    reveal_type(compose(g, f))  # N: Revealed type is 'def (builtins.str*) -> builtins.float*'
+- case: immutable_has_correct_constructor
+  main: |
+    from pfun import Immutable
+
+    class C(Immutable):
+      field: int
+    
+    C()  # E: Too few arguments for "C"
+- case: cant_set_immutable_attribute
+  main: |
+    from pfun import Immutable
+
+    class C(Immutable):
+      field: int
+    
+    c = C(1)
+    c.field = 2  # E: Property "field" defined in "C" is read-only
+
+    class D(C):
+      other_field: str
+    
+    d = D(1, '')
+    d.field = 2  # E: Property "field" defined in "D" is read-only
+        

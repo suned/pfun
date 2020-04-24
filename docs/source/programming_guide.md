@@ -123,6 +123,38 @@ assert f(1)(1) == 3
 ```
 
 ## Effectful (But Side-Effect Free) Functional Programming
+In imperative programming, our code directly describes what to do 
+### Effect
+The effect type has three type-parameters `R`, `E` and `A`:
+```python
+Effect[R, E, A]
+```
+Let's study each of them in turn.
+
+`A` represents the success type, that is, the type of value that will eventually be produced when the effect is executed. We can create an effect that does nothing but succeed with a value of type `A` by calling the `wrap` method of the `effect` module.
+
+```python
+from pfun import effect
+
+e = effect.wrap('Success!')
+reveal_type(e)  # revealed_type: Effect[Any, NoReturn, str]
+assert e.run(None) == 'Success!'
+```
+
+Ignore for now the first two type parameters
+#### The Module Pattern
+```python
+from typing import Protocol
+
+class HasFiles(Protocol):
+    files: Files
+
+class Env(Protocol):
+    files
+```
+#### Asynchronous IO
+#### Error Handling
+#### Injected Effects
 ### Maybe
 Say you have a function that can fail:
 
