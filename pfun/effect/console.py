@@ -2,7 +2,7 @@ from typing import Any, NoReturn
 from typing_extensions import Protocol
 import asyncio
 
-from . import Effect, get_environment
+from .effect import Effect, get_environment
 from ..immutable import Immutable
 from ..either import Either, Right
 from ..aio_trampoline import Trampoline, Done
@@ -20,7 +20,7 @@ class Console(Immutable):
     def input(self, prompt: str = '') -> Effect[Any, NoReturn, str]:
         async def run_e(_):
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(None, _input, prompt)
+            result = await loop.run_in_executor(None, input, prompt)
             return Done(Right(result))
 
         return Effect(run_e)

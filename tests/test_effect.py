@@ -5,6 +5,7 @@ import pytest
 from hypothesis import given, assume
 from .strategies import effects, anything, unaries
 from .utils import recursion_limit
+from unittest import mock
 
 
 class TestEffect(MonadTest):
@@ -169,3 +170,70 @@ class TestEffect(MonadTest):
         with pytest.raises(Exception):
             # todo
             catched_division_error.run(None)
+
+
+class HasConsole:
+    console = effect.console.Console()
+
+
+def mock_open(read_data=None):
+    return mock.patch('pfun.effect.files.open', mock.mock_open(read_data=read_data))
+
+
+class TestConsole:
+    def test_print_line(self, capsys) -> None:
+        
+        e = effect.console.print_line('Hello, world!')
+        e.run(HasConsole())
+        captured = capsys.readouterr()
+        assert captured.out == 'Hello, world!\n'
+    
+    def test_get_line(self) -> None:
+        with mock.patch('pfun.effect.console.input', return_value='Hello!') as mocked_input:
+            e = effect.console.get_line('Say hello')
+            assert e.run(HasConsole()) == 'Hello!'
+            mocked_input.assert_called_once_with('Say hello')
+
+
+class HasFiles:
+    files = effect.files.Files()
+
+
+class TestFiles:
+    def test_read(self):
+        with mock_open('content') as mocked_open:
+            e = effect.files.read('foo.txt')
+            assert e.run(HasFiles()) == 'content'
+
+    def test_write(self):
+        with mock_open() as mocked_open:
+            e = effect.files.write('foo.txt', 'content')
+            e.run(HasFiles())
+            mocked_open.assert_called_once_with('foo.txt', 'w')
+            mocked_open().write.assert_called_once_with('content')
+    
+    def test_read_bytes(self):
+        with mock_open(b'content') as mocked_open:
+            e = effect.files.read_bytes('foo.txt')
+            assert e.run(HasFiles()) == b'content'
+    
+    def test_write_bytes(self):
+        with mock_open() as mocked_open:
+            e = effect.files.write_bytes('foo.txt', b'content')
+            e.run(HasFiles())
+            mocked_open.assert_called_once_with('foo.txt', 'wb')
+            mocked_open().write.assert_called_once_with(b'content')
+    
+    def test_append(self):
+        with mock_open() as mocked_open:
+            e = effect.files.append('foo.txt', 'content')
+            e.run(HasFiles())
+            mocked_open.assert_called_once_with('foo.txt', 'a+')
+            mocked_open().write.assert_called_once_with('content')
+    
+    def test_append_bytes(self):
+        with mock_open() as mocked_open:
+            e = effect.files.append_bytes('foo.txt', b'content')
+            e.run(HasFiles())
+            mocked_open.assert_called_once_with('foo.txt', 'ab+')
+            mocked_open().write.assert_called_once_with(b'content')
