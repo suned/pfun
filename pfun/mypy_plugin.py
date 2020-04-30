@@ -310,9 +310,7 @@ def _combine_hook(context: FunctionContext):
         error_types.append(error_type)
         result_types.append(result_type)
     map_return_type_def = _type_var_def(
-        'R1',
-        'pfun.effect',
-        context.api.named_type('builtins.object')
+        'R1', 'pfun.effect', context.api.named_type('builtins.object')
     )
     map_return_type = TypeVarType(map_return_type_def)
     map_function_type = CallableType(
@@ -328,11 +326,16 @@ def _combine_hook(context: FunctionContext):
     ret_type_args = ret_type.args
     ret_type_args[1] = combined_error_type
     ret_type_args[2] = map_return_type
-    env_types = [env_type for env_type in env_types
-                 if not isinstance(env_type, AnyType)]
+    env_types = [
+        env_type for env_type in env_types
+        if not isinstance(env_type, AnyType)
+    ]
     if len(set(env_types)) == 1:
         combined_env_type = env_types[0]
-    elif env_types and all(hasattr(env_type, 'type') and env_type.type.is_protocol for env_type in env_types):
+    elif env_types and all(
+        hasattr(env_type, 'type') and env_type.type.is_protocol
+        for env_type in env_types
+    ):
         combined_env_type = reduce(_combine_protocols, env_types)
     else:
         combined_env_type = ret_type_args[0]
@@ -376,15 +379,18 @@ def _effect_recover_hook(context: MethodContext) -> Type:
     except AttributeError:
         return return_type
 
+
 def _lift_hook(context: FunctionContext) -> Type:
     lifted_arg_types = context.arg_types[0][0].arg_types
     lifted_ret_type = context.arg_types[0][0].ret_type
-    return context.default_return_type.copy_modified(args=lifted_arg_types + [lifted_ret_type])
-    
+    return context.default_return_type.copy_modified(
+        args=lifted_arg_types + [lifted_ret_type]
+    )
 
 
 def _lift_call_hook(context: MethodContext) -> Type:
-    import ipdb; ipdb.set_trace()
+    import ipdb
+    ipdb.set_trace()
     arg_types = []
     for arg_type in context.arg_types[0]:
         arg_types.append(arg_type.args[-1])
@@ -397,13 +403,7 @@ def _lift_call_hook(context: MethodContext) -> Type:
         ret_type=ret_type,
         fallback=context.api.named_type('builtins.function')
     )
-    context.api.expr_checker.check_call(
-        callee=function_type,
-        
-    )
-    
-    
-
+    context.api.expr_checker.check_call(callee=function_type, )
 
 
 class PFun(Plugin):

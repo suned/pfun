@@ -71,8 +71,10 @@ class Done(Trampoline[A]):
     async def _resume(self) -> Trampoline[A]:
         return self
 
-    async def _handle_cont(self,
-                     cont: Callable[[A], Union[Awaitable[Trampoline[B]], Trampoline[B]]]) -> Trampoline[B]:
+    async def _handle_cont(
+        self,
+        cont: Callable[[A], Union[Awaitable[Trampoline[B]], Trampoline[B]]]
+    ) -> Trampoline[B]:
         result = cont(self.a)
         if iscoroutine(result):
             return await result  # type: ignore
@@ -85,9 +87,9 @@ class Call(Trampoline[A]):
     """
     thunk: Callable[[], Awaitable[Trampoline[A]]]
 
-    async def _handle_cont(self,
-                     cont: Callable[[A], Trampoline[B]]) -> Trampoline[B]:
-        trampoline = await self.thunk()   # type: ignore
+    async def _handle_cont(self, cont: Callable[[A], Trampoline[B]]
+                           ) -> Trampoline[B]:
+        trampoline = await self.thunk()  # type: ignore
         return trampoline.and_then(cont)
 
     async def _resume(self) -> Trampoline[A]:
@@ -102,8 +104,8 @@ class AndThen(Generic[A, B], Trampoline[B]):
     sub: Trampoline[A]
     cont: Callable[[A], Union[Trampoline[B], Awaitable[Trampoline[B]]]]
 
-    async def _handle_cont(self,
-                     cont: Callable[[B], Trampoline[C]]) -> Trampoline[C]:
+    async def _handle_cont(self, cont: Callable[[B], Trampoline[C]]
+                           ) -> Trampoline[C]:
         return self.sub.and_then(self.cont).and_then(cont)  # type: ignore
 
     async def _resume(self) -> Trampoline[B]:
@@ -121,10 +123,8 @@ class AndThen(Generic[A, B], Trampoline[B]):
                 return t.and_then(f)
 
             return Call(thunk)
-        return AndThen(
-            self.sub,
-            cont
-        )
+
+        return AndThen(self.sub, cont)
 
 
 def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
@@ -142,13 +142,4 @@ def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
     return cast(Trampoline[Iterable[A]], sequence_(Done, iterable))
 
 
-
-
-
-__all__ = [
-    'Trampoline',
-    'Done',
-    'sequence'
-    'Call',
-    'AndThen'
-]
+__all__ = ['Trampoline', 'Done', 'sequence' 'Call', 'AndThen']

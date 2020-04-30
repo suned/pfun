@@ -12,12 +12,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class List(Monoid,
-           Monad,
-           Generic[A],
-           Iterable[A],
-           Immutable,
-           init=False):
+class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
     _iterable: Tuple[A]
 
     def __init__(self, iterable: Iterable[A] = ()):

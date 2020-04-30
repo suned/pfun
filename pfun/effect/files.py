@@ -113,4 +113,3 @@ def append(path: str, content: str) -> Effect[HasFiles, IOError, None]:
 def append_bytes(path: str, content: bytes) -> Effect[HasFiles, IOError, None]:
     return get_environment(
     ).and_then(lambda env: env.files.append_bytes(path, content))
-
