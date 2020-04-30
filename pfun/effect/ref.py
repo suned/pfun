@@ -42,7 +42,8 @@ class Ref(Immutable, Generic[A]):
 
         return Effect(run_e)
 
-    def try_modify(self, f: Callable[[A], Either[E, A]]) -> Effect[Any, E, None]:
+    def try_modify(self,
+                   f: Callable[[A], Either[E, A]]) -> Effect[Any, E, None]:
         async def run_e(_) -> Trampoline[Either[E, None]]:
             async with self.lock:
                 either = f(self.value)

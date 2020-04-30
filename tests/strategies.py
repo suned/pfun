@@ -1,5 +1,5 @@
 from pfun import (
-    maybe, List, reader, state, Dict, cont, writer, trampoline, free, effect
+    maybe, List, reader, state, Dict, cont, writer, trampoline, free, effect, aio_trampoline
 )
 from hypothesis.strategies import (
     integers,
@@ -90,6 +90,23 @@ def trampolines(value_strategy=anything()):
 
     return one_of(dones, call(), and_then())
 
+def aio_trampolines(value_strategy=anything()):
+    dones = builds(aio_trampoline.Done, value_strategy)
+
+    @composite
+    def call(draw):
+        t = draw(aio_trampolines(value_strategy))
+        async def f():
+            return t
+        return aio_trampoline.Call(f)
+
+    @composite
+    def and_then(draw):
+        t = draw(aio_trampolines(value_strategy))
+        cont = lambda _: t
+        return aio_trampoline.AndThen(draw(aio_trampolines(value_strategy)), cont)
+
+    return one_of(dones, call(), and_then())
 
 def lists(element_strategies=_everything(allow_nan=False), min_size=0):
     return builds(

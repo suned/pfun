@@ -123,7 +123,7 @@ assert f(1)(1) == 3
 ```
 
 ## Effectful (But Side-Effect Free) Functional Programming
-In imperative programming, our code directly describes what to do 
+In functional programming, programs are built by composing functions that have no side-effects. This makes it tricky to express things that we normally model as side-effects in imperative programming such as doing io or raising exceptions. To help with this
 ### Effect
 The effect type has three type-parameters `R`, `E` and `A`:
 ```python
@@ -146,11 +146,14 @@ Ignore for now the first two type parameters
 ```python
 from typing import Protocol
 
-class HasFiles(Protocol):
-    files: Files
+class RequestMaker:
+    def make_request(self, url: str) -> Effect[Any, HTTPError, bytes]:
+        ...
 
-class Env(Protocol):
-    files
+class HasRequestMaker(Protocol):
+    request_maker: RequestMaker
+
+
 ```
 #### Asynchronous IO
 #### Error Handling

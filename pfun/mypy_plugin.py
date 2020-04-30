@@ -282,7 +282,7 @@ def _effect_and_then_hook(context: MethodContext) -> Type:
             return return_type.copy_modified(args=return_type_args)
         else:
             return return_type
-    except AttributeError:
+    except (AttributeError, IndexError):
         return return_type
 
 
@@ -290,7 +290,7 @@ def _get_environment_hook(context: FunctionContext):
     if context.api.return_types == []:
         return context.default_return_type
     type_context = context.api.return_types[-1]
-    if type_context.type.fullname == 'pfun.effect.Effect':
+    if type_context.type.fullname == 'pfun.effect.effect.Effect':
         type_context = get_proper_type(type_context)
         args = context.default_return_type.args
         inferred_r = type_context.args[0]
@@ -375,18 +375,35 @@ def _effect_recover_hook(context: MethodContext) -> Type:
             return return_type
     except AttributeError:
         return return_type
+
+def _lift_hook(context: FunctionContext) -> Type:
+    lifted_arg_types = context.arg_types[0][0].arg_types
+    lifted_ret_type = context.arg_types[0][0].ret_type
+    return context.default_return_type.copy_modified(args=lifted_arg_types + [lifted_ret_type])
     
 
 
-def _lift_hook(context: FunctionContext) -> Type:
-    return_type = context.default_return_type
-    arg_types = context.arg_types
-    return_type_args = []
-    for arg_type in arg_types[0]:
-        if not arg_type.type.fullname == 'pfun.effect.Effect':
-            return return_type
-        return_type_args.append(arg_type.args[-1])
+def _lift_call_hook(context: MethodContext) -> Type:
     import ipdb; ipdb.set_trace()
+    arg_types = []
+    for arg_type in context.arg_types[0]:
+        arg_types.append(arg_type.args[-1])
+    args = context.type.args[:-1]
+    ret_type = context.type.args[-1]
+    function_type = CallableType(
+        arg_types=args,
+        arg_kinds=[ARG_POS] * len(args),
+        arg_names=[None] * len(args),
+        ret_type=ret_type,
+        fallback=context.api.named_type('builtins.function')
+    )
+    context.api.expr_checker.check_call(
+        callee=function_type,
+        
+    )
+    
+    
+
 
 
 class PFun(Plugin):
@@ -414,18 +431,16 @@ class PFun(Plugin):
             _EITHER_CATCH
         ):
             return _variadic_decorator_hook
-        if fullname == 'pfun.effect.get_environment':
+        if fullname == 'pfun.effect.effect.get_environment':
             return _get_environment_hook
-        if fullname == 'pfun.effect.combine':
+        if fullname == 'pfun.effect.effect.combine':
             return _combine_hook
-        if fullname == 'pfun.effect.lift':
-            return _lift_hook
         return None
 
-    def get_method_hook(self, fullname):
-        if fullname == 'pfun.effect.Effect.and_then':
+    def get_method_hook(self, fullname: str):
+        if fullname == 'pfun.effect.effect.Effect.and_then':
             return _effect_and_then_hook
-        if fullname == 'pfun.effect.Effect.recover':
+        if fullname == 'pfun.effect.effect.Effect.recover':
             return _effect_recover_hook
 
     def get_base_class_hook(self, fullname: str):

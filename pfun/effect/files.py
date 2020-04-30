@@ -52,7 +52,7 @@ class Files(Immutable):
                 return Done(Right(None))
             except IOError as e:
                 return Done(Left(e))
-        
+
         return Effect(run_e)
 
     def append(self, path: str, content: str) -> Effect[Any, IOError, None]:
@@ -63,7 +63,7 @@ class Files(Immutable):
                 return Done(Right(None))
             except IOError as e:
                 return Done(Left(e))
-        
+
         return Effect(run_e)
 
     def append_bytes(self, path: str,
@@ -75,7 +75,7 @@ class Files(Immutable):
                 return Done(Right(None))
             except IOError as e:
                 return Done(Left(e))
-        
+
         return Effect(run_e)
 
 
@@ -92,19 +92,25 @@ def write(path: str, content: str) -> Effect[HasFiles, IOError, None]:
     return get_environment(
     ).and_then(lambda env: env.files.write(path, content))
 
+
 def read_bytes(path: str) -> Effect[HasFiles, IOError, bytes]:
     return get_environment().and_then(lambda env: env.files.read_bytes(path))
 
+
 @curry
 def write_bytes(path: str, content: bytes) -> Effect[HasFiles, IOError, None]:
-    return get_environment().and_then(lambda env: env.files.write_bytes(path, content))
+    return get_environment(
+    ).and_then(lambda env: env.files.write_bytes(path, content))
+
 
 @curry
 def append(path: str, content: str) -> Effect[HasFiles, IOError, None]:
-    return get_environment().and_then(lambda env: env.files.append(path, content))
+    return get_environment(
+    ).and_then(lambda env: env.files.append(path, content))
+
 
 @curry
 def append_bytes(path: str, content: bytes) -> Effect[HasFiles, IOError, None]:
-    return get_environment().and_then(lambda env: env.files.append_bytes(path, content))
-
+    return get_environment(
+    ).and_then(lambda env: env.files.append_bytes(path, content))
 

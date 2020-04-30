@@ -133,12 +133,6 @@ class TestEffect(MonadTest):
         
         assert effect.combine(effect.wrap('a'), effect.wrap('b'))(f).run(None) == 'ab'
     
-    def test_lift(self):
-        def f(a, b):
-            return a + b
-        
-        assert effect.lift(f)(effect.wrap('a'), effect.wrap('b')).run(None) == 'ab'
-    
     def test_catch(self):
         def f(fail):
             if fail:

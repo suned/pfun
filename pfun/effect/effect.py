@@ -87,7 +87,7 @@ class Effect(Generic[R, E, A], Immutable):
                 if isinstance(error, Exception):
                     raise error
                 else:
-                    raise Exception(f'Run error: {error}' )
+                    raise Exception(f'Run error: {error}')
             else:
                 return result.get
 
@@ -163,7 +163,8 @@ def with_effect(f: Callable[..., Effects[R1, E1, A1]]
     return decorator
 
 
-def sequence_async(iterable):
+def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
+                   ) -> Effect[R1, E1, Iterable[A1]]:
     async def run_e(r):
         awaitables = [e.run_e(r) for e in iterable]
         trampolines = await asyncio.gather(*awaitables)
@@ -174,8 +175,10 @@ def sequence_async(iterable):
 
     return Effect(run_e)
 
+
 @curry
-def map_m(f, iterable):
+def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
+          iterable: Iterable[A1]) -> Effect[R1, E1, Iterable[A1]]:
     effects = (f(x) for x in iterable)
     return sequence_async(effects)
 
@@ -188,16 +191,15 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
         trampolines = await asyncio.gather(*awaitables)
         trampoline = sequence_trampolines(trampolines)
         return trampoline.map(
-            lambda eithers: sequence_eithers(eithers).map(
-                lambda bs: tuple(a for a, b in zip(iterable, bs) if b)
-            )
+            lambda eithers: sequence_eithers(eithers).
+            map(lambda bs: tuple(a for a, b in zip(iterable, bs) if b))
         )
+
     return Effect(run_e)
-    
-    
 
 
-def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]) -> Effect[Any, E1, A1]:
+def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]
+            ) -> Effect[Any, E1, A1]:
     async def run_e(r) -> Trampoline[Either[E1, A1]]:
         trampoline = await effect.run_e(r)  # type: ignore
         return trampoline.and_then(lambda either: Done(either.get))
@@ -212,17 +214,12 @@ def fail(error: E1) -> Effect[Any, E1, NoReturn]:
     return Effect(run_e)
 
 
-def combine(*effects: Effect
+A2 = TypeVar('A2')
+
+
+def combine(*effects: Effect[R1, E1, A2]
             ) -> Callable[[Callable[..., A1]], Effect[Any, Any, A1]]:
     def _(f: Callable[..., A1]):
-        effect = sequence_async(effects)
-        return effect.map(lambda seq: f(*seq))
-
-    return _
-
-
-def lift(f: Callable[..., A1]) -> Callable[..., Effect[Any, Any, A1]]:
-    def _(*effects: Effect) -> Effect[Any, Any, A1]:
         effect = sequence_async(effects)
         return effect.map(lambda seq: f(*seq))
 
@@ -254,4 +251,18 @@ def catch_all(f: Callable[[], A1]) -> Effect[Any, Exception, A1]:
     return Effect(run_e)
 
 
-__all__ = ['Effect', 'wrap', 'get_environment', 'with_effect', 'sequence_async', 'filter_m', 'map_m', 'absolve', 'fail', 'combine', 'lift', 'catch', 'catch_all', 'from_awaitable']
+__all__ = [
+    'Effect',
+    'wrap',
+    'get_environment',
+    'with_effect',
+    'sequence_async',
+    'filter_m',
+    'map_m',
+    'absolve',
+    'fail',
+    'combine',
+    'catch',
+    'catch_all',
+    'from_awaitable'
+]

@@ -1,3 +1,39 @@
+- case: variadic_decorators_preserve_nullary_signature
+  main: |
+    from pfun.maybe import maybe
+
+    @maybe
+    def f() -> int:
+      pass
+
+    reveal_type(f)  # N: Revealed type is 'def () -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int]]'
+- case: variadic_decorators_preserve_unary_signature
+  main: |
+    from pfun.maybe import maybe
+
+    @maybe
+    def f(a: int) -> int:
+      pass
+
+    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int]]'
+- case: variadic_decorators_preserve_binary_signature
+  main: |
+    from pfun.maybe import maybe
+
+    @maybe
+    def f(a: int, b: int) -> int:
+      pass
+
+    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int]]'
+- case: variadic_decorators_preserve_trinary_signature
+  main: |
+    from pfun.maybe import maybe
+
+    @maybe
+    def f(a: int, b: int, c: int) -> int:
+      pass
+
+    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int, c: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int]]'
 - case: curry_nullary_function
   main: |
     from pfun import curry
@@ -68,4 +104,102 @@
     
     d = D(1, '')
     d.field = 2  # E: Property "field" defined in "D" is read-only
-        
+- case: effect_and_then_combines_protocols
+  main: |
+      from typing_extensions import Protocol
+      from typing import NoReturn
+      from pfun.effect import Effect
+      
+      
+      class P1(Protocol):
+        p1_attr: str
+      
+      class P2(Protocol):
+        p2_attr: int
+      
+      e1: Effect[P1, NoReturn, str]
+      e2: Effect[P2, NoReturn, int]
+      reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.effect.Effect[pfun.effect.Intersection[main.P2, main.P1], <nothing>, builtins.int*]'
+- case: effect_and_then_does_not_combine_non_protocols
+  main: |
+    from typing import NoReturn
+    from pfun.effect import Effect
+
+    e1: Effect[int, NoReturn, str]
+    e2: Effect[str, NoReturn, int]
+
+    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.effect.Effect[Any, <nothing>, builtins.int*]'
+- case: effect_recover_combines_protocols
+  main: |
+      from typing_extensions import Protocol
+      from typing import NoReturn
+      from pfun.effect import Effect
+      
+      
+      class P1(Protocol):
+        p1_attr: str
+      
+      class P2(Protocol):
+        p2_attr: int
+      
+      e1: Effect[P1, ValueError, str]
+      e2: Effect[P2, NoReturn, str]
+      reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.effect.Effect[pfun.effect.Intersection[main.P2, main.P1], <nothing>, builtins.str]'
+- case: effect_recover_does_not_combine_non_protocols
+  main: |
+    from typing import NoReturn
+    from pfun.effect import Effect
+
+    e1: Effect[int, ValueError, str]
+    e2: Effect[str, NoReturn, str]
+
+    reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.effect.Effect[Any, <nothing>, builtins.str]'
+- case: get_environment_infers_type
+  main: |
+     from typing import NoReturn
+     from pfun.effect import Effect, get_environment
+
+     def f() -> Effect[int, NoReturn, str]:
+         return get_environment().map(lambda env: env.upper())  # E: "int" has no attribute "upper"
+- case: effect_combine_checks_args
+  main: |
+    from typing import Any, NoReturn
+    from pfun.effect import wrap, combine, Effect
+
+    def f(a: int, b: int) -> str:
+      pass
+    
+    combine(wrap(''), wrap(''))(f)  # E: Argument 1 has incompatible type "Callable[[int, int], str]"; expected "Callable[[str, str], str]"
+- case: effect_combine_combines_protocols
+  main: |
+    from typing_extensions import Protocol
+    from typing import NoReturn
+    from pfun.effect import Effect, combine
+    
+    
+    class P1(Protocol):
+      p1_attr: str
+    
+    class P2(Protocol):
+      p2_attr: int
+    
+    e1: Effect[P1, NoReturn, str]
+    e2: Effect[P2, NoReturn, str]
+
+    def f(a: str, b: str) -> str:
+      pass
+    
+    reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.effect.Effect[pfun.effect.Intersection[main.P2, main.P1], <nothing>, builtins.str*]'
+- case: effect_combine_unions_errors
+  main: |
+    from typing import Any
+    from pfun.effect import Effect, combine
+    
+    e1: Effect[Any, ValueError, str]
+    e2: Effect[Any, IOError, str]
+
+    def f(a: str, b: str) -> str:
+      pass
+    
+    reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.effect.Effect[Any, Union[builtins.ValueError, builtins.OSError], builtins.str*]'
+    
