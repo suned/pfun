@@ -34,6 +34,16 @@ class Ref(Immutable, Generic[A]):
         return Effect(run_e)
 
     def modify(self, f: Callable[[A], A]) -> Effect[Any, NoReturn, None]:
+        """
+        Modify the value wrapped by this :class:`Ref` by applying `f` in isolation
+
+        :example:
+        >>> ref = Ref([])
+        >>> ref.modify(lambda l: l + [1]).run(None)
+        None
+        >>> ref.value
+        [1]
+        """
         async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
             async with self.lock:
                 new = f(self.value)

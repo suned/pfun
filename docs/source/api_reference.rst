@@ -1,5 +1,29 @@
 API Reference
-====
+=============
+Effect
+------
+
+Effect
+^^^^^^
+.. automodule:: pfun.effect.effect
+    :members:
+
+Files
+^^^^^
+.. automodule:: pfun.effect.files
+    :members:
+
+Console
+^^^^^^^
+.. automodule:: pfun.effect.console
+    :members:
+
+Ref
+^^^
+
+.. automodule:: pfun.effect.ref
+    :members:
+
 Maybe
 -----
 .. autofunction:: pfun.maybe.maybe
@@ -26,7 +50,7 @@ Either
     :members:
 
 Result
------
+------
 .. autofunction:: pfun.result.result
 
 .. autoclass:: pfun.result.Result

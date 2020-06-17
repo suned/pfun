@@ -9,6 +9,9 @@ from ..curry import curry
 
 
 class Files(Immutable):
+    """
+    Module that enables reading and writing from files
+    """
     def read(self, path: str) -> Effect[Any, IOError, str]:
         async def run_e(_) -> Trampoline[Either[IOError, str]]:
             try:
@@ -79,6 +82,11 @@ class Files(Immutable):
 
 
 class HasFiles(Protocol):
+    """
+    Module provider that provides the files module
+
+    :attribute files: The :class:`Files` instance
+    """
     files: Files
 
 
