@@ -188,4 +188,4 @@ def ios(value_strategy=anything()):
     )
 
 def effects(value_strategy=anything()):
-    return builds(effect.wrap, value_strategy)
+    return builds(effect.success, value_strategy)

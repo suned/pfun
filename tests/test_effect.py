@@ -20,42 +20,42 @@ class TestEffect(MonadTest):
     def test_composition_law(self, f, g, value, env):
         h = compose(f, g)
         assert (
-            effect.wrap(value).map(h).run(env) ==
-            effect.wrap(value).map(g).map(f).run(env)
+            effect.success(value).map(h).run(env) ==
+            effect.success(value).map(g).map(f).run(env)
         )
 
     @given(anything(), anything())
     def test_identity_law(self, value, env):
         assert (
-            effect.wrap(value).map(identity).run(env) ==
-            effect.wrap(value).run(env)
+            effect.success(value).map(identity).run(env) ==
+            effect.success(value).run(env)
         )
 
     @given(unaries(effects()), anything(), anything())
     def test_left_identity_law(self, f, value, env):
         assert (
-            effect.wrap(value).and_then(f).run(env) ==
+            effect.success(value).and_then(f).run(env) ==
             f(value).run(env)
         )
     
     @given(anything(), anything())
     def test_right_identity_law(self, value, env):
         assert (
-            effect.wrap(value).and_then(
-                effect.wrap
-            ).run(env) == effect.wrap(value).run(env)
+            effect.success(value).and_then(
+                effect.success
+            ).run(env) == effect.success(value).run(env)
         )
 
     @given(anything(), anything())
     def test_equality(self, value, env):
-        assert effect.wrap(value).run(env
-                                      ) == effect.wrap(value).run(env)
+        assert effect.success(value).run(env
+                                      ) == effect.success(value).run(env)
 
     @given(anything(), anything(), anything())
     def test_inequality(self, first, second, env):
         assume(first != second)
-        assert effect.wrap(first).run(env
-                                      ) != effect.wrap(second).run(env)
+        assert effect.success(first).run(env
+                                      ) != effect.success(second).run(env)
     
     def test_get_environment(self):
         assert effect.get_environment().run('env') == 'env'
@@ -67,32 +67,45 @@ class TestEffect(MonadTest):
         assert effect.from_awaitable(f()).run(None) == 1
     
     def test_sequence(self):
-        assert effect.sequence_async([effect.wrap(v) for v in range(3)]
+        assert effect.sequence_async([effect.success(v) for v in range(3)]
                               ).run(None) == (0, 1, 2)
 
     def test_stack_safety(self):
         with recursion_limit(100):
-            effect.sequence_async([effect.wrap(v) for v in range(500)]).run(None)
+            effect.sequence_async([effect.success(v) for v in range(500)]).run(None)
+        
+        e = effect.failure('')
+        for _ in range(500):
+            e = e.recover(lambda _: effect.failure(''))
+        e = e.recover(lambda _: effect.success(''))
+        with recursion_limit(100):
+            e.run(None)
+        
+        e = effect.success('')
+        for _ in range(500):
+            e = e.either()
+        with recursion_limit(100):
+            e.run(None)
 
     def test_filter_m(self):
-        assert effect.filter_m(lambda v: effect.wrap(v % 2 == 0),
+        assert effect.filter_m(lambda v: effect.success(v % 2 == 0),
                               range(5)).run(None) == (0, 2, 4)
 
     def test_map_m(self):
-        assert effect.map_m(effect.wrap,
+        assert effect.map_m(effect.success,
                            range(3)).run(None) == (0, 1, 2)
     
     def test_with_effect(self):
         @effect.with_effect
         def f():
-            a = yield effect.wrap(2)
-            b = yield effect.wrap(2)
+            a = yield effect.success(2)
+            b = yield effect.success(2)
             return a + b
 
         @effect.with_effect
         def test_stack_safety():
             for _ in range(500):
-                yield effect.wrap(1)
+                yield effect.success(1)
             return None
 
         with recursion_limit(100):
@@ -101,37 +114,37 @@ class TestEffect(MonadTest):
         assert f().run(None) == 4
     
     def test_either(self):
-        success = effect.wrap(1)
-        error = effect.fail('error')
+        success = effect.success(1)
+        error = effect.failure('error')
         assert success.either().run(None) == either.Right(1)
         error.either().run(None) == either.Left('error')
     
     def test_recover(self):
-        success = effect.wrap(1)
-        error = effect.fail('error')
-        assert success.recover(lambda e: effect.wrap(2)).run(None) == 1
-        assert error.recover(lambda e: effect.wrap(2)).run(None) == 2
+        success = effect.success(1)
+        error = effect.failure('error')
+        assert success.recover(lambda e: effect.success(2)).run(None) == 1
+        assert error.recover(lambda e: effect.success(2)).run(None) == 2
     
     def test_absolve(self):
         right = either.Right(1)
         left = either.Left('error')
-        right_effect = effect.wrap(right)
-        left_effect = effect.wrap(left)
+        right_effect = effect.success(right)
+        left_effect = effect.success(left)
         assert effect.absolve(right_effect).run(None) == 1
         with pytest.raises(Exception):
             # todo
             effect.absolve(left_effect).run(None)
     
-    def test_fail(self):
+    def test_error(self):
         with pytest.raises(Exception):
             # todo
-            effect.fail('error').run(None)
+            effect.error('error').run(None)
     
     def test_combine(self):
         def f(a, b):
             return a + b
         
-        assert effect.combine(effect.wrap('a'), effect.wrap('b'))(f).run(None) == 'ab'
+        assert effect.combine(effect.success('a'), effect.success('b'))(f).run(None) == 'ab'
     
     def test_catch(self):
         def f(fail):

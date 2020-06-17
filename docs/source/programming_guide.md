@@ -123,7 +123,10 @@ assert f(1)(1) == 3
 ```
 
 ## Effectful (But Side-Effect Free) Functional Programming
-In functional programming, programs are built by composing functions that have no side-effects. This makes it tricky to express things that we normally model as side-effects in imperative programming such as doing io or raising exceptions. To help with this
+In functional programming, programs are built by composing functions that have no side-effects. This means that things that we normally model as side-effects in imperative programming such as performing io or raising exceptions are modelled differently in functional programming. The best way to deal with side-effecty things such as io or error handling with `pfun` is to use the `pfun.effect` module, which lets you work with side-effecty stuff in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "functional effect system", which is precisely what `pfun.effect` is.
+
+`pfun` also offers more traditional ways of working with functional effects in the form of MTL style classes such as `pfun.maybe` or `pfun.reader`. We recommend using
+
 ### Effect
 The effect type has three type-parameters `R`, `E` and `A`:
 ```python
@@ -136,7 +139,7 @@ Let's study each of them in turn.
 ```python
 from pfun import effect
 
-e = effect.wrap('Success!')
+e = effect.succeed('Success!')
 reveal_type(e)  # revealed_type: Effect[Any, NoReturn, str]
 assert e.run(None) == 'Success!'
 ```
@@ -158,6 +161,9 @@ class HasRequestMaker(Protocol):
 #### Asynchronous IO
 #### Error Handling
 #### Injected Effects
+
+
+In the following sections we will look at more traditional alternatives to working with `pfun.effect`. As already stated, we recommend using `pfun.effect` over these classes, but for some use-cases, all the features of `pfun.effect` might be overkill. 
 ### Maybe
 Say you have a function that can fail:
 

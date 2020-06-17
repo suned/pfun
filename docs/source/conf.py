@@ -10,4 +10,4 @@ version = ''
 release = '0.5.1'
 source_suffix = ['.rst', '.md']
 master_doc = 'index'
-extensions = ['recommonmark', 'sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
+extensions = ['recommonmark', 'sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx_autodoc_typehints']

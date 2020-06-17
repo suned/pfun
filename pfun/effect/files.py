@@ -6,7 +6,6 @@ from ..either import Either, Left, Right
 from ..aio_trampoline import Done, Trampoline
 from ..immutable import Immutable
 from ..curry import curry
-import sys
 
 
 class Files(Immutable):

@@ -28,6 +28,9 @@ B = TypeVar('B')
 
 
 class Effect(Generic[R, E, A], Immutable):
+    """
+    Wrapper for functions that perform side-effects
+    """
     run_e: Callable[[R], Awaitable[Trampoline[Either[E, A]]]]
 
     def and_then(
@@ -35,6 +38,19 @@ class Effect(Generic[R, E, A], Immutable):
         f: Callable[[A],
                     Union[Awaitable[Effect[Any, E2, B]], Effect[Any, E2, B]]]
     ) -> Effect[Any, Union[E, E2], B]:
+        """
+        Create new :class:`Effect` that applies ``f`` to the result of running this effect successfully.
+        If this :class:`Effect` fails, ``f`` is not applied.
+
+        :example:
+        >>> success(2).and_then(lambda i: success(i + 2)).run(None)
+        4
+        
+        :param f: Function to pass the result of this :class:`Effect` instance \
+        once it can be computed
+        :return: New :class:`Effect` which wraps the result of \
+        passing the result of this :class:`Effect` instance to ``f``
+        """
         async def run_e(r: R) -> Trampoline[Either[Union[E, E2], B]]:
             async def thunk():
                 def cont(either: Either):
@@ -57,24 +73,76 @@ class Effect(Generic[R, E, A], Immutable):
             return Call(thunk)
 
         return Effect(run_e)
+    
+    def discard_and_then(self, effect: Effect[Any, E2, B]) -> Effect[Any, Union[E, E2], B]:
+        """
+        Create a new effect that discards the result of this effect, and produces instead ``effect``. Like ``and_then`` but does not require
+        you to handle the result. Convenient for effects that produce ``None``, like writing to files.
+        :example:
+        >>> class Env:
+                files = effect.files.Files()
+        >>> effect.files.write('foo.txt', 'Hello!').discard_and_then(effect.files.read('foo.txt')).run(Env())
+        Hello!
+
+        :param: :class:`Effect` instance to run after this :class:`Effect` has run successfully.
+        """
+        return self.and_then(lambda _: effect)  # type: ignore
 
     def either(self) -> Effect[R, NoReturn, Either[E, A]]:
+        """
+        Push the potential error into the success channel as an either, allowing
+        error handling.
+        :example:
+        >>> failure('Whoops!').either().map(lambda either: either.get if isinstance(either, Right) else 'Phew!').run(None)
+        'Phew!'
+
+        :return: New :class:`Effect` that produces a :class:`Left[E]` if it has failed, or a \
+            :class:`Right[A]` if it succeeds 
+        """
         async def run_e(r: R) -> Trampoline[Either[NoReturn, Either[E, A]]]:
-            trampoline = await self.run_e(r)  # type: ignore
-            return trampoline.and_then(lambda either: Done(Right(either)))
+            async def thunk() -> Trampoline[Either[NoReturn, Either[E, A]]]:
+                trampoline = await self.run_e(r)  # type: ignore
+                return trampoline.and_then(lambda either: Done(Right(either)))
+            
+            return Call(thunk)
 
         return Effect(run_e)
 
     def recover(self,
                 f: Callable[[E], Effect[Any, E2, A]]) -> Effect[Any, E2, A]:
-        async def run_e(r: R) -> Trampoline[Either[E2, B]]:
-            async def k(either: Either) -> Trampoline[Either[E2, A]]:
-                if isinstance(either, Left):
-                    return await f(either.get).run_e(r)  # type: ignore
-                return Done(either)
+        """
+        Create new :class:`Effect` that applies ``f`` to the result of running this effect successfully.
+        If this :class:`Effect` fails, ``f`` is not applied.
 
-            trampoline = await self.run_e(r)  # type: ignore
-            return trampoline.and_then(k)
+        :example:
+        >>> success(2).and_then(lambda i: success(i + 2)).run(None)
+        4
+        
+        :param f: Function to pass the result of this :class:`Effect` instance \
+        once it can be computed
+        :return: New :class:`Effect` which wraps the result of \
+        passing the result of this :class:`Effect` instance to ``f``
+        """
+        async def run_e(r: R) -> Trampoline[Either[E2, A]]:
+            async def thunk():
+                def cont(either: Either):
+                    if isinstance(either, Right):
+                        return Done(either)
+
+                    async def thunk():
+                        next_ = f(either.get)
+                        if asyncio.iscoroutine(next_):
+                            effect = await next_
+                        else:
+                            effect = next_
+                        return await effect.run_e(r)
+
+                    return Call(thunk)
+
+                trampoline = await self.run_e(r)
+                return trampoline.and_then(cont)
+
+            return Call(thunk)
 
         return Effect(run_e)
 
@@ -117,7 +185,7 @@ E1 = TypeVar('E1')
 A1 = TypeVar('A1')
 
 
-def wrap(value: A1) -> Effect[Any, NoReturn, A1]:
+def success(value: A1) -> Effect[Any, NoReturn, A1]:
     async def run_e(_):
         return Done(Right(value))
 
@@ -152,13 +220,13 @@ def with_effect(f: Callable[..., Effects[R1, E1, A1]]
             try:
                 return g.send(v).and_then(cont)
             except StopIteration as e:
-                return wrap(e.value)
+                return success(e.value)
 
         try:
             m = next(g)
             return m.and_then(cont)
         except StopIteration as e:
-            return wrap(e.value)
+            return success(e.value)
 
     return decorator
 
@@ -207,9 +275,9 @@ def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]
     return Effect(run_e)
 
 
-def fail(error: E1) -> Effect[Any, E1, NoReturn]:
+def failure(reason: E1) -> Effect[Any, E1, NoReturn]:
     async def run_e(r):
-        return Done(Left(error))
+        return Done(Left(reason))
 
     return Effect(run_e)
 
@@ -234,9 +302,9 @@ def catch(error_type: Type[EX],
           ) -> Callable[[Callable[[], A1]], Effect[Any, EX, A1]]:
     def _(f):
         try:
-            return wrap(f())
+            return success(f())
         except error_type as e:
-            return fail(e)
+            return failure(e)
 
     return _
 
@@ -253,14 +321,14 @@ def catch_all(f: Callable[[], A1]) -> Effect[Any, Exception, A1]:
 
 __all__ = [
     'Effect',
-    'wrap',
+    'success',
     'get_environment',
     'with_effect',
     'sequence_async',
     'filter_m',
     'map_m',
     'absolve',
-    'fail',
+    'failure',
     'combine',
     'catch',
     'catch_all',
