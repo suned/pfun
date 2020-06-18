@@ -1,31 +1,67 @@
 API Reference
 =============
-Effect
-------
+pfun
+----
 
-Effect
-^^^^^^
-.. automodule:: pfun.effect.effect
+.. autoclass:: pfun.Immutable
     :members:
 
-Files
-^^^^^
+
+
+.. autoclass:: pfun.Dict
+    :members:
+    :special-members:
+    :exclude-members: __weakref__,clear,__setitem__,__delitem__
+
+.. autoclass:: pfun.List
+    :members:
+    :special-members:
+    :exclude-members: __weakref__,clear,__setitem__,__delitem__
+
+
+.. autofunction:: pfun.curry
+
+
+.. autofunction:: pfun.compose
+
+
+.. autofunction:: pfun.always
+
+
+.. autofunction:: pfun.pipeline
+
+
+.. autofunction:: pfun.identity
+
+
+pfun.effect
+-----------
+.. automodule:: pfun.effect
+    :members:
+    :imported-members:
+
+pfun.effect.files
+-----------------
 .. automodule:: pfun.effect.files
     :members:
 
-Console
-^^^^^^^
+pfun.effect.console
+-------------------
 .. automodule:: pfun.effect.console
     :members:
 
-Ref
-^^^
+pfun.effect.subprocess
+----------------------
+.. automodule:: pfun.effect.subprocess
+    :members:
 
+pfun.effect.ref
+---------------
 .. automodule:: pfun.effect.ref
     :members:
 
-Maybe
------
+pfun.maybe
+----------
 .. autofunction:: pfun.maybe.maybe
 
 .. autoattribute:: pfun.maybe.Maybe
@@ -36,8 +72,8 @@ Maybe
 .. autoclass:: pfun.maybe.Nothing
     :members:
 
-Either
-------
+pfun.either
+-----------
 .. autofunction:: pfun.either.either
 
 
@@ -49,21 +85,21 @@ Either
 .. autoclass:: pfun.result.Left
     :members:
 
-Result
-------
+pfun.result
+-----------
 .. autofunction:: pfun.result.result
 
 .. autoclass:: pfun.result.Result
     :members:
 
-Reader
-------
+pfun.reader
+-----------
 
 .. automodule:: pfun.reader
     :members:
 
-Writer
-------
+pfun.writer
+-----------
 
 .. automodule:: pfun.writer
     :members:
@@ -71,24 +107,24 @@ Writer
     :exclude-members: __weakref__,__setattr__,__repr__
 
 
-State
------
+pfun.state
+----------
 
 .. automodule:: pfun.state
     :members:
     :special-members:
     :exclude-members: __weakref__,__setattr__,__repr__
 
-IO
-----
+pfun.io
+-------
 
 .. automodule:: pfun.io
     :members:
     :special-members:
     :exclude-members: __weakref__,__setattr__,__repr__
 
-Trampoline
-----------
+pfun.trampoline
+---------------
 
 .. automodule:: pfun.trampoline
     :members:
@@ -96,61 +132,17 @@ Trampoline
     :exclude-members: __weakref__,__setattr__,__repr__
 
 
-Cont
-----
+pfun.cont
+---------
 
 .. automodule:: pfun.cont
     :members:
     :special-members:
     :exclude-members: __weakref__,__setattr__,__repr__
 
-Free
-----
+pfun.free
+---------
 .. automodule:: pfun.free
     :members:
     :special-members:
     :exclude-members: __weakref__,__setattr__,__repr__
-
-
-Immutable
----------
-
-.. autoclass:: pfun.Immutable
-    :members:
-
-
-Dict
-----
-.. autoclass:: pfun.Dict
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,clear,__setitem__,__delitem__
-List
-----
-.. autoclass:: pfun.List
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,clear,__setitem__,__delitem__
-
-curry
------
-.. autofunction:: pfun.curry
-
-compose
--------
-.. autofunction:: pfun.compose
-
-always
-------
-.. autofunction:: pfun.always
-
-pipeline
---------
-.. autofunction:: pfun.pipeline
-
-identity
---------
-
-.. autofunction:: pfun.identity
-
-

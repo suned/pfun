@@ -7,7 +7,7 @@ For a detailed documentation of all classes and functions, see [API Reference](a
 
 `pip install pfun`
 
-### MyPy Plugin
+## MyPy Plugin
 
 The types provided by the Python `typing` module are often not flexible enough to provide
 precise typing of common functional design patterns. If you use [mypy](http://mypy-lang.org/), `pfun`

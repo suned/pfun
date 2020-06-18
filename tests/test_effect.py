@@ -1,3 +1,6 @@
+from unittest import mock
+from subprocess import CalledProcessError
+
 from .monad_test import MonadTest
 from pfun import effect, compose, identity, either
 
@@ -5,7 +8,6 @@ import pytest
 from hypothesis import given, assume
 from .strategies import effects, anything, unaries
 from .utils import recursion_limit
-from unittest import mock
 
 
 class TestEffect(MonadTest):
@@ -244,3 +246,38 @@ class TestFiles:
             e.run(HasFiles())
             mocked_open.assert_called_once_with('foo.txt', 'ab+')
             mocked_open().write.assert_called_once_with(b'content')
+
+
+class TestRef:
+    def test_get(self):
+        ref = effect.ref.Ref(0)
+        assert ref.get().run(None) == 0
+    
+    def test_put(self):
+        ref = effect.ref.Ref(0)
+        ref.put(1).run(None)
+        assert ref.value == 1
+    
+    def test_modify(self):
+        ref = effect.ref.Ref(0)
+        ref.modify(lambda _: 1).run(None)
+        assert ref.value == 1
+    
+    def test_try_modify(self):
+        ref = effect.ref.Ref(0)
+        ref.try_modify(lambda _: either.Left('')).either().run(None)
+        assert ref.value == 0
+        ref.try_modify(lambda _: either.Right(1)).run(None)
+        assert ref.value == 1
+
+class HasSubprocess:
+    subprocess = effect.subprocess.Subprocess()
+
+
+class TestSubprocess:
+    def test_run_in_shell(self):
+        stdout, stderr = effect.subprocess.run_in_shell('echo "test"').run(HasSubprocess())
+        assert stdout == b'test\n'
+
+        with pytest.raises(CalledProcessError):
+            effect.subprocess.run_in_shell('exit 1').run(HasSubprocess())

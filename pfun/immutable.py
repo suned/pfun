@@ -6,10 +6,10 @@ T = TypeVar('T')
 
 @dataclass(frozen=True)
 class Immutable:
-    __immutable__ = True
     """
     Super class that makes subclasses immutable using dataclasses
 
+    :example:
     >>> class A(Immutable):
     ...     a: str
     >>> class B(A):
@@ -19,6 +19,7 @@ class Immutable:
     AttributeError: <__main__.B object at 0x10f99a0f0> is immutable
 
     """
+    __immutable__ = True
     def __init_subclass__(
         cls, init=True, repr=True, eq=True, order=False, unsafe_hash=False
     ):

@@ -391,7 +391,7 @@ def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]
     """
     async def run_e(r) -> Trampoline[Either[E1, A1]]:
         async def thunk():
-            trampoline = await effect.run_e(r)  # type: ignore
+            trampoline = await effect.run_e(r)
             return trampoline.and_then(lambda either: Done(either.get))
         return Call(thunk)
 
