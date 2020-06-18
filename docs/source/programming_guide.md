@@ -159,6 +159,31 @@ class HasRequestMaker(Protocol):
 
 ```
 #### Asynchronous IO
+`Effect` uses `asyncio` under the hood to run side-effects asynchronously when possible.
+This can yield significant speed ups when running an effect spends alot of time waiting for io.
+
+Consider for example this program that calls `curl http://www.google.com` in a subprocess 50 times:
+```python
+# call_google_sync.py
+import timeit
+import subprocess
+
+[subprocess.run(['curl', 'http://www.googlec.com']) for _ in range(50)]
+```
+
+`time python -m call_google_sync`
+
+```python
+# call_google_async.py
+from pfun.effect.subprocess import Subprocess
+from pfun.effect import sequence_async
+from subprocess import DEVNULL
+
+sp = Subprocess()
+sequence_async(sp.run_in_shell('curl http://www.googlec.com') for _ in range(50)).run(None)
+```
+
+`time python -m call_google_sync_async`
 #### Error Handling
 #### Injected Effects
 
