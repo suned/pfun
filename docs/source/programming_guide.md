@@ -78,11 +78,11 @@ assert List(range(3)).map(str) == ['0', '1', '2']
 `Dict` is a functional style dictionary.
 
 ```python
-from pfun import Dict
+from pfun import Dict, maybe
 
 d = Dict({'key': 'value'})
 d2 = d.set('new_key', 'new_value')
-assert 'new_key' not in d and d2['new_key'] == Just('new_value')
+assert 'new_key' not in d and d2['new_key'] == maybe.Just('new_value')
 ```
 
 It supports the same api as `dict` which the exception of `__setitem__` which will raise an exception, and uses
@@ -125,7 +125,7 @@ assert f(1)(1) == 3
 ## Effectful (But Side-Effect Free) Functional Programming
 In functional programming, programs are built by composing functions that have no side-effects. This means that things that we normally model as side-effects in imperative programming such as performing io or raising exceptions are modelled differently in functional programming. The best way to deal with side-effecty things such as io or error handling with `pfun` is to use the `pfun.effect` module, which lets you work with side-effecty stuff in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "functional effect system", which is precisely what `pfun.effect` is.
 
-`pfun` also offers more traditional ways of working with functional effects in the form of MTL style classes such as `pfun.maybe` or `pfun.reader`. We recommend using
+`pfun` also offers more traditional ways of working with functional effects in the form of MTL style classes such as `pfun.maybe` or `pfun.reader`. We recommend using `pfun.effect` over these alternatives because composing multiple effects with MTL style classes (say `IO[Either]` for example) is cumbersome to use and type in MTL style, and effortless with `pfun.effect`.
 
 ### Effect
 The effect type has three type-parameters `R`, `E` and `A`:
@@ -134,7 +134,7 @@ Effect[R, E, A]
 ```
 Let's study each of them in turn.
 
-`A` represents the success type, that is, the type of value that will eventually be produced when the effect is executed. We can create an effect that does nothing but succeed with a value of type `A` by calling the `wrap` method of the `effect` module.
+`A` represents the success type, that is, the type of value that will eventually be produced when the effect is executed. We can create an effect that does nothing but succeed with a value of type `A` by calling the `success` method of the `effect` module.
 
 ```python
 from pfun import effect
@@ -159,7 +159,7 @@ class HasRequestMaker(Protocol):
 
 ```
 #### Asynchronous IO
-`Effect` uses `asyncio` under the hood to run side-effects asynchronously when possible.
+`Effect` uses `asyncio` under the hood to run io bound side-effects asynchronously when possible.
 This can yield significant speed ups when running an effect spends alot of time waiting for io.
 
 Consider for example this program that calls `curl http://www.google.com` in a subprocess 50 times:
@@ -188,8 +188,9 @@ sequence_async(sp.run_in_shell('curl http://www.googlec.com') for _ in range(50)
 #### Injected Effects
 
 
+### MTL Style Effect Types
 In the following sections we will look at more traditional alternatives to working with `pfun.effect`. As already stated, we recommend using `pfun.effect` over these classes, but for some use-cases, all the features of `pfun.effect` might be overkill. 
-### Maybe
+#### Maybe
 Say you have a function that can fail:
 
 ```python
@@ -238,7 +239,7 @@ The only requirement for the function argument to `and_then` is that it returns 
 monadic type that you started with (a `Maybe` in this case).
 A function that returns a monadic value is called a _monadic function_.
 
-### Either
+#### Either
 `Maybe` allowed us to put the failure effect in the type signature, but
 it doesn't tell the caller _what_ went wrong. `Either` will do that:
 
@@ -252,7 +253,7 @@ def i_can_fail(s: str) -> Either[ValueError, str]:
     return Right('Ok!')
 ```
 
-### Reader
+#### Reader
 Imagine that you're trying to write a Python program in functional style.
 In many places in your code, you need to instantiate dependencies
 (like a database connection). You could of course instantiate that
@@ -317,7 +318,7 @@ def main():
 ```
 
 
-### Writer
+#### Writer
 Imagine that you are logging by appending to a `tuple` (Why a `tuple`? Well because they're
 immutable of course!). Trying to avoid global mutable state,
 you decide to pass the list around as a common argument to all the functions
@@ -367,7 +368,7 @@ def main():
 `tuple` is not the only thing `Writer` can combine: in fact the only requirement on the second argument is that its a _monoid_. You can even tell writer
 to combine custom types by implementing the `Monoid` ABC.
 
-### State
+#### State
 Where `Reader` can only read the context passed into it, and `Writer` can only append to a monoid but not read it, `State` can do both.
 You can use it to thread some state through a computation without global shared state
 
@@ -388,7 +389,7 @@ state = add('first element').and_then(
 print(state.run(()))  # outputs (None, ('second element',))
 ```
 The `None` value is the result of the computation (which is nothing, because all we do is change the state), and `('second element',)` is the final state.
-### IO
+#### IO
 A program that can't interact with the outside world isn't much use. But how can we keep our program pure and still interact with
 the outside world? The common solution is to use `IO` to separate the pure parts of our program from the unpure parts
 
@@ -405,7 +406,7 @@ print_.run()
 with `map` and `and_then` just like the other monads we have seen.
 
 
-### Combining Monadic Values
+#### Combining Monadic Values
 Sometimes you want to combine multiple unwrapped monadic values 
 like in the `get_full_name` function below:
 ```python
@@ -512,13 +513,13 @@ def factorial(n: int) -> int:
     def factorial_acc(n: int, acc: int) -> int:
         if n == 1:
             return acc
-        return factorial_acc(n - 1; n * acc)
+        return factorial_acc(n - 1, n * acc)
         
     return factorial_acc(n, 1)
 ```
 In Python however, this is not enough to solve the problem because Python does not perform tail-call-optimization.
 
-In languages without tail-call-optimization such as Python, its common to use a data structure called a trampoline
+Because Python doesn't optimize tail calls, we need to use a data structure called a trampoline
 to wrap the recursive calls into objects that can be interpreted in constant stack space, by letting the function
 return immediately at each recursive step.
 
@@ -550,7 +551,7 @@ way of solving recursive problems (when it doesn't break [referential transparen
 is often easier to understand.
 
 Sometimes you'll find yourself in a situation where you want to write a recursive monadic function.
-For some monads this is not a problem since they are designed to be stack safe (`Reader`, `State`, `IO`, and `Cont`).
+For some monads this is not a problem since they are designed to be stack safe (`Effect`, `Reader`, `State`, `IO`, and `Cont`).
 But for other monads (`Maybe`, `Either` and `Writer`), this can lead to `RecursionError`. Consider `pow_writer` which computes integer powers by recursion:
 
 ```python
