@@ -146,6 +146,14 @@ version = "0.3.0"
 
 [[package]]
 category = "dev"
+description = ""
+name = "docstring-parser"
+optional = false
+python-versions = "*"
+version = "0.3"
+
+[[package]]
+category = "dev"
 description = "Docutils -- Python Documentation Utilities"
 name = "docutils"
 optional = false
@@ -359,6 +367,18 @@ MarkupSafe = ">=0.23"
 
 [package.extras]
 i18n = ["Babel (>=0.8)"]
+
+[[package]]
+category = "dev"
+description = "A tiny library for creating CLIs"
+name = "main-dec"
+optional = false
+python-versions = ">=3.6,<4.0"
+version = "0.1.1"
+
+[package.dependencies]
+docstring-parser = ">=0.3.0,<0.4.0"
+stringcase = ">=1.2,<2.0"
 
 [[package]]
 category = "dev"
@@ -894,6 +914,14 @@ test = ["pytest"]
 
 [[package]]
 category = "dev"
+description = "String case converter."
+name = "stringcase"
+optional = false
+python-versions = "*"
+version = "1.2.0"
+
+[[package]]
+category = "dev"
 description = "Python Library for Tom's Obvious, Minimal Language"
 name = "toml"
 optional = false
@@ -1023,7 +1051,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "15a1ce848025533e8888094d7273e90b090ee6f6edb303a767c3e1ea49acc477"
+content-hash = "1c60d061009c7cf1302fad11f8c1356c0eed434056ffba952b7d356eef87d8f7"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1119,6 +1147,9 @@ decorator = [
 distlib = [
     {file = "distlib-0.3.0.zip", hash = "sha256:2e166e231a26b36d6dfe35a48c4464346620f8645ed0ace01ee31822b288de21"},
 ]
+docstring-parser = [
+    {file = "docstring_parser-0.3.tar.gz", hash = "sha256:06e012a6e4410427423d401928709f5b10f1bd3f07d947c5dc5a27aa86df272e"},
+]
 docutils = [
     {file = "docutils-0.16-py2.py3-none-any.whl", hash = "sha256:0c5b78adfbf7762415433f5515cd5c9e762339e23369dbe8000d84a4bf4ab3af"},
     {file = "docutils-0.16.tar.gz", hash = "sha256:c2de3a60e9e7d07be26b7f2b00ca0309c207e06c100f9cc2a94931fc75a478fc"},
@@ -1181,6 +1212,10 @@ jedi = [
 jinja2 = [
     {file = "Jinja2-2.11.2-py2.py3-none-any.whl", hash = "sha256:f0a4641d3cf955324a89c04f3d94663aa4d638abe8f733ecd3582848e1c37035"},
     {file = "Jinja2-2.11.2.tar.gz", hash = "sha256:89aab215427ef59c34ad58735269eb58b1a5808103067f7bb9d5836c651b3bb0"},
+]
+main-dec = [
+    {file = "main-dec-0.1.1.tar.gz", hash = "sha256:e64316e9d98f3f5f3f9d319f5a41dbc137d02014263783a7d90ba7d8030e0105"},
+    {file = "main_dec-0.1.1-py3-none-any.whl", hash = "sha256:1117b0f3c470b5f2b6d33667a1e6e6b1980d204cfaaab493c8fae4991725d1e5"},
 ]
 markupsafe = [
     {file = "MarkupSafe-1.1.1-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:09027a7803a62ca78792ad89403b1b7a73a01c8cb65909cd876f7fcebd79b161"},
@@ -1425,6 +1460,9 @@ sphinxcontrib-qthelp = [
 sphinxcontrib-serializinghtml = [
     {file = "sphinxcontrib-serializinghtml-1.1.4.tar.gz", hash = "sha256:eaa0eccc86e982a9b939b2b82d12cc5d013385ba5eadcc7e4fed23f4405f77bc"},
     {file = "sphinxcontrib_serializinghtml-1.1.4-py2.py3-none-any.whl", hash = "sha256:f242a81d423f59617a8e5cf16f5d4d74e28ee9a66f9e5b637a18082991db5a9a"},
+]
+stringcase = [
+    {file = "stringcase-1.2.0.tar.gz", hash = "sha256:48a06980661908efe8d9d34eab2b6c13aefa2163b3ced26972902e3bdfd87008"},
 ]
 toml = [
     {file = "toml-0.10.0-py2.7.egg", hash = "sha256:f1db651f9657708513243e61e6cc67d101a39bad662eaa9b5546f789338e07a3"},
