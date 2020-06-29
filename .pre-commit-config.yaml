@@ -1,0 +1,45 @@
+repos:
+    - repo: local
+      hooks:
+        - id: trailing-whitespace-fixer
+          name: trailing-whitespace-fixer
+          stages: [commit]
+          language: system
+          entry: trailing-whitespace-fixer
+          types: [text]
+
+        - id: end-of-file-fixer
+          name: end-of-file-fixer
+          stages: [commit]
+          language: system
+          entry: end-of-file-fixer
+          types: [text]
+
+        - id: isort
+          name: isort
+          stages: [commit]
+          language: system
+          entry: isort
+          types: [python]
+
+        - id: yapf
+          name: yapf
+          stages: [commit]
+          language: system
+          entry: yapf
+          types: [python]
+
+        - id: flake8
+          name: flake8
+          stages: [commit]
+          language: system
+          entry: flake8
+          types: [python]
+
+        - id: mypy
+          name: mypy
+          stages: [commit]
+          language: system
+          entry: mypy
+          types: [python]
+          pass_filenames: false
