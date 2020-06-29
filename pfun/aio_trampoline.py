@@ -1,9 +1,9 @@
-from typing import Generic, TypeVar, Callable, cast, Iterable, Generator, Awaitable, Union
 from abc import ABC, abstractmethod
-
-from .monad import Monad, sequence_, map_m_, filter_m_
-from .immutable import Immutable
 from asyncio import iscoroutine
+from typing import Awaitable, Callable, Generic, Iterable, TypeVar, Union, cast
+
+from .immutable import Immutable
+from .monad import Monad, sequence_
 
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
@@ -142,4 +142,4 @@ def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
     return cast(Trampoline[Iterable[A]], sequence_(Done, iterable))
 
 
-__all__ = ['Trampoline', 'Done', 'sequence' 'Call', 'AndThen']
+__all__ = ['Trampoline', 'Done', 'sequence', 'Call', 'AndThen']

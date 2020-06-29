@@ -1,11 +1,12 @@
 from typing import Any
+
 from typing_extensions import Protocol
 
-from .effect import Effect, get_environment
-from ..either import Either, Left, Right
 from ..aio_trampoline import Done, Trampoline
-from ..immutable import Immutable
 from ..curry import curry
+from ..either import Either, Left, Right
+from ..immutable import Immutable
+from .effect import Effect, get_environment
 
 
 class Files(Immutable):
@@ -59,8 +60,12 @@ class Files(Immutable):
         Get an :class:`Effect` that writes to a file
 
         :example:
-        >>> Files().write_bytes('foo.txt', 'content of foo.txt').and_then(read('foo.txt')).run(None)
-        'content of foo.txt'
+        >>> files = Files()
+        >>> files\
+        ...     .write('foo.txt', 'contents')\
+        ...     .discard_and_then(files.read('foo.txt'))\
+        ...     .run(None)
+        'contents'
 
         :param path: the path of the file to be written
         :param: content the content to write
@@ -82,8 +87,12 @@ class Files(Immutable):
         Get an :class:`Effect` that writes to a file
 
         :example:
-        >>> Files().write_bytes('foo.txt', b'content of foo.txt').and_then(read('foo.txt')).run(None)
-        'content of foo.txt'
+        >>> files = Files()
+        >>> files\
+        ...     .write_bytes('foo.txt', b'contents')\
+        ...     .discard_and_then(files.read('foo.txt'))\
+        ...     .run(None)
+        'contents'
 
         :param path: the path of the file to be written
         :param: content the content to write
@@ -104,8 +113,12 @@ class Files(Immutable):
         Get an :class:`Effect` that appends to a file
 
         :example:
-        >>> Files().append('foo.txt', 'content of foo.txt').and_then(read('foo.txt')).run(None)
-        'content of foo.txt'
+        >>> files = Files()
+        >>> files\
+        ...     .append('foo.txt', 'contents')\
+        ...     .discard_and_then(files.read('foo.txt'))\
+        ...     .run(None)
+        'contents'
 
         :param path: the path of the file to be written
         :param: content the content to append
@@ -127,8 +140,12 @@ class Files(Immutable):
         Get an :class:`Effect` that appends to a file
 
         :example:
-        >>> Files().append_bytes('foo.txt', b'content of foo.txt').and_then(read('foo.txt')).run(None)
-        'content of foo.txt'
+        >>> files = Files()
+        >>> files\
+        ...     .append_bytes('foo.txt', b'contents')\
+        ...     .discard_and_then(files.read('foo.txt'))\
+        ...     .run(None)
+        'contents
 
         :param path: the path of the file to be written
         :param: content the content to append
@@ -178,7 +195,9 @@ def write(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     :example:
     >>> class Env:
     ...     files = Files()
-    >>> write('foo.txt')('content of foo.txt').and_then(read('foo.txt')).run(Env())
+    >>> write('foo.txt')('contents')\
+    ...     .discard_and_then(read('foo.txt'))\
+    ...     .run(Env())
     'content of foo.txt'
 
     :param path: the path of the file to be written
@@ -213,7 +232,9 @@ def write_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     :example:
     >>> class Env:
     ...     files = Files()
-    >>> write_bytes('foo.txt')(b'content of foo.txt').and_then(read('foo.txt')).run(Env())
+    >>> write_bytes('foo.txt')(b'content of foo.txt')\
+    ...     .discard_and_then(read('foo.txt'))\
+    ...     .run(Env())
     'content of foo.txt'
 
     :param path: the path of the file to be written
@@ -232,7 +253,9 @@ def append(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     :example:
     >>> class Env:
     ...     files = Files()
-    >>> append('foo.txt')('content of foo.txt').and_then(read('foo.txt')).run(Env())
+    >>> append('foo.txt')('content of foo.txt')\
+    ...     .discard_and_then(read('foo.txt'))\
+    ...     .run(Env())
     'content of foo.txt'
 
     :param path: the path of the file to be written
@@ -251,7 +274,9 @@ def append_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     :example:
     >>> class Env:
     ...     files = Files()
-    >>> append_bytes('foo.txt')(b'content of foo.txt').and_then(read('foo.txt')).run(Env())
+    >>> append_bytes('foo.txt')(b'content of foo.txt')\
+    ...     .discard_and_then(read('foo.txt'))\
+    ...     .run(Env())
     'content of foo.txt'
 
     :param path: the path of the file to be written

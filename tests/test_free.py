@@ -1,9 +1,10 @@
-from hypothesis import given, assume
-from pfun.free import Done, with_effect, sequence, map_m, filter_m, with_effect
-from pfun import identity, compose
+from hypothesis import assume, given
 
-from .strategies import frees, unaries, anything
+from pfun import compose, identity
+from pfun.free import Done, filter_m, map_m, sequence, with_effect
+
 from .monad_test import MonadTest
+from .strategies import anything, frees, unaries
 from .utils import recursion_limit
 
 

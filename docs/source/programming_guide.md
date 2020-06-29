@@ -128,7 +128,7 @@ In functional programming, programs are built by composing functions that have n
 `pfun` also offers more traditional ways of working with functional effects in the form of [MTL](https://github.com/haskell/mtl) style classes such as `pfun.maybe` or `pfun.reader`. We recommend using `pfun.effect` over these alternatives because composing multiple effects with MTL style classes (say `IO[Either]` for example) is cumbersome to use and type in MTL style, and effortless with `pfun.effect`.
 
 ### Effect
-The core type you will use when expressing side-effects with `pfun` is `pfun.effect.Effect`. `Effect` is a callable that 
+The core type you will use when expressing side-effects with `pfun` is `pfun.effect.Effect`. `Effect` is a callable that
 
 - Takes exactly one argument
 - May or may not perform side-effects when called (including raising exceptions)
@@ -207,7 +207,7 @@ e(None)  # raises OSError
 ```
 Don't worry about the api of `files` for now, simply notice that when `e` has the type `Effect[Any, OSError, str]`, it means that when you execute `e` it can produce a `str` or fail with `OSError`. Having the the error type explicitly modelled in the type signature of `e` allows type safe error handling as we'll see later.
 
-Finally, let's look at `R`: the _environment type_. `R` is the argument that your effect function requires to produce its result. It allows you to parameterize the side-effect that your `Effect` implements which improves re-useability and testability. For example, imagine that you want to use `Effect` to model the side-effect of reading from a database. The function that reads from the database requires a connection string as an argument to connect. If `Effect` did not take a parameter you would have to pass around the connection string as a parameter through function calls, all the way down to where the connection string was needed. 
+Finally, let's look at `R`: the _environment type_. `R` is the argument that your effect function requires to produce its result. It allows you to parameterize the side-effect that your `Effect` implements which improves re-useability and testability. For example, imagine that you want to use `Effect` to model the side-effect of reading from a database. The function that reads from the database requires a connection string as an argument to connect. If `Effect` did not take a parameter you would have to pass around the connection string as a parameter through function calls, all the way down to where the connection string was needed.
 
 The environment type allows you to pass in the connection string at the edge of your program, rather than threading it through a potentially deep stack of function calls:
 
@@ -253,7 +253,7 @@ def make_request(results: List[DBRow]) -> Effect[Credentials, HTTPError, bytes]:
     ...
 
 results: effect.Effect[str, IOError, List[DBRow]] = execute('select * from users;')
-response: effect.Effect[..., Union[IOError, HTTPError], HTTPResponse] 
+response: effect.Effect[..., Union[IOError, HTTPError], HTTPResponse]
 response = results.and_then(make_request)
 response(...)  # What could this argument be?
 ```
@@ -330,7 +330,7 @@ def execute(query: str) -> Effect[HasDatabase, IOError, List[DBRow]]:
     """
     return get_environment().and_then(lambda env: env.database.execute(query))
 ```
-There are two _modules_: `Requests` and `Database` that provide implementations. There are two corresponding _module providers_: `HasRequests` and `HasDatabase`. Finally there are two functions `execute` and `make_request` that puts it all together. 
+There are two _modules_: `Requests` and `Database` that provide implementations. There are two corresponding _module providers_: `HasRequests` and `HasDatabase`. Finally there are two functions `execute` and `make_request` that puts it all together.
 
 Pay attention to the fact that `execute` and `make_request` look quite similar: they both start by calling `pfun.effect.get_environment`. This function returns an effect that succeeds with the environment value that will eventually be passed as the argument to the final effect (in this example the effect produced by `execute(...).and_then(make_request)`). If you use the MyPy plugin, `pfun` is able to infer the return type of `get_environment` in the body definition of a function that returns an `Effect` instance. For example, in the function body of `execute`, `pfun` is able to infer that the return type of `get_environment` must be `Effect[HasRequests, NoReturn, HasRequests]`.
 
@@ -339,14 +339,14 @@ If we combine the new functions `execute` and `make_request` that both has proto
 ```python
 effect = execute('select * from users;').and_then(make_request)
 ```
-The type of `effect` in this case will be 
+The type of `effect` in this case will be
 ```python
 Effect[
-    pfun.effect.Intersection[HasRequests, HasDatabase], 
-    Union[HTTPError, IOError], 
+    pfun.effect.Intersection[HasRequests, HasDatabase],
+    Union[HTTPError, IOError],
     bytes
 ]
-``` 
+```
 
 Quite a mouthful, but what it tells us is that `effect` must be called with an instance of a type that has both the `requests` and `database` attributes with appropriate types. In other words, if you accidentally defined your environment as:
 ```python
@@ -440,7 +440,7 @@ from typing import List
 def parse(content: str) -> effect.Effect[Any, ZeroDivisionError, List[int]]:
     ...
 
-e: effect.Effect[Any, Union[OSError, ZeroDivisionError], List[int]] 
+e: effect.Effect[Any, Union[OSError, ZeroDivisionError], List[int]]
 e = files.read('foo.txt').and_then(parse)
 ```
 `e` has `Union[OSError, ZeroDivisionError]` as its error type because it can fail if `files.read` fails, _or_ if `parse` fails. This compositional aspect of the error type of `Effect` means that accurate and complex error types are built up from combining simple error types. Moreover, it makes reasoning about error handling easy because errors disappear from the type when they are handled, as we shall see next.
@@ -455,7 +455,7 @@ from pfun.either import Either, Left
 # files.read can fail with OSError
 may_have_failed: Effect[files.HasFiles, OSError, str] = files.read('foo.txt')
 # calling either() surfaces the OSError in the success type as a pfun.either.Either
-as_either: Effect[files.HasFiles, NoReturn, Either[OSError, str]] = may_have_failed.either()  
+as_either: Effect[files.HasFiles, NoReturn, Either[OSError, str]] = may_have_failed.either()
 # we can use map or and_then to handle the error
 cant_fail: Effect[files.HasFiles, NoReturn, str] = as_either.map(lambda either: 'backup content' if isinstance(either, Left) else either.get)
 ```
@@ -679,7 +679,7 @@ def i_need_to_log_something(i: int, log: Tuple[str]) -> Tuple[int, Tuple[str]]:
     result = compute_something(i)
     log = log + ('Something was successfully computed',)
     return result, log
- 
+
 def i_need_to_log_something_too(i: int, log: Tuple[str]) -> Tuple[int, Tuple[str]]:
     result = compute_something_else(i)
     log = log + ('Something else was computed',)
@@ -703,8 +703,8 @@ from pfun.writer import value, Writer
 def i_need_to_log_something(i: int) -> Writer[int, List[str]]:
     result = compute_something(i)
     return Writer(result, ['Something was successfully computed'])
-    
-    
+
+
 def i_need_to_log_something_too(i: int) -> Writer[int, List[str]]:
     result = compute_something_else(i)
     return Writer(result, ['Something else was successfully computed'])
@@ -713,7 +713,7 @@ def i_need_to_log_something_too(i: int) -> Writer[int, List[str]]:
 def main():
     _, log = i_need_to_log_something(1).and_then(i_need_to_log_something_too)
     print('log', log)  # output: ['Something was successfully computed', 'Something else was successfully computed']
- 
+
 ```
 `tuple` is not the only thing `Writer` can combine: in fact the only requirement on the second argument is that its a _monoid_. You can even tell writer
 to combine custom types by implementing the `Monoid` ABC.
@@ -757,7 +757,7 @@ with `map` and `and_then` just like the other monads we have seen.
 
 
 #### Combining Monadic Values
-Sometimes you want to combine multiple unwrapped monadic values 
+Sometimes you want to combine multiple unwrapped monadic values
 like in the `get_full_name` function below:
 ```python
 from pfun.maybe import Just, Maybe
@@ -859,12 +859,12 @@ to put the recursive call in tail-call position.
 
 ```python
 def factorial(n: int) -> int:
-    
+
     def factorial_acc(n: int, acc: int) -> int:
         if n == 1:
             return acc
         return factorial_acc(n - 1, n * acc)
-        
+
     return factorial_acc(n, 1)
 ```
 In Python however, this is not enough to solve the problem because Python does not perform tail-call-optimization.
@@ -878,7 +878,7 @@ from pfun.trampoline import Trampoline, Done, Call
 
 
 def factorial(n: int) -> int:
-    
+
     def factorial_acc(n: int, acc: int) -> Trampoline[int]:
         if n == 1:
             return Done(acc)
@@ -913,7 +913,7 @@ def pow_writer(n: int, m: int) -> Writer[None, int]:
     return tell(n).and_then(lambda _: pow_writer(n, m - 1))
 ```
 
-`pow_writer` cannot easily be trampolined because the function passed to `and_then` which performs the recursion 
+`pow_writer` cannot easily be trampolined because the function passed to `and_then` which performs the recursion
 must return a `Writer`, and not a `Trampoline`.
 
 In these cases the helper function `tail_rec` is provided which can help you trampoline you monadic function using `Either`:

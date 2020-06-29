@@ -1,24 +1,16 @@
 from __future__ import annotations
-from typing import (
-    TypeVar,
-    Generic,
-    Callable,
-    Any,
-    Generator,
-    Awaitable,
-    Union,
-    NoReturn,
-    Type,
-    Iterable
-)
+
 import asyncio
 from functools import wraps
-from typing_extensions import final, Protocol
+from typing import (Any, Awaitable, Callable, Generator, Generic, Iterable,
+                    NoReturn, Type, TypeVar, Union)
 
-from ..immutable import Immutable
-from ..either import Either, Right, Left, sequence as sequence_eithers, filter_m as filter_eithers
-from ..aio_trampoline import Done, Call, Trampoline, sequence as sequence_trampolines
+from ..aio_trampoline import Call, Done, Trampoline
+from ..aio_trampoline import sequence as sequence_trampolines
 from ..curry import curry
+from ..either import Either, Left, Right
+from ..either import sequence as sequence_eithers
+from ..immutable import Immutable
 
 R = TypeVar('R', contravariant=True)
 E = TypeVar('E', covariant=True)
@@ -39,15 +31,16 @@ class Effect(Generic[R, E, A], Immutable):
                     Union[Awaitable[Effect[Any, E2, B]], Effect[Any, E2, B]]]
     ) -> Effect[Any, Union[E, E2], B]:
         """
-        Create new :class:`Effect` that applies ``f`` to the result of running this effect successfully. \
-        If this :class:`Effect` fails, ``f`` is not applied.
+        Create new :class:`Effect` that applies ``f`` to the result of \
+        running this effect successfully. If this :class:`Effect` fails, \
+        ``f`` is not applied.
 
         :example:
         >>> success(2).and_then(lambda i: success(i + 2)).run(None)
         4
-        
-        :param f: Function to pass the result of this :class:`Effect` instance \
-        once it can be computed
+
+        :param f: Function to pass the result of this :class:`Effect` \
+        instance once it can be computed
 
         :return: New :class:`Effect` which wraps the result of \
         passing the result of this :class:`Effect` instance to ``f``
@@ -78,31 +71,40 @@ class Effect(Generic[R, E, A], Immutable):
     def discard_and_then(self, effect: Effect[Any, E2, B]
                          ) -> Effect[Any, Union[E, E2], B]:
         """
-        Create a new effect that discards the result of this effect, and produces instead ``effect``. Like ``and_then`` but does not require
-        you to handle the result. Convenient for effects that produce ``None``, like writing to files.
-        
+        Create a new effect that discards the result of this effect, \
+        and produces instead ``effect``. Like ``and_then`` but does not require
+        you to handle the result. \
+        Convenient for effects that produce ``None``, like writing to files.
+
         :example:
         >>> class Env:
         ...     files = effect.files.Files()
-        >>> effect.files.write('foo.txt', 'Hello!').discard_and_then(effect.files.read('foo.txt')).run(Env())
+        >>> effect.files.write('foo.txt', 'Hello!')\
+        ...     .discard_and_then(effect.files.read('foo.txt'))\
+        ...     .run(Env())
         Hello!
 
-        :param effect: :class:`Effect` instance to run after this :class:`Effect` has run successfully.
+        :param effect: :class:`Effect` instance to run after this \
+        :class:`Effect` has run successfully.
+
         :return: New effect that succeeds with `effect`
         """
         return self.and_then(lambda _: effect)  # type: ignore
 
     def either(self) -> Effect[R, NoReturn, Either[E, A]]:
         """
-        Push the potential error into the success channel as an either, allowing
-        error handling.
-        
+        Push the potential error into the success channel as an either, \
+        allowing error handling.
+
         :example:
-        >>> error('Whoops!').either().map(lambda either: either.get if isinstance(either, Right) else 'Phew!').run(None)
+        >>> error('Whoops!').either().map(
+                lambda either: either.get if isinstance(either, Right)
+                               else 'Phew!'
+        ... ).run(None)
         'Phew!'
 
-        :return: New :class:`Effect` that produces a :class:`Left[E]` if it has failed, or a \
-            :class:`Right[A]` if it succeeds 
+        :return: New :class:`Effect` that produces a :class:`Left[E]` if it \
+            has failed, or a :class:`Right[A]` if it succeeds
         """
         async def run_e(r: R) -> Trampoline[Either[NoReturn, Either[E, A]]]:
             async def thunk() -> Trampoline[Either[NoReturn, Either[E, A]]]:
@@ -116,15 +118,17 @@ class Effect(Generic[R, E, A], Immutable):
     def recover(self,
                 f: Callable[[E], Effect[Any, E2, A]]) -> Effect[Any, E2, A]:
         """
-        Create new :class:`Effect` that applies ``f`` to the error result of running this effect if it fails.
-        If this :class:`Effect` succeeds, ``f`` is not applied.
+        Create new :class:`Effect` that applies ``f`` to the error result of \
+        running this effect if it fails. If this :class:`Effect` succeeds, \
+        ``f`` is not applied.
 
         :example:
         >>> error('Whoops!').recover(lambda _: success('Phew!')).run(None)
         'Phew!'
-        
-        :param f: Function to pass the error result of this :class:`Effect` instance \
-        once it can be computed
+
+        :param f: Function to pass the error result of this :class:`Effect` \
+        instance once it can be computed
+
         :return: New :class:`Effect` which wraps the result of \
         passing the error result of this :class:`Effect` instance to ``f``
         """
@@ -153,11 +157,13 @@ class Effect(Generic[R, E, A], Immutable):
 
     def run(self, r: R, asyncio_run=asyncio.run) -> A:
         """
-        Run the function wrapped by this :class:`Effect`, including potential side-effects. If the function fails
-        the resulting error will be raised as an exception.
+        Run the function wrapped by this :class:`Effect`, including potential \
+        side-effects. If the function fails the resulting error will be \
+        raised as an exception.
 
         :param r: The environment with which to run this :class:`Effect`
-        :param asyncio_run: Function to run the coroutine returned by the wrapped function
+        :param asyncio_run: Function to run the coroutine returned by the \
+            wrapped function
         :returns: The succesful result of the wrapped functions if it succeeds
         """
         async def _run() -> A:
@@ -230,7 +236,8 @@ def success(value: A1) -> Effect[Any, NoReturn, A1]:
 
 def get_environment() -> Effect[Any, NoReturn, Any]:
     """
-    Get an :class:`Effect` that produces the environment passed to `run` when executed
+    Get an :class:`Effect` that produces the environment passed to `run` \
+    when executed
 
     :example:
     >>> get_environment().run('environment')
@@ -384,11 +391,13 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
 def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]
             ) -> Effect[Any, E1, A1]:
     """
-    Move the error type from an :class:`Effect` producing an :class:`Either` into the
-    error channel of the :class:`Effect`
+    Move the error type from an :class:`Effect` producing an :class:`Either` \
+    into the error channel of the :class:`Effect`
 
     :example:
-    >>> effect = error('Whoops').either().map(lambda either: either.get if isinstance(either, Right) else 'Phew!')
+    >>> effect = error('Whoops').either().map(
+    ...     lambda either: either.get if isinstance(either, Right) else 'Phew!'
+    ... )
     >>> absolve(effect).run(None)
     'Phew!'
 
@@ -428,15 +437,18 @@ A2 = TypeVar('A2')
 def combine(*effects: Effect[R1, E1, A2]
             ) -> Callable[[Callable[..., A1]], Effect[Any, Any, A1]]:
     """
-    Create an effect that produces the result of calling the passed function with the results of effects in `effects`
+    Create an effect that produces the result of calling the passed function \
+    with the results of effects in `effects`
 
     :example:
     >>> combine(success(2), success(2))(lambda a, b: a + b).run(None)
     4
 
-    :param effects: Effects the results of which to pass to the combiner function
-    :return: function that takes a combiner function and returns an :class:`Effect` that \
-        applies the function to the results of `effects`
+    :param effects: Effects the results of which to pass to the combiner \
+        function
+
+    :return: function that takes a combiner function and returns an \
+        :class:`Effect` that applies the function to the results of `effects`
     """
     def _(f: Callable[..., A1]):
         effect = sequence_async(effects)
@@ -452,14 +464,17 @@ EX = TypeVar('EX', bound=Exception)
 def catch(error_type: Type[EX],
           ) -> Callable[[Callable[[], A1]], Effect[Any, EX, A1]]:
     """
-    Catch exceptions raised by a function and push them into the error type of an :class:`Effect`
+    Catch exceptions raised by a function and push them into the error type \
+    of an :class:`Effect`
 
     :example:
     >>> catch(ZeroDivisionError)(lambda: 1 / 0).either().run(None)
     Left(ZeroDivisionError('division by zero'))
 
-    :param error_type: Exception type to catch. All other exceptions will not be handled
-    :return: :class:`Effect` that can fail with exceptions raised by the passed function
+    :param error_type: Exception type to catch. All other exceptions will \
+        not be handled
+    :return: :class:`Effect` that can fail with exceptions raised by the \
+        passed function
     """
     def _(f):
         try:
@@ -478,10 +493,10 @@ def catch_all(f: Callable[[], A1]) -> Effect[Any, Exception, A1]:
     >>> catch_all(lambda: 1 / 0).either().run(None)
     Left(ZeroDivisionError('division by zero'))
 
-    :param f: All exceptions raised by this functions will be pushed to the error \
-        channel of the resulting :class:`Effect`
-    :return: :class:`Effect` that cain fail with exceptions raised by `f` or succeed with the \
-        result of `f`
+    :param f: All exceptions raised by this functions will be pushed to the \
+        error channel of the resulting :class:`Effect`
+    :return: :class:`Effect` that cain fail with exceptions raised by `f` \
+        or succeed with the result of `f`
     """
     async def run_e(_: Any) -> Trampoline[Either[Exception, A1]]:
         try:

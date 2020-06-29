@@ -1,10 +1,11 @@
-from pfun.free import (
-    Functor, Free, More, Done, FreeInterpreter, FreeInterpreterElement
-)
-from pfun import Immutable, Dict, compose
-from pfun.state import State, get as get_, put as put_
+from typing import Callable, TypeVar
 
-from typing import TypeVar, Callable
+from pfun import Dict, Immutable, compose
+from pfun.free import (Done, Free, FreeInterpreter, FreeInterpreterElement,
+                       Functor, More)
+from pfun.state import State
+from pfun.state import get as get_
+from pfun.state import put as put_
 
 A = TypeVar('A')
 B = TypeVar('B')

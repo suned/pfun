@@ -1,9 +1,9 @@
-from hypothesis import given, assume
+from hypothesis import assume, given
 
-from pfun import writer
-from pfun import identity, compose
+from pfun import compose, identity, writer
 from tests.monad_test import MonadTest
-from tests.strategies import anything, unaries, writers, monoids
+from tests.strategies import anything, monoids, unaries, writers
+
 from .utils import recursion_limit
 
 

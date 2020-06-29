@@ -1,16 +1,11 @@
 # flake8: noqa
 
-from . import maybe
-from . import reader
-from . import writer
-from . import state
-from . import result
-from . import io
-from .util import (identity, compose, pipeline, Unary, Predicate, always)
-from .dict import Dict
-from .list import List
+from . import io, maybe, reader, result, state, writer
 from .curry import curry
+from .dict import Dict
 from .immutable import Immutable
+from .list import List
+from .util import Predicate, Unary, always, compose, identity, pipeline
 
 __all__ = [
     'maybe',

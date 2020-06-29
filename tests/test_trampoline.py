@@ -1,9 +1,10 @@
-from hypothesis import given, assume
-from pfun.trampoline import Done, with_effect, sequence, filter_m, map_m
-from pfun import identity, compose
+from hypothesis import assume, given
 
-from .strategies import trampolines, unaries, anything
+from pfun import compose, identity
+from pfun.trampoline import Done, filter_m, map_m, sequence, with_effect
+
 from .monad_test import MonadTest
+from .strategies import anything, trampolines, unaries
 from .utils import recursion_limit
 
 

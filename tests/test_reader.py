@@ -1,7 +1,9 @@
+from hypothesis import assume, given
+
+from pfun import compose, identity, reader
+
 from .monad_test import MonadTest
-from .strategies import anything, unaries, readers
-from hypothesis import given, assume
-from pfun import reader, identity, compose
+from .strategies import anything, readers, unaries
 from .utils import recursion_limit
 
 

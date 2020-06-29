@@ -1,9 +1,9 @@
-from typing import Generic, Callable, TypeVar, Iterable, cast, Generator
+from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
 
-from .immutable import Immutable
-from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
-from .trampoline import Trampoline, Done, Call
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
+from .trampoline import Call, Done, Trampoline
 from .util import identity
 from .with_effect import with_effect_
 

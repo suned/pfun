@@ -1,14 +1,15 @@
 from __future__ import annotations
-from typing import Callable, TypeVar, Generic, Generator, Iterable, cast
+
 import sys
 from functools import wraps
+from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
 
 from typing_extensions import Literal
 
-from .immutable import Immutable
-from .trampoline import Trampoline, Done, Call
-from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
+from .trampoline import Call, Done, Trampoline
 from .with_effect import with_effect_
 
 A = TypeVar('A')

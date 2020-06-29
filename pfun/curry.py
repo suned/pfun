@@ -1,6 +1,6 @@
-from typing import Callable
 import functools
 import inspect
+from typing import Callable
 
 from .immutable import Immutable
 

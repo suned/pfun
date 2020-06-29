@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from typing import (
-    Generic, TypeVar, Callable, Any, Iterable, cast, Union, Generator
-)
-from functools import wraps
 from abc import ABC, abstractmethod
+from functools import wraps
+from typing import (Any, Callable, Generator, Generic, Iterable, TypeVar,
+                    Union, cast)
 
-from .immutable import Immutable
-from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
 from .with_effect import with_effect_tail_rec
 
 A = TypeVar('A', covariant=True)

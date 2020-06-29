@@ -1,11 +1,12 @@
-from typing import Any, NoReturn
-from typing_extensions import Protocol
 import asyncio
+from typing import Any, NoReturn
 
-from .effect import Effect, get_environment
-from ..immutable import Immutable
+from typing_extensions import Protocol
+
+from ..aio_trampoline import Done, Trampoline
 from ..either import Either, Right
-from ..aio_trampoline import Trampoline, Done
+from ..immutable import Immutable
+from .effect import Effect, get_environment
 
 
 class Console(Immutable):
@@ -35,7 +36,8 @@ class Console(Immutable):
         Get an effect that reads from stdin
 
         :example:
-        >>> Console().input('What is your name? ').map(lambda name: f'Hello {name}').run(None)
+        >>> greeting = lambda name: f'Hello {name}'
+        >>> Console().input('What is your name? ').map(greeting).run(None)
         what is your name?  # input e.g "John Doe"
         'Hello John Doe!'
 
@@ -71,7 +73,8 @@ def print_line(msg: str = '') -> Effect[HasConsole, NoReturn, None]:
     Hello pfun!
 
     :param msg: Message to print
-    :return: :class:`Effect` that prints to the console using the :class:`HasConsole` provided to `run`
+    :return: :class:`Effect` that prints to the console using the \
+        :class:`HasConsole` provided to `run`
     """
     return get_environment().and_then(lambda env: env.console.print(msg))
 
@@ -83,7 +86,8 @@ def get_line(prompt: str = '') -> Effect[HasConsole, NoReturn, str]:
     :example:
     >>> class Env:
     ...     console = Console()
-    >>> get_line('What is your name? ').map(lambda name: f'Hello {name}!').run(Env())
+    >>> greeting = lambda name: f'Hello {name}!'
+    >>> get_line('What is your name? ').map(greeting).run(Env())
     name?  # input e.g 'John Doe'
     'Hello John Doe!'
 

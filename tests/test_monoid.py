@@ -1,7 +1,7 @@
 from hypothesis import given
-from hypothesis.strategies import lists, integers, text, none, builds, tuples
+from hypothesis.strategies import builds, integers, lists, none, text, tuples
 
-from pfun.monoid import empty, append, Monoid
+from pfun.monoid import Monoid, append, empty
 from tests.strategies import anything
 
 

@@ -1,11 +1,11 @@
-from typing import TypeVar, Generic, Callable, Iterable, cast, Generator
+from abc import ABC, abstractmethod
+from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
 
 from pfun.immutable import Immutable
-from abc import ABC, abstractmethod
 
-from .functor import Functor
-from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .functor import Functor
+from .monad import Monad, filter_m_, map_m_, sequence_
 from .state import State, get
 from .with_effect import with_effect_
 

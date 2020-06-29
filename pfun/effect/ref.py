@@ -1,11 +1,10 @@
-from typing import Generic, TypeVar, Any, Callable, NoReturn, Optional, cast
-from dataclasses import field
-from asyncio import Lock, get_event_loop
+from asyncio import Lock
+from typing import Any, Callable, Generic, NoReturn, Optional, TypeVar, cast
 
-from . import Effect
-from ..immutable import Immutable
-from ..either import Either, Left, Right
 from ..aio_trampoline import Done, Trampoline
+from ..either import Either, Left, Right
+from ..immutable import Immutable
+from . import Effect
 
 A = TypeVar('A')
 E = TypeVar('E')
@@ -26,10 +25,12 @@ class Ref(Immutable, Generic[A]):
         # All this nonsense is to ensure that locks are not initialised
         # before the thread running the event loop is initialised.
         # If the lock is initialised in the main thread,
-        # it may lead to RuntimeError: There is no current event loop in thread 'MainThread'.
+        # it may lead to
+        # RuntimeError: There is no current event loop in thread 'MainThread'.
         # see https://tinyurl.com/yc9kd77s
-        # In theory, users could still get this wrong by supplying their own lock
-        # as Ref(value, Lock()), but then they are on their own ¯\_(ツ)_/¯
+        # In theory, users could still get this wrong by supplying
+        # their own lock as Ref(value, Lock()),
+        # but then they are on their own ¯\_(ツ)_/¯
         if self.lock is None:
             object.__setattr__(self, 'lock', Lock())
         return cast(Lock, self.lock)
@@ -78,7 +79,8 @@ class Ref(Immutable, Generic[A]):
 
     def modify(self, f: Callable[[A], A]) -> Effect[Any, NoReturn, None]:
         """
-        Modify the value wrapped by this :class:`Ref` by applying `f` in isolation
+        Modify the value wrapped by this :class:`Ref` by \
+            applying `f` in isolation
 
         :example:
         >>> ref = Ref([])
@@ -87,8 +89,9 @@ class Ref(Immutable, Generic[A]):
         >>> ref.value
         [1]
 
-        :param f: function that accepts the current state and returns a new state
-        :return: :class:`Effect` that updates the state to the result of `f` 
+        :param f: function that accepts the current state and returns \
+            a new state
+        :return: :class:`Effect` that updates the state to the result of `f`
         """
         async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
             async with self.__lock:
@@ -117,7 +120,8 @@ class Ref(Immutable, Generic[A]):
         >>> ref.value
         'new state'
 
-        :param f: function that accepts the current state and returns a :class:`Right` wrapping a new state \
+        :param f: function that accepts the current state and \
+            returns a :class:`Right` wrapping a new state \
             or a :class:`Left` value wrapping an error
         :return: an :class:`Effect` that updates the state if `f` succeeds
         """

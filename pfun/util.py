@@ -1,4 +1,4 @@
-from typing import TypeVar, Callable, Generic, Tuple, Any
+from typing import Any, Callable, Generic, Tuple, TypeVar
 
 from .immutable import Immutable
 

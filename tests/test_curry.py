@@ -1,5 +1,5 @@
 import pytest
-from hypothesis import given, assume
+from hypothesis import assume, given
 from hypothesis.strategies import integers
 
 from pfun import curry

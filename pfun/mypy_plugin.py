@@ -3,26 +3,15 @@
 import typing as t
 from functools import reduce
 
-from mypy.plugin import Plugin, FunctionContext, ClassDefContext, MethodContext
-from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.types import (
-    Type,
-    CallableType,
-    Instance,
-    TypeVarType,
-    Overloaded,
-    TypeVarId,
-    TypeVarDef,
-    AnyType,
-    TypeOfAny,
-    UnionType,
-    get_proper_type,
-    ARG_POS
-)
-from mypy.nodes import ClassDef, ARG_POS, TypeInfo, Block, NameExpr
 from mypy import checkmember, infer
 from mypy.checker import TypeChecker
 from mypy.mro import calculate_mro
+from mypy.nodes import ARG_POS, Block, ClassDef, NameExpr, TypeInfo
+from mypy.plugin import ClassDefContext, FunctionContext, MethodContext, Plugin
+from mypy.plugins.dataclasses import DataclassTransformer
+from mypy.types import (ARG_POS, AnyType, CallableType, Instance, Overloaded,
+                        Type, TypeVarDef, TypeVarId, TypeVarType, UnionType,
+                        get_proper_type)
 
 _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
@@ -251,7 +240,8 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     info.is_protocol = True
     info.is_abstract = True
     info.bases = [p1, p2]
-    info.abstract_attributes = p1.type.abstract_attributes + p2.type.abstract_attributes
+    info.abstract_attributes = (p1.type.abstract_attributes +
+                                p2.type.abstract_attributes)
     calculate_mro(info)
     return Instance(info, p1.args + p2.args)
 
@@ -259,7 +249,6 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
 def _effect_and_then_hook(context: MethodContext) -> Type:
     return_type = context.default_return_type
     return_type_args = return_type.args
-    e = return_type_args[1]
     return_type = return_type.copy_modified(args=return_type_args)
     try:
         e1 = context.type

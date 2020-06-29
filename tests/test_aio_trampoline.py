@@ -1,11 +1,11 @@
-from hypothesis import given, assume
-from pfun.aio_trampoline import Done
-from pfun import identity, compose
 import pytest
+from hypothesis import assume, given
 
-from .strategies import aio_trampolines, unaries, anything
+from pfun import compose, identity
+from pfun.aio_trampoline import Done
+
 from .monad_test import MonadTest
-from .utils import recursion_limit
+from .strategies import aio_trampolines, anything, unaries
 
 
 class TestTrampoline(MonadTest):

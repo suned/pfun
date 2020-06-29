@@ -1,9 +1,9 @@
-from typing import Generic, TypeVar, Callable, cast, Iterable, Generator
 from abc import ABC, abstractmethod
+from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
 
-from .immutable import Immutable
-from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
 from .with_effect import with_effect_
 
 A = TypeVar('A')

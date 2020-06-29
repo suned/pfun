@@ -1,9 +1,11 @@
-from typing import Generic, Callable, TypeVar, Iterable, cast, Generator
+from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
+
 from pfun.monoid import M, append, empty
-from .immutable import Immutable
+
 from .curry import curry
-from .monad import map_m_, Monad, sequence_, filter_m_
 from .either import Either, Left
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
 from .with_effect import with_effect_tail_rec
 
 A = TypeVar('A')

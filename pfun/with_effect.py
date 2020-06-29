@@ -1,7 +1,8 @@
 from functools import wraps
-from pfun.monad import Monad
+from typing import Any, Callable, Generator, TypeVar
+
 from pfun.curry import curry
-from typing import Generator, TypeVar, Callable, Any
+from pfun.monad import Monad
 
 M = TypeVar('M', bound=Monad)
 

@@ -1,7 +1,6 @@
-from functools import singledispatch
-
-from typing import Union, List, Tuple, TypeVar
 from abc import ABC, abstractmethod
+from functools import singledispatch
+from typing import List, Tuple, TypeVar, Union
 
 
 class Monoid(ABC):

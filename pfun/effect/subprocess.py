@@ -1,14 +1,13 @@
-from typing import Any, Tuple, IO, Union
 import asyncio
-from subprocess import CalledProcessError, PIPE
+from subprocess import PIPE, CalledProcessError
+from typing import IO, Any, Tuple, Union
 
 from typing_extensions import Protocol
 
-from ..immutable import Immutable
 from ..aio_trampoline import Done
-from ..either import Right, Left
+from ..either import Left, Right
+from ..immutable import Immutable
 from .effect import Effect, get_environment
-from ..curry import curry
 
 
 class Subprocess(Immutable):

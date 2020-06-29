@@ -1,13 +1,13 @@
-from typing import (
-    TypeVar, Callable, Iterable, Tuple, Optional, Generic, cast, Generator
-)
 from functools import reduce
+from typing import (Callable, Generator, Generic, Iterable, Optional, Tuple,
+                    TypeVar, cast)
 
-from .monoid import Monoid
-from .immutable import Immutable
 from .curry import curry
-from .monad import map_m_, sequence_, filter_m_, Monad
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
+from .monoid import Monoid
 from .with_effect import with_effect_eager
+
 A = TypeVar('A')
 B = TypeVar('B')
 

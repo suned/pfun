@@ -1,7 +1,7 @@
 from hypothesis import given
 
 from pfun import util
-from tests.strategies import anything, unaries, lists, dicts
+from tests.strategies import anything, dicts, lists, unaries
 
 
 @given(anything(allow_nan=False))

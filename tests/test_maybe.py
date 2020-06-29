@@ -1,19 +1,13 @@
 from typing import Any
+
 from hypothesis import assume, given
-from pfun import Unary, identity, compose, List
-from pfun.maybe import (
-    Maybe,
-    Just,
-    Nothing,
-    maybe,
-    flatten,
-    with_effect,
-    sequence,
-    map_m,
-    filter_m
-)
+
+from pfun import List, Unary, compose, identity
+from pfun.maybe import (Just, Maybe, Nothing, filter_m, flatten, map_m, maybe,
+                        sequence, with_effect)
+
 from .monad_test import MonadTest
-from .strategies import anything, unaries, maybes, lists
+from .strategies import anything, lists, maybes, unaries
 from .utils import recursion_limit
 
 

@@ -1,13 +1,13 @@
 from typing import Any
 
-from hypothesis import given, assume
+from hypothesis import assume, given
 
-from pfun import Unary, identity, compose
-from pfun.either import (
-    Either, Left, Right, either, with_effect, sequence, filter_m, map_m
-)
+from pfun import Unary, compose, identity
+from pfun.either import (Either, Left, Right, either, filter_m, map_m,
+                         sequence, with_effect)
 from tests.monad_test import MonadTest
-from tests.strategies import eithers, unaries, anything
+from tests.strategies import anything, eithers, unaries
+
 from .utils import recursion_limit
 
 
@@ -25,7 +25,9 @@ class TestEither(MonadTest):
         self, either: Either, f: Unary[Any, Either], g: Unary[Any, Either]
     ):
 
-        assert either.and_then(f).and_then(g) == either.and_then(  # type: ignore
+        assert either.and_then(f).and_then(
+            g
+        ) == either.and_then(  # type: ignore
             lambda x: f(x).and_then(g)
         )
 

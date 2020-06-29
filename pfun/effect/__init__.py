@@ -1,5 +1,2 @@
-from .effect import *
-from . import console
-from . import files
-from . import subprocess
-from . import ref
+from . import console, files, ref, subprocess  # noqa
+from .effect import *  # noqa
