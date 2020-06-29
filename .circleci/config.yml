@@ -16,7 +16,7 @@ jobs:
           command: POETRY_VERSION=1.0.9 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
       - run:
           name: Configure poetry
-          command: poetry config settings.virtualenvs.in-project true
+          command: poetry config virtualenvs.in-project true
       - run:
           name: Install dependencies
           command: poetry install
