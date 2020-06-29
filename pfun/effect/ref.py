@@ -1,5 +1,6 @@
-from typing import Generic, TypeVar, Any, Callable, NoReturn
-from asyncio import Lock
+from typing import Generic, TypeVar, Any, Callable, NoReturn, Optional, cast
+from dataclasses import field
+from asyncio import Lock, get_event_loop
 
 from . import Effect
 from ..immutable import Immutable
@@ -18,7 +19,20 @@ class Ref(Immutable, Generic[A]):
     :attribute lock: locks mutation of `value`
     """
     value: A
-    lock: Lock = Lock()
+    lock: Optional[Lock] = None
+
+    @property
+    def __lock(self) -> Lock:
+        # All this nonsense is to ensure that locks are not initialised
+        # before the thread running the event loop is initialised.
+        # If the lock is initialised in the main thread,
+        # it may lead to RuntimeError: There is no current event loop in thread 'MainThread'.
+        # see https://tinyurl.com/yc9kd77s
+        # In theory, users could still get this wrong by supplying their own lock
+        # as Ref(value, Lock()), but then they are on their own ¯\_(ツ)_/¯
+        if self.lock is None:
+            object.__setattr__(self, 'lock', Lock())
+        return cast(Lock, self.lock)
 
     def get(self) -> Effect[Any, NoReturn, A]:
         """
@@ -32,7 +46,7 @@ class Ref(Immutable, Generic[A]):
         :return: :class:`Effect` that reads the current state
         """
         async def run_e(_) -> Trampoline[Either[NoReturn, A]]:
-            async with self.lock:
+            async with self.__lock:
                 return Done(Right(self.value))
 
         return Effect(run_e)
@@ -55,7 +69,7 @@ class Ref(Immutable, Generic[A]):
         :return: :class:`Effect` that updates the state
         """
         async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
-            async with self.lock:
+            async with self.__lock:
                 # purists avert your eyes
                 object.__setattr__(self, 'value', value)
             return Done(Right(None))
@@ -77,7 +91,7 @@ class Ref(Immutable, Generic[A]):
         :return: :class:`Effect` that updates the state to the result of `f` 
         """
         async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
-            async with self.lock:
+            async with self.__lock:
                 new = f(self.value)
                 object.__setattr__(self, 'value', new)
             return Done(Right(None))
@@ -108,7 +122,7 @@ class Ref(Immutable, Generic[A]):
         :return: an :class:`Effect` that updates the state if `f` succeeds
         """
         async def run_e(_) -> Trampoline[Either[E, None]]:
-            async with self.lock:
+            async with self.__lock:
                 either = f(self.value)
                 if isinstance(either, Left):
                     return Done(either)

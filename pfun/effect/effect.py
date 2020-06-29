@@ -13,7 +13,7 @@ from typing import (
 )
 import asyncio
 from functools import wraps
-from typing_extensions import final
+from typing_extensions import final, Protocol
 
 from ..immutable import Immutable
 from ..either import Either, Right, Left, sequence as sequence_eithers, filter_m as filter_eithers
@@ -40,7 +40,7 @@ class Effect(Generic[R, E, A], Immutable):
     ) -> Effect[Any, Union[E, E2], B]:
         """
         Create new :class:`Effect` that applies ``f`` to the result of running this effect successfully. \
-        If this :class:`Effect` fails, ``f`` is not applied. \
+        If this :class:`Effect` fails, ``f`` is not applied.
 
         :example:
         >>> success(2).and_then(lambda i: success(i + 2)).run(None)
@@ -74,18 +74,21 @@ class Effect(Generic[R, E, A], Immutable):
             return Call(thunk)
 
         return Effect(run_e)
-    
-    def discard_and_then(self, effect: Effect[Any, E2, B]) -> Effect[Any, Union[E, E2], B]:
+
+    def discard_and_then(self, effect: Effect[Any, E2, B]
+                         ) -> Effect[Any, Union[E, E2], B]:
         """
         Create a new effect that discards the result of this effect, and produces instead ``effect``. Like ``and_then`` but does not require
         you to handle the result. Convenient for effects that produce ``None``, like writing to files.
+        
         :example:
         >>> class Env:
-                files = effect.files.Files()
+        ...     files = effect.files.Files()
         >>> effect.files.write('foo.txt', 'Hello!').discard_and_then(effect.files.read('foo.txt')).run(Env())
         Hello!
 
-        :param: :class:`Effect` instance to run after this :class:`Effect` has run successfully.
+        :param effect: :class:`Effect` instance to run after this :class:`Effect` has run successfully.
+        :return: New effect that succeeds with `effect`
         """
         return self.and_then(lambda _: effect)  # type: ignore
 
@@ -95,7 +98,7 @@ class Effect(Generic[R, E, A], Immutable):
         error handling.
         
         :example:
-        >>> failure('Whoops!').either().map(lambda either: either.get if isinstance(either, Right) else 'Phew!').run(None)
+        >>> error('Whoops!').either().map(lambda either: either.get if isinstance(either, Right) else 'Phew!').run(None)
         'Phew!'
 
         :return: New :class:`Effect` that produces a :class:`Left[E]` if it has failed, or a \
@@ -105,7 +108,7 @@ class Effect(Generic[R, E, A], Immutable):
             async def thunk() -> Trampoline[Either[NoReturn, Either[E, A]]]:
                 trampoline = await self.run_e(r)  # type: ignore
                 return trampoline.and_then(lambda either: Done(Right(either)))
-            
+
             return Call(thunk)
 
         return Effect(run_e)
@@ -113,17 +116,17 @@ class Effect(Generic[R, E, A], Immutable):
     def recover(self,
                 f: Callable[[E], Effect[Any, E2, A]]) -> Effect[Any, E2, A]:
         """
-        Create new :class:`Effect` that applies ``f`` to the result of running this effect successfully.
-        If this :class:`Effect` fails, ``f`` is not applied.
+        Create new :class:`Effect` that applies ``f`` to the error result of running this effect if it fails.
+        If this :class:`Effect` succeeds, ``f`` is not applied.
 
         :example:
-        >>> success(2).and_then(lambda i: success(i + 2)).run(None)
-        4
+        >>> error('Whoops!').recover(lambda _: success('Phew!')).run(None)
+        'Phew!'
         
-        :param f: Function to pass the result of this :class:`Effect` instance \
+        :param f: Function to pass the error result of this :class:`Effect` instance \
         once it can be computed
         :return: New :class:`Effect` which wraps the result of \
-        passing the result of this :class:`Effect` instance to ``f``
+        passing the error result of this :class:`Effect` instance to ``f``
         """
         async def run_e(r: R) -> Trampoline[Either[E2, A]]:
             async def thunk():
@@ -151,7 +154,7 @@ class Effect(Generic[R, E, A], Immutable):
     def run(self, r: R, asyncio_run=asyncio.run) -> A:
         """
         Run the function wrapped by this :class:`Effect`, including potential side-effects. If the function fails
-        The resulting error will be raised as an exception.
+        the resulting error will be raised as an exception.
 
         :param r: The environment with which to run this :class:`Effect`
         :param asyncio_run: Function to run the coroutine returned by the wrapped function
@@ -170,6 +173,8 @@ class Effect(Generic[R, E, A], Immutable):
                 return result.get
 
         return asyncio_run(_run())
+
+    __call__ = run
 
     def map(self, f: Callable[[A], Union[Awaitable[B], B]]) -> Effect[R, E, B]:
         """
@@ -370,6 +375,7 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
                 lambda eithers: sequence_eithers(eithers).
                 map(lambda bs: tuple(a for a, b in zip(iterable, bs) if b))
             )
+
         return Call(thunk)
 
     return Effect(run_e)
@@ -382,7 +388,7 @@ def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]
     error channel of the :class:`Effect`
 
     :example:
-    >>> effect = failure('Whoops').either().map(lambda either: either.get if isinstance(either, Right) else 'Phew!')
+    >>> effect = error('Whoops').either().map(lambda either: either.get if isinstance(either, Right) else 'Phew!')
     >>> absolve(effect).run(None)
     'Phew!'
 
@@ -393,17 +399,18 @@ def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]
         async def thunk():
             trampoline = await effect.run_e(r)
             return trampoline.and_then(lambda either: Done(either.get))
+
         return Call(thunk)
 
     return Effect(run_e)
 
 
-def failure(reason: E1) -> Effect[Any, E1, NoReturn]:
+def error(reason: E1) -> Effect[Any, E1, NoReturn]:
     """
     Create an :class:`Effect` that does nothing but fail with `reason`
 
     :example:
-    >>> failure('Whoops!').run(None)
+    >>> error('Whoops!').run(None)
     RuntimeError: 'Whoops!'
 
     :param reason: Value to fail with
@@ -431,7 +438,6 @@ def combine(*effects: Effect[R1, E1, A2]
     :return: function that takes a combiner function and returns an :class:`Effect` that \
         applies the function to the results of `effects`
     """
-
     def _(f: Callable[..., A1]):
         effect = sequence_async(effects)
         return effect.map(lambda seq: f(*seq))
@@ -459,7 +465,7 @@ def catch(error_type: Type[EX],
         try:
             return success(f())
         except error_type as e:
-            return failure(e)
+            return error(e)
 
     return _
 
@@ -495,7 +501,7 @@ __all__ = [
     'filter_m',
     'map_m',
     'absolve',
-    'failure',
+    'error',
     'combine',
     'catch',
     'catch_all',

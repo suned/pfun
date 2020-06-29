@@ -76,9 +76,9 @@ class TestEffect(MonadTest):
         with recursion_limit(100):
             effect.sequence_async([effect.success(v) for v in range(500)]).run(None)
         
-        e = effect.failure('')
+        e = effect.error('')
         for _ in range(500):
-            e = e.recover(lambda _: effect.failure(''))
+            e = e.recover(lambda _: effect.error(''))
         e = e.recover(lambda _: effect.success(''))
         with recursion_limit(100):
             e.run(None)
@@ -117,13 +117,13 @@ class TestEffect(MonadTest):
     
     def test_either(self):
         success = effect.success(1)
-        error = effect.failure('error')
+        error = effect.error('error')
         assert success.either().run(None) == either.Right(1)
         error.either().run(None) == either.Left('error')
     
     def test_recover(self):
         success = effect.success(1)
-        error = effect.failure('error')
+        error = effect.error('error')
         assert success.recover(lambda e: effect.success(2)).run(None) == 1
         assert error.recover(lambda e: effect.success(2)).run(None) == 2
     

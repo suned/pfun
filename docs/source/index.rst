@@ -8,7 +8,7 @@ Contents
 --------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     programming_guide
     api_reference

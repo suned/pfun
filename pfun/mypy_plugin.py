@@ -236,7 +236,7 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     keywords = p1.type.defn.keywords.copy()
     keywords.update(p2.type.defn.keywords)
     bases = get_bases(p1) | get_bases(p2)
-    bases_repr = ', '.join([repr(base) for base in bases])
+    bases_repr = ', '.join(sorted([repr(base) for base in bases]))
     name = f'Intersection[{bases_repr}]'
     defn = ClassDef(
         name,
@@ -304,51 +304,54 @@ def _combine_hook(context: FunctionContext):
     result_types = []
     error_types = []
     env_types = []
-    for effect_type in context.arg_types[0]:
-        env_type, error_type, result_type = effect_type.args
-        env_types.append(env_type)
-        error_types.append(error_type)
-        result_types.append(result_type)
-    map_return_type_def = _type_var_def(
-        'R1', 'pfun.effect', context.api.named_type('builtins.object')
-    )
-    map_return_type = TypeVarType(map_return_type_def)
-    map_function_type = CallableType(
-        arg_types=result_types,
-        arg_kinds=[ARG_POS for _ in result_types],
-        arg_names=[None for _ in result_types],
-        ret_type=map_return_type,
-        variables=[map_return_type_def],
-        fallback=context.api.named_type('builtins.function')
-    )
-    ret_type = context.default_return_type.ret_type
-    combined_error_type = UnionType(set(error_types))
-    ret_type_args = ret_type.args
-    ret_type_args[1] = combined_error_type
-    ret_type_args[2] = map_return_type
-    env_types = [
-        env_type for env_type in env_types
-        if not isinstance(env_type, AnyType)
-    ]
-    if len(set(env_types)) == 1:
-        combined_env_type = env_types[0]
-    elif env_types and all(
-        hasattr(env_type, 'type') and env_type.type.is_protocol
-        for env_type in env_types
-    ):
-        combined_env_type = reduce(_combine_protocols, env_types)
-    else:
-        combined_env_type = ret_type_args[0]
-    ret_type_args[0] = combined_env_type
-    ret_type = ret_type.copy_modified(args=ret_type_args)
-    return CallableType(
-        arg_types=[map_function_type],
-        arg_kinds=[ARG_POS],
-        arg_names=[None],
-        variables=[map_return_type_def],
-        ret_type=ret_type,
-        fallback=context.api.named_type('builtins.function')
-    )
+    try:
+        for effect_type in context.arg_types[0]:
+            env_type, error_type, result_type = effect_type.args
+            env_types.append(env_type)
+            error_types.append(error_type)
+            result_types.append(result_type)
+        map_return_type_def = _type_var_def(
+            'R1', 'pfun.effect', context.api.named_type('builtins.object')
+        )
+        map_return_type = TypeVarType(map_return_type_def)
+        map_function_type = CallableType(
+            arg_types=result_types,
+            arg_kinds=[ARG_POS for _ in result_types],
+            arg_names=[None for _ in result_types],
+            ret_type=map_return_type,
+            variables=[map_return_type_def],
+            fallback=context.api.named_type('builtins.function')
+        )
+        ret_type = context.default_return_type.ret_type
+        combined_error_type = UnionType(set(error_types))
+        ret_type_args = ret_type.args
+        ret_type_args[1] = combined_error_type
+        ret_type_args[2] = map_return_type
+        env_types = [
+            env_type for env_type in env_types
+            if not isinstance(env_type, AnyType)
+        ]
+        if len(set(env_types)) == 1:
+            combined_env_type = env_types[0]
+        elif env_types and all(
+            hasattr(env_type, 'type') and env_type.type.is_protocol
+            for env_type in env_types
+        ):
+            combined_env_type = reduce(_combine_protocols, env_types)
+        else:
+            combined_env_type = ret_type_args[0]
+        ret_type_args[0] = combined_env_type
+        ret_type = ret_type.copy_modified(args=ret_type_args)
+        return CallableType(
+            arg_types=[map_function_type],
+            arg_kinds=[ARG_POS],
+            arg_names=[None],
+            variables=[map_return_type_def],
+            ret_type=ret_type,
+            fallback=context.api.named_type('builtins.function')
+        )
+    except AttributeError:
+        return context.default_return_type
 
 
 def _effect_recover_hook(context: MethodContext) -> Type:

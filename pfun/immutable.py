@@ -20,6 +20,7 @@ class Immutable:
 
     """
     __immutable__ = True
+
     def __init_subclass__(
         cls, init=True, repr=True, eq=True, order=False, unsafe_hash=False
     ):

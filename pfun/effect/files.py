@@ -12,7 +12,6 @@ class Files(Immutable):
     """
     Module that enables reading and writing from files
     """
-    
     def read(self, path: str) -> Effect[Any, OSError, str]:
         """
         get an :class:`Effect` that reads the content of a file as a str
