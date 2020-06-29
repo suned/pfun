@@ -24,6 +24,10 @@ class Subprocess(Immutable):
         """
         Get an :class:`Effect` that runs `cmd` in the shell
 
+        :example:
+        >>> Subprocess().run_in_shell('cat foo.txt').run(None)
+        (b'contents of foo.txt', b'')
+
         :param cmd: the command to run
         :param stdin: input pipe for the subprocess
         :param stdout: output pipe for the subprocess
@@ -66,6 +70,12 @@ def run_in_shell(
 ) -> Effect[HasSubprocess, CalledProcessError, Tuple[bytes, bytes]]:
     """
     Get an :class:`Effect` that runs `cmd` in the shell
+
+    :example:
+    >>> class Env:
+    ...     subprocess = Subprocess()
+    >>> run_in_shell('cat foo.txt').run(Env())
+    (b'contents of foo.txt', b'')
 
     :param cmd: the command to run
     :param stdin: input pipe for the subprocess

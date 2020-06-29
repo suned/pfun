@@ -79,8 +79,8 @@ class Effect(Generic[R, E, A], Immutable):
         :example:
         >>> class Env:
         ...     files = effect.files.Files()
-        >>> effect.files.write('foo.txt', 'Hello!')\
-        ...     .discard_and_then(effect.files.read('foo.txt'))\
+        >>> effect.files.write('foo.txt', 'Hello!')\\
+        ...     .discard_and_then(effect.files.read('foo.txt'))\\
         ...     .run(Env())
         Hello!
 
@@ -98,8 +98,8 @@ class Effect(Generic[R, E, A], Immutable):
 
         :example:
         >>> error('Whoops!').either().map(
-                lambda either: either.get if isinstance(either, Right)
-                               else 'Phew!'
+        ...     lambda either: either.get if isinstance(either, Right)
+        ...                    else 'Phew!'
         ... ).run(None)
         'Phew!'
 

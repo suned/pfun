@@ -61,9 +61,9 @@ class Files(Immutable):
 
         :example:
         >>> files = Files()
-        >>> files\
-        ...     .write('foo.txt', 'contents')\
-        ...     .discard_and_then(files.read('foo.txt'))\
+        >>> files\\
+        ...     .write('foo.txt', 'contents')\\
+        ...     .discard_and_then(files.read('foo.txt'))\\
         ...     .run(None)
         'contents'
 
@@ -88,9 +88,9 @@ class Files(Immutable):
 
         :example:
         >>> files = Files()
-        >>> files\
-        ...     .write_bytes('foo.txt', b'contents')\
-        ...     .discard_and_then(files.read('foo.txt'))\
+        >>> files\\
+        ...     .write_bytes('foo.txt', b'contents')\\
+        ...     .discard_and_then(files.read('foo.txt'))\\
         ...     .run(None)
         'contents'
 
@@ -114,9 +114,9 @@ class Files(Immutable):
 
         :example:
         >>> files = Files()
-        >>> files\
-        ...     .append('foo.txt', 'contents')\
-        ...     .discard_and_then(files.read('foo.txt'))\
+        >>> files\\
+        ...     .append('foo.txt', 'contents')\\
+        ...     .discard_and_then(files.read('foo.txt'))\\
         ...     .run(None)
         'contents'
 
@@ -141,9 +141,9 @@ class Files(Immutable):
 
         :example:
         >>> files = Files()
-        >>> files\
-        ...     .append_bytes('foo.txt', b'contents')\
-        ...     .discard_and_then(files.read('foo.txt'))\
+        >>> files\\
+        ...     .append_bytes('foo.txt', b'contents')\\
+        ...     .discard_and_then(files.read('foo.txt'))\\
         ...     .run(None)
         'contents
 
@@ -195,8 +195,8 @@ def write(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     :example:
     >>> class Env:
     ...     files = Files()
-    >>> write('foo.txt')('contents')\
-    ...     .discard_and_then(read('foo.txt'))\
+    >>> write('foo.txt')('contents')\\
+    ...     .discard_and_then(read('foo.txt'))\\
     ...     .run(Env())
     'content of foo.txt'
 
@@ -232,8 +232,8 @@ def write_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     :example:
     >>> class Env:
     ...     files = Files()
-    >>> write_bytes('foo.txt')(b'content of foo.txt')\
-    ...     .discard_and_then(read('foo.txt'))\
+    >>> write_bytes('foo.txt')(b'content of foo.txt')\\
+    ...     .discard_and_then(read('foo.txt'))\\
     ...     .run(Env())
     'content of foo.txt'
 
@@ -253,8 +253,8 @@ def append(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     :example:
     >>> class Env:
     ...     files = Files()
-    >>> append('foo.txt')('content of foo.txt')\
-    ...     .discard_and_then(read('foo.txt'))\
+    >>> append('foo.txt')('content of foo.txt')\\
+    ...     .discard_and_then(read('foo.txt'))\\
     ...     .run(Env())
     'content of foo.txt'
 
@@ -274,8 +274,8 @@ def append_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     :example:
     >>> class Env:
     ...     files = Files()
-    >>> append_bytes('foo.txt')(b'content of foo.txt')\
-    ...     .discard_and_then(read('foo.txt'))\
+    >>> append_bytes('foo.txt')(b'content of foo.txt')\\
+    ...     .discard_and_then(read('foo.txt'))\\
     ...     .run(Env())
     'content of foo.txt'
 

@@ -4,7 +4,7 @@ from typing import Any, Callable, Generic, NoReturn, Optional, TypeVar, cast
 from ..aio_trampoline import Done, Trampoline
 from ..either import Either, Left, Right
 from ..immutable import Immutable
-from . import Effect
+from .effect import Effect
 
 A = TypeVar('A')
 E = TypeVar('E')
