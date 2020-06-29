@@ -1,7 +1,7 @@
 defaults: &defaults
   working_directory: ~/pfun
   docker:
-    - image: jonatkinson/python-poetry:3.7
+    - image: circleci/python:3.7.5
 
 version: 2
 jobs:
@@ -11,6 +11,9 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "poetry.lock" }}
+      - run:
+          name: Install poetry
+          command: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
       - run:
           name: Configure poetry
           command: poetry config settings.virtualenvs.in-project true
