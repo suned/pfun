@@ -21,6 +21,9 @@ jobs:
           name: Install dependencies
           command: poetry install
       - run:
+          name: Lint
+          command: .venv/bin/pre-commit run --all
+      - run:
           name: Test
           command: poetry run tox
       - save_cache:
@@ -28,12 +31,6 @@ jobs:
           paths:
             - .venv
             - .tox
-      - run:
-          name: Lint
-          command: poetry run flake8 pfun tests examples
-      - run:
-          name: Typecheck
-          command: poetry run mypy pfun examples
   release:
     <<: *defaults
     steps:
