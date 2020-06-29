@@ -13,7 +13,7 @@ jobs:
           key: dependency-cache-{{ checksum "poetry.lock" }}
       - run:
           name: Install poetry
-          command: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+          command: POETRY_VERSION=1.0.9 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
       - run:
           name: Configure poetry
           command: poetry config settings.virtualenvs.in-project true
