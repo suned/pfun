@@ -22,7 +22,7 @@ jobs:
           command: poetry install
       - run:
           name: Lint
-          command: .venv/bin/pre-commit run --all
+          command: poetry run pre-commit run --all
       - run:
           name: Test
           command: poetry run tox
