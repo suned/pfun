@@ -153,8 +153,8 @@ class Effect(Generic[R, E, A]):
 ```
 In other words, `Effect` takes three type paramaters: `R`, `E` and `A`. We'll study them one at a time.
 
-
-`A` is the _success type_. This is the type that the effect function will return if no error occurs. For example, in an `Effect` instance that reads a file as a `str`, `A` would be parameterized with `str`. You can create an `Effect` instance that succeeds with the value `a` using `effect.success(a)`:
+#### The Success Type
+The `A` in `Effect[R, E, A]` is the _success type_. This is the type that the effect function will return if no error occurs. For example, in an `Effect` instance that reads a file as a `str`, `A` would be parameterized with `str`. You can create an `Effect` instance that succeeds with the value `a` using `effect.success(a)`:
 
 ```python
 from typing import Any, NoReturn
@@ -180,7 +180,9 @@ assert e(None) == 2
 ```
 (for those with previous functional programming experince, `and_then` is the "bind" operation of `Effect`).
 
-The `E` type parameter of `Effect` is the _error type_. This is type that the effect function will raise if it fails. You can create an effect that does nothing but fail using `pfun.effect.error`:
+
+#### The Error Type
+The `E` in `Effect[R, E, A]` is the _error type_. This is type that the effect function will raise if it fails. You can create an effect that does nothing but fail using `pfun.effect.error`:
 
 ```python
 from typing import Any, NoReturn
@@ -207,7 +209,8 @@ e(None)  # raises OSError
 ```
 Don't worry about the api of `files` for now, simply notice that when `e` has the type `Effect[Any, OSError, str]`, it means that when you execute `e` it can produce a `str` or fail with `OSError`. Having the the error type explicitly modelled in the type signature of `e` allows type safe error handling as we'll see later.
 
-Finally, let's look at `R`: the _environment type_. `R` is the argument that your effect function requires to produce its result. It allows you to parameterize the side-effect that your `Effect` implements which improves re-useability and testability. For example, imagine that you want to use `Effect` to model the side-effect of reading from a database. The function that reads from the database requires a connection string as an argument to connect. If `Effect` did not take a parameter you would have to pass around the connection string as a parameter through function calls, all the way down to where the connection string was needed.
+#### The Environment Type
+Finally, let's look at `R` in `Effect[R, E, A]`: the _environment type_. `R` is the argument that your effect function requires to produce its result. It allows you to parameterize the side-effect that your `Effect` implements which improves re-useability and testability. For example, imagine that you want to use `Effect` to model the side-effect of reading from a database. The function that reads from the database requires a connection string as an argument to connect. If `Effect` did not take a parameter you would have to pass around the connection string as a parameter through function calls, all the way down to where the connection string was needed.
 
 The environment type allows you to pass in the connection string at the edge of your program, rather than threading it through a potentially deep stack of function calls:
 
@@ -257,7 +260,7 @@ response: effect.Effect[..., Union[IOError, HTTPError], HTTPResponse]
 response = results.and_then(make_request)
 response(...)  # What could this argument be?
 ```
-To call the `response` function, we need an instance of a type that is a `str` and a `Credentials` instance _at the same time_, because that argument must be passed to both the effect returned by `execute` and by `make_request`.
+To call the `response` function, we need an instance of a type that is a `str` and a `Credentials` instance _at the same time_, because that argument must be passed to both the effect returned by `execute` and by `make_request`. Ideally, we want `response` to have the type `Effect[Intersection[Credentials, str], IOError, bytes]`, where `Intersection[Credentials, str]` indicates that the environment type must be both of type `Credentials` and of type `str`.
 
 In theory such an object could exist (defined as `class MyEnv(Credentials, str): ...`), but there are no straight-forward way of expressing that
 type dynamically in the Python type system. As a consequence, `pfun` infers the resulting effect with the `R` parameterized as `Any`, which in this case doesn't mean that any type will do, but simply that `pfun` could not assign a meaningful type to `R`.
@@ -370,6 +373,78 @@ mock_env.requests.make_request.return_value = success(b'Mocked!')
 assert make_request([])(mock_env) == b'Mocked!'
 ```
 
+
+#### Error Handling
+In this section, we'll look at how to handle errors of effects with type safety. In previous sections we have already spent some time looking at the `Effect` error type. In many of the examples so far, the error type was `typing.NoReturn`. An `Effect` with this error type can never return a value for an error, or in other words, it can never fail (as those effects returned by `pfun.effect.success`). In the rest of this section we'll of course be pre-occupied with effects that _can_ fail.
+
+When you combine side effects using `Effect.and_then`, `pfun` uses `typing.Union` to combine error types, in order that the resulting effect captures all potential errors in its error type:
+```python
+from typing import List
+
+from pfun.effect.files import Files
+
+
+def parse(content: str) -> effect.Effect[Any, ZeroDivisionError, List[int]]:
+    ...
+
+
+files = Files()
+e: effect.Effect[Any, Union[OSError, ZeroDivisionError], List[int]]
+e = files.read('foo.txt').and_then(parse)
+```
+`e` has `Union[OSError, ZeroDivisionError]` as its error type because it can fail if `files.read` fails, _or_ if `parse` fails. This compositional aspect of the error type of `Effect` means that accurate and complex error types are built up from combining simple error types. Moreover, it makes reasoning about error handling easy because errors disappear from the type when they are handled, as we shall see next.
+
+The most low level function you can use to handle errors is `Effect.either`, which surfaces any errors that may have occurred as a `pfun.either.Either`, where a `pfun.either.Right` signifies a successful computation and a `pfun.either.Left` a failed computation:
+```python
+from typing import NoReturn
+from pfun.effect import Effect, files
+from pfun.either import Either, Left
+
+
+# files.read can fail with OSError
+may_have_failed: Effect[files.HasFiles, OSError, str] = files.read('foo.txt')
+# calling either() surfaces the OSError in the success type as a pfun.either.Either
+as_either: Effect[files.HasFiles, NoReturn, Either[OSError, str]] = may_have_failed.either()
+# we can use map or and_then to handle the error
+cant_fail: Effect[files.HasFiles, NoReturn, str] = as_either.map(lambda either: 'backup content' if isinstance(either, Left) else either.get)
+```
+
+Once you've handled whatever errors you want, you can push the error back into error type of the effect using `pfun.effect.absolve`:
+```python
+from typing import Any, NoReturn, List
+from pfun.effect import Effect, absolve, files
+from pfun.either import Either
+
+
+# function to handle error
+def handle(either: Either[Union[OSError, ZeroDivisionError], str]) -> Either[ZeroDivisionError, str]:
+    ...
+
+# define an effect that can fail
+e: Effect[Any, Union[OSError, ZeroDivisionError], List[int]] = files.read('foo.txt').and_then(parse)
+# handle errors using e.either.map
+without_os_error: Effect[Any, NoReturn, Either[OSError, str]] = e.either().map(handle)
+# push the remaining error into the error type using absolve
+e2: Effect[Any, OSError, str] = absolve(without_os_error)
+```
+
+At a slightly higher level, you can use `Effect.recover`, which takes a function that can inspect the error and handle it.
+```python
+from typing import Any, Union
+from pfun.effect import success, failure, Effect
+
+
+def handle_errors(error: Union[OSError, ZeroDivisionError]) -> Effect[Any, ZeroDivisionError, str]:
+    if isinstance(error, OSError):
+        return success('default value)
+    return failure(error)
+
+e: Effect[Any, Union[OSError, ZeroDivisionError], str]
+recovered: Effect[Any, ZeroDivisionError, str] = e.recover(handle_errors)
+```
+
+You will frequently handle errors by using `isinstance` to compare errors with types, so defining your own error types becomes even more important when using `pfun` to distinguish one error source from another.
+
 #### Asynchronous IO
 `Effect` uses `asyncio` under the hood to run io bound side-effects asynchronously when possible.
 This can lead to significant speed ups when an effect spends alot of time waiting for io.
@@ -429,81 +504,8 @@ async def sleep_and_add_1(a: int) -> int:
 assert success(1).map(sleep_and_add_1)(None) == 2
 ```
 
-
-
-#### Error Handling
-In previous sections we have already spent some time looking at the `Effect` error type. In many of the examples so far, the error type was `typing.NoReturn`. An `Effect` with this error type can never return a value for an error, or in other words, it can never fail (as those effects returned by `pfun.effect.success`). In this section, we'll look at some examples of effects that _can_ fail, and how to handle those errors with type safety.
-
-When you combine side effects using `Effect.and_then`, `pfun` uses `typing.Union` to combine error types, in order that the resulting effect captures all potential errors in its error type:
-```python
-from typing import List
-
-from pfun.effect.files import Files
-
-
-def parse(content: str) -> effect.Effect[Any, ZeroDivisionError, List[int]]:
-    ...
-
-
-files = Files()
-e: effect.Effect[Any, Union[OSError, ZeroDivisionError], List[int]]
-e = files.read('foo.txt').and_then(parse)
-```
-`e` has `Union[OSError, ZeroDivisionError]` as its error type because it can fail if `files.read` fails, _or_ if `parse` fails. This compositional aspect of the error type of `Effect` means that accurate and complex error types are built up from combining simple error types. Moreover, it makes reasoning about error handling easy because errors disappear from the type when they are handled, as we shall see next.
-
-The most low level function you can use to handle errors is `Effect.either`, which surfaces any errors that may have occurred as a `pfun.either.Either`, where a `pfun.either.Right` signifies a successful computation and a `pfun.either.Left` a failed computation:
-```python
-from typing import NoReturn
-from pfun.effect import Effect, files
-from pfun.either import Either, Left
-
-
-# files.read can fail with OSError
-may_have_failed: Effect[files.HasFiles, OSError, str] = files.read('foo.txt')
-# calling either() surfaces the OSError in the success type as a pfun.either.Either
-as_either: Effect[files.HasFiles, NoReturn, Either[OSError, str]] = may_have_failed.either()
-# we can use map or and_then to handle the error
-cant_fail: Effect[files.HasFiles, NoReturn, str] = as_either.map(lambda either: 'backup content' if isinstance(either, Left) else either.get)
-```
-
-Once you've handled whatever errors you want, you can push the error back into error type of the effect using `pfun.effect.absolve`:
-```python
-from typing import Any, NoReturn, List
-from pfun.effect import Effect, absolve, files
-from pfun.either import Either
-
-
-# function to handle error
-def handle(either: Either[Union[OSError, ZeroDivisionError], str]) -> Either[OSError, str]:
-    ...
-
-# define an effect that can fail
-e: Effect[Any, Union[OSError, ZeroDivisionError], List[int]] = files.read('foo.txt').and_then(parse)
-# handle errors using e.either.map
-without_os_error: Effect[Any, NoReturn, Either[OSError, str]] = e.either().map(handle)
-# push the remaining error into the error type using absolve
-e2: Effect[Any, OSError, str] = absolve(without_os_error)
-```
-
-At a slightly higher level, you can use `Effect.recover`, which takes a function that can inspect the error and handle it.
-```python
-from typing import Any, Union
-from pfun.effect import success, failure, Effect
-
-
-def handle_errors(error: Union[OSError, ZeroDivisionError]) -> Effect[Any, ZeroDivisionError, str]:
-    if isinstance(error, OSError):
-        return success('default value)
-    return failure(error)
-
-e: Effect[Any, Union[OSError, ZeroDivisionError], str]
-recovered: Effect[Any, ZeroDivisionError, str] = e.recover(handle_errors)
-```
-
-You will frequently handle errors by using `isinstance` to compare errors with types, so defining your own error types becomes even more important when using `pfun` to distinguish one error source from another.
-
 #### Purely Functional State
-To keep our program side-effect free, we want to avoid mutating non-local state. `pfun.effect.ref` provides tools based on `Effect` for managing program state in a purely functional way. This works by mutating the state only by calling `Effect` instances.
+Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. `pfun.effect.ref` provides exactly this. `pfun.effect.ref` works by mutating state only by calling `Effect` instances.
 
 ```python
 from typing import Tuple, Any, NoReturn
