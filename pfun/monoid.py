@@ -10,7 +10,7 @@ class Monoid(ABC):
 
     """
     @abstractmethod
-    def append(self, other):
+    def __add__(self, other):
         """
         Append function for the Monoid type
 
@@ -40,7 +40,7 @@ def append(a: M, b: M) -> M:
 
 @append.register
 def append_monoid(a: Monoid, b: Monoid) -> Monoid:
-    return a.append(b)
+    return a + b
 
 
 @append.register

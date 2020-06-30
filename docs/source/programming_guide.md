@@ -389,6 +389,7 @@ Timing the execution using the unix `time` informs me this takes 5.15 seconds on
 from pfun.effect.subprocess import Subprocess
 from pfun.effect import sequence_async
 
+
 sp = Subprocess()
 effect = sequence_async(sp.run_in_shell('curl http://www.google.com') for _ in range(50)
 effect(None)
@@ -401,6 +402,7 @@ You can create an effect from a Python awaitable using `pfun.effect.from_awaitab
 import asyncio
 from typing import Any, NoReturn
 from pfun.effect import from_awaitable, Effect
+
 
 async def sleep() -> str:
     await asyncio.sleep(1)
@@ -436,10 +438,14 @@ When you combine side effects using `Effect.and_then`, `pfun` uses `typing.Union
 ```python
 from typing import List
 
+from pfun.effect.files import Files
+
 
 def parse(content: str) -> effect.Effect[Any, ZeroDivisionError, List[int]]:
     ...
 
+
+files = Files()
 e: effect.Effect[Any, Union[OSError, ZeroDivisionError], List[int]]
 e = files.read('foo.txt').and_then(parse)
 ```

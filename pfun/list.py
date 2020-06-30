@@ -40,7 +40,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         """
         return reduce(f, self._iterable, initializer)  # type: ignore
 
-    def append(self, a: Iterable[A]) -> 'List[A]':
+    def append(self, a: A) -> 'List[A]':
         """
         Add element to end of list
 
@@ -51,7 +51,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param a: Element to append
         :return: New :class:`List` with ``a`` appended
         """
-        return List(self._iterable + tuple(a))
+        return List(self._iterable + (a,))
 
     def extend(self, iterable: Iterable[A]) -> 'List[A]':
         """

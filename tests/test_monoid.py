@@ -9,7 +9,7 @@ class M(Monoid):
     def __init__(self, i):
         self.i = i
 
-    def append(self, other: 'M') -> 'M':
+    def __add__(self, other: 'M') -> 'M':
         return M(self.i + other.i)
 
     def empty(self) -> 'M':

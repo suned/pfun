@@ -15,9 +15,9 @@ from .utils import recursion_limit
 
 
 class TestList(MonadTest, MonoidTest):
-    @given(lists(), lists())
+    @given(lists(), anything())
     def test_append(self, l1, l2):
-        assert l1.append(l2) == l1 + l2
+        assert l1.append(l2) == l1 + (l2,)
 
     def test_empty(self):
         assert List().empty() == List()
