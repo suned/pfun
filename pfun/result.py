@@ -1,17 +1,17 @@
-from typing import TypeVar, Callable, Union
 from functools import wraps
+from typing import Callable, TypeVar, Union
 
-from .either import Left, Right, with_effect, Eithers
+from .either import Eithers, Left, Right, with_effect
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Ok(Right[A]):  # type: ignore
+class Ok(Right[A]):
     pass
 
 
-class Error(Left[Exception]):  # type: ignore
+class Error(Left[Exception]):
     get: Exception
 
 

@@ -1,11 +1,11 @@
-from typing import TypeVar, Generic, Callable, Iterable, cast, Generator
+from abc import ABC, abstractmethod
+from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
 
 from pfun.immutable import Immutable
-from abc import ABC, abstractmethod
 
-from .functor import Functor
-from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .functor import Functor
+from .monad import Monad, filter_m_, map_m_, sequence_
 from .state import State, get
 from .with_effect import with_effect_
 
@@ -54,7 +54,7 @@ class FreeInterpreterElement(Functor, Generic[C, D], ABC):
 F = TypeVar('F', bound=Functor)
 
 
-class Free(  # type: ignore
+class Free(
     Generic[F, A, C, D], FreeInterpreterElement[C, D], Monad, Immutable
 ):
     """
@@ -70,7 +70,7 @@ class Free(  # type: ignore
         return self.and_then(lambda v: Done(f(v)))
 
 
-class Done(Free[F, A, C, D]):  # type: ignore
+class Done(Free[F, A, C, D]):
     """
     Pure ``Free`` value
     """
@@ -95,7 +95,7 @@ class Done(Free[F, A, C, D]):  # type: ignore
         return interpreter.interpret_done(self)
 
 
-class More(Free[F, A, C, D]):  # type: ignore
+class More(Free[F, A, C, D]):
     """
     A ``Free`` value wrapping a `Functor` value
     """

@@ -20,3 +20,4 @@ Requires [poetry](https://poetry.eustace.io/)
 - Install dependencies with `poetry install`
 - Build documentation with `poetry run sphinx-build -b html docs/source docs/build`
 - Run tests with `poetry run pytest`
+- Lint with `poetry run pre-commit --all`

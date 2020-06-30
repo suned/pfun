@@ -1,7 +1,6 @@
-from functools import singledispatch
-
-from typing import Union, List, Tuple, TypeVar
 from abc import ABC, abstractmethod
+from functools import singledispatch
+from typing import List, Tuple, TypeVar, Union
 
 
 class Monoid(ABC):
@@ -11,7 +10,7 @@ class Monoid(ABC):
 
     """
     @abstractmethod
-    def append(self, other):
+    def __add__(self, other):
         """
         Append function for the Monoid type
 
@@ -41,7 +40,7 @@ def append(a: M, b: M) -> M:
 
 @append.register
 def append_monoid(a: Monoid, b: Monoid) -> Monoid:
-    return a.append(b)
+    return a + b
 
 
 @append.register

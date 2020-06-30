@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from typing import (
-    Generic, TypeVar, Callable, Any, Iterable, cast, Union, Generator
-)
-from functools import wraps
 from abc import ABC, abstractmethod
+from functools import wraps
+from typing import (Any, Callable, Generator, Generic, Iterable, TypeVar,
+                    Union, cast)
 
-from .immutable import Immutable
-from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
 from .with_effect import with_effect_tail_rec
 
-A = TypeVar('A')
-B = TypeVar('B')
+A = TypeVar('A', covariant=True)
+B = TypeVar('B', covariant=True)
 C = TypeVar('C')
+D = TypeVar('D')
 
 
-class Either_(Immutable, Monad, ABC):  # type: ignore
+class Either_(Immutable, Monad, ABC):
     """
     Abstract class representing a computation with either
     ``A`` or ``B`` as its result.
@@ -97,16 +97,16 @@ class Either_(Immutable, Monad, ABC):  # type: ignore
         raise NotImplementedError()
 
 
-class Right(Either_, Generic[A]):  # type: ignore
+class Right(Either_, Generic[A]):
     """
     Represents the ``Right`` case of ``Either``
     """
     get: A
 
-    def or_else(self, default: A) -> A:
+    def or_else(self, default: C) -> A:
         return self.get
 
-    def map(self, f: Callable[[A], C]) -> Either[B, C]:
+    def map(self, f: Callable[[A], C]) -> Either[Any, C]:
         return Right(f(self.get))
 
     def and_then(self, f: Callable[[A], Either[B, C]]) -> Either[B, C]:
@@ -137,13 +137,13 @@ class Right(Either_, Generic[A]):  # type: ignore
         return f'Right({repr(self.get)})'
 
 
-class Left(Either_, Generic[B]):  # type: ignore
+class Left(Either_, Generic[B]):
     """
     Represents the ``Left`` case of ``Either``
     """
     get: B
 
-    def or_else(self, default: A) -> A:
+    def or_else(self, default: C) -> C:
         return default
 
     def map(self, f: Callable[[A], C]) -> Either[B, C]:
@@ -252,7 +252,7 @@ def filter_m(f: Callable[[A], Either[bool, B]],
     return cast(Either[Iterable[A], B], filter_m_(Right, f, iterable))
 
 
-def tail_rec(f: Callable[[A], Either[C, Either[A, B]]], a: A) -> Either[C, B]:
+def tail_rec(f: Callable[[D], Either[C, Either[D, B]]], a: D) -> Either[C, B]:
     """
     Run a stack safe recursive monadic function `f`
     by calling `f` with :class:`Left` values
@@ -309,6 +309,17 @@ def with_effect(f: Callable[..., Eithers[A, B, C]]
     return with_effect_tail_rec(Right, f, tail_rec)  # type: ignore
 
 
+def catch(f: Callable[..., A]) -> Callable[..., Either[Exception, A]]:
+    @wraps(f)
+    def decorator(*args, **kwargs) -> Either[Exception, A]:
+        try:
+            return Right(f(*args, **kwargs))
+        except Exception as e:
+            return Left(e)
+
+    return decorator
+
+
 __all__ = [
     'Either',
     'Left',
@@ -318,5 +329,6 @@ __all__ = [
     'sequence',
     'filter_m',
     'with_effect',
-    'Eithers'
+    'Eithers',
+    'catch'
 ]

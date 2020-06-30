@@ -1,9 +1,9 @@
-from typing import Generic, TypeVar, Callable, Tuple, Iterable, cast, Generator
+from typing import Callable, Generator, Generic, Iterable, Tuple, TypeVar, cast
 
-from .immutable import Immutable
-from .monad import sequence_, map_m_, filter_m_, Monad
 from .curry import curry
-from .trampoline import Trampoline, Done, Call
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
+from .trampoline import Call, Done, Trampoline
 from .with_effect import with_effect_
 
 A = TypeVar('A')
@@ -11,7 +11,7 @@ B = TypeVar('B')
 C = TypeVar('C')
 
 
-class State(Generic[B, A], Immutable, Monad):  # type: ignore
+class State(Generic[B, A], Immutable, Monad):
     """
     Represents a computation that is not yet complete,
     but will complete when given a state of type A

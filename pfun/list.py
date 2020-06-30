@@ -1,23 +1,18 @@
-from typing import (
-    TypeVar, Callable, Iterable, Tuple, Optional, Generic, cast, Generator
-)
 from functools import reduce
+from typing import (Callable, Generator, Generic, Iterable, Optional, Tuple,
+                    TypeVar, cast)
 
-from .monoid import Monoid
-from .immutable import Immutable
 from .curry import curry
-from .monad import map_m_, sequence_, filter_m_, Monad
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
+from .monoid import Monoid
 from .with_effect import with_effect_eager
+
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class List(Monoid,  # type: ignore
-           Monad,
-           Generic[A],
-           Iterable[A],
-           Immutable,
-           init=False):
+class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
     _iterable: Tuple[A]
 
     def __init__(self, iterable: Iterable[A] = ()):
@@ -45,7 +40,7 @@ class List(Monoid,  # type: ignore
         """
         return reduce(f, self._iterable, initializer)  # type: ignore
 
-    def append(self, a: Iterable[A]) -> 'List[A]':
+    def append(self, a: A) -> 'List[A]':
         """
         Add element to end of list
 
@@ -56,7 +51,7 @@ class List(Monoid,  # type: ignore
         :param a: Element to append
         :return: New :class:`List` with ``a`` appended
         """
-        return List(self._iterable + tuple(a))
+        return List(self._iterable + (a,))
 
     def extend(self, iterable: Iterable[A]) -> 'List[A]':
         """

@@ -1,16 +1,17 @@
-from pfun.free import (
-    Functor, Free, More, Done, FreeInterpreter, FreeInterpreterElement
-)
-from pfun import Immutable, Dict, compose
-from pfun.state import State, get as get_, put as put_
+from typing import Callable, TypeVar
 
-from typing import TypeVar, Callable
+from pfun import Dict, Immutable, compose
+from pfun.free import (Done, Free, FreeInterpreter, FreeInterpreterElement,
+                       Functor, More)
+from pfun.state import State
+from pfun.state import get as get_
+from pfun.state import put as put_
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class KVStoreF(Functor, Immutable):  # type: ignore
+class KVStoreF(Functor, Immutable):
     pass
 
 
@@ -23,7 +24,7 @@ get_state: Callable[[], KVStoreInterpreterState[KVStore]] = get_
 set_state: Callable[[KVStore], KVStoreInterpreterState[None]] = put_
 
 
-class Put(KVStoreF, KVStoreElement):  # type: ignore
+class Put(KVStoreF, KVStoreElement):
     k: str
     v: str
     a: KVStoreFree
@@ -39,7 +40,7 @@ class Put(KVStoreF, KVStoreElement):  # type: ignore
         ).and_then(lambda _: interpreter.interpret(self.a))
 
 
-class Get(KVStoreF, KVStoreElement):  # type: ignore
+class Get(KVStoreF, KVStoreElement):
     key: str
     h: Callable[[str], KVStoreFree]
 
@@ -57,7 +58,7 @@ class Get(KVStoreF, KVStoreElement):  # type: ignore
         )  # yapf: disable
 
 
-class Delete(KVStoreF, KVStoreElement):  # type: ignore
+class Delete(KVStoreF, KVStoreElement):
     key: str
     a: KVStoreFree
 

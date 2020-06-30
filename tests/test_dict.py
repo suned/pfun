@@ -1,4 +1,4 @@
-from hypothesis import given, assume
+from hypothesis import assume, given
 
 from pfun import Dict
 from pfun.maybe import Just, Nothing

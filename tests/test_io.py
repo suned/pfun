@@ -1,23 +1,22 @@
-from unittest.mock import patch, mock_open as mock_open_
 import sys
-from pfun.io import (
-    put_line,
-    get_line,
-    read_str as read_file,
-    read_bytes as read_file_bytes,
-    write_str as write_file,
-    write_bytes as write_file_bytes,
-    value as IO,
-    with_effect,
-    sequence,
-    filter_m,
-    map_m
-)
-from pfun import identity, compose
-from .monad_test import MonadTest
-from .strategies import ios, unaries, anything
-from hypothesis import given, assume
+from unittest.mock import mock_open as mock_open_
+from unittest.mock import patch
+
+from hypothesis import assume, given
 from hypothesis.strategies import text
+
+from pfun import compose, identity
+from pfun.io import filter_m, get_line, map_m, put_line
+from pfun.io import read_bytes as read_file_bytes
+from pfun.io import read_str as read_file
+from pfun.io import sequence
+from pfun.io import value as IO
+from pfun.io import with_effect
+from pfun.io import write_bytes as write_file_bytes
+from pfun.io import write_str as write_file
+
+from .monad_test import MonadTest
+from .strategies import anything, ios, unaries
 from .utils import recursion_limit
 
 

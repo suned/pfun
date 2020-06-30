@@ -1,7 +1,7 @@
 from hypothesis import given
-from hypothesis.strategies import lists, integers, text, none, builds, tuples
+from hypothesis.strategies import builds, integers, lists, none, text, tuples
 
-from pfun.monoid import empty, append, Monoid
+from pfun.monoid import Monoid, append, empty
 from tests.strategies import anything
 
 
@@ -9,7 +9,7 @@ class M(Monoid):
     def __init__(self, i):
         self.i = i
 
-    def append(self, other: 'M') -> 'M':
+    def __add__(self, other: 'M') -> 'M':
         return M(self.i + other.i)
 
     def empty(self) -> 'M':

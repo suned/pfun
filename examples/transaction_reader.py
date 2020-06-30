@@ -1,7 +1,7 @@
-from pfun.reader import Reader, value, ask
-from pfun import Immutable, curry
+from typing import Callable, List, TypeVar
 
-from typing import TypeVar, List, Callable
+from pfun import Immutable, curry
+from pfun.reader import Reader, ask, value
 
 
 class Transaction:
@@ -18,7 +18,7 @@ class Transaction:
         ...
 
 
-class User(Immutable):  # type: ignore
+class User(Immutable):
     user_id: int
     password: str
 

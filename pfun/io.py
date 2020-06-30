@@ -1,21 +1,22 @@
 from __future__ import annotations
-from typing import Callable, TypeVar, Generic, Generator, Iterable, cast
+
 import sys
 from functools import wraps
+from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
 
 from typing_extensions import Literal
 
-from .immutable import Immutable
-from .trampoline import Trampoline, Done, Call
-from .monad import Monad, sequence_, map_m_, filter_m_
 from .curry import curry
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
+from .trampoline import Call, Done, Trampoline
 from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class IO(Monad, Immutable, Generic[A]):  # type: ignore
+class IO(Monad, Immutable, Generic[A]):
     """
     Represents world changing actions
     """
@@ -203,8 +204,8 @@ def map_m(f: Callable[[A], IO[B]], iterable: Iterable[A]) -> IO[Iterable[B]]:
     from left to right and collect the results
 
     :example:
-    >>> map_m(IO, range(3))
-    IO(a=(0, 1, 2))
+    >>> map_m(IO, range(3)).run()
+    (0, 1, 2)
 
     :param f: Function to map over ``iterable``
     :param iterable: Iterable to map ``f`` over
@@ -219,11 +220,11 @@ def sequence(iterable: Iterable[IO[A]]) -> IO[Iterable[A]]:
     and collect the results
 
     :example:
-    >>> sequence([IO(v) for v in range(3)])
-    Just(a=(0, 1, 2))
+    >>> sequence([IO(v) for v in range(3)]).run()
+    (0, 1, 2)
 
     :param iterable: The iterable to collect results from
-    :returns: ``Maybe`` of collected results
+    :returns: ``IO`` of collected results
     """
     return cast(IO[Iterable[A]], sequence_(value, iterable))
 
@@ -237,8 +238,8 @@ def filter_m(f: Callable[[A], IO[bool]],
     and combine from left to right.
 
     :example:
-    >>> filter_m(lambda v: IO(v % 2 == 0), range(3))
-    IO(a=(0, 2))
+    >>> filter_m(lambda v: IO(v % 2 == 0), range(3)).run()
+    (0, 2)
 
     :param f: Function to map ``iterable`` by
     :param iterable: Iterable to map by ``f``

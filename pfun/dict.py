@@ -1,23 +1,15 @@
-from typing import (
-    TypeVar,
-    Dict as Dict_,
-    Union,
-    Mapping,
-    KeysView,
-    ValuesView,
-    ItemsView,
-    Generic,
-    Iterator
-)
+from typing import Dict as Dict_
+from typing import (Generic, ItemsView, Iterator, KeysView, Mapping, TypeVar,
+                    Union, ValuesView)
 
-from .maybe import Maybe, Nothing, Just
 from .immutable import Immutable
+from .maybe import Just, Maybe, Nothing
 
 K = TypeVar('K')
 V = TypeVar('V')
 
 
-class Dict(Immutable, Generic[K, V], init=False):  # type: ignore
+class Dict(Immutable, Generic[K, V], init=False):
     """
     Immutable dictionary class with functional helper methods
     """

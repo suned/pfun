@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from .functor_test import FunctorTest
 
 

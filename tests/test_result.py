@@ -1,4 +1,4 @@
-from pfun.result import result, Ok, Error
+from pfun.result import Error, Ok, result
 
 
 def test_result_decorator():

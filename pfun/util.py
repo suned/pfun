@@ -1,4 +1,4 @@
-from typing import TypeVar, Callable, Generic, Tuple, Any
+from typing import Any, Callable, Generic, Tuple, TypeVar
 
 from .immutable import Immutable
 
@@ -25,7 +25,7 @@ Unary = Callable[[A], B]
 Predicate = Callable[[A], bool]
 
 
-class always(Generic[A], Immutable):  # type: ignore
+class always(Generic[A], Immutable):
     """
     A Callable that always returns the same value
     regardless of the arguments
@@ -44,7 +44,7 @@ class always(Generic[A], Immutable):  # type: ignore
         return self.value
 
 
-class Composition(Immutable):  # type: ignore
+class Composition(Immutable):
     functions: Tuple[Callable, ...]
 
     def __call__(self, *args, **kwargs):

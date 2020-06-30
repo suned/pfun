@@ -2,7 +2,7 @@ import re
 
 from main_dec import main
 
-from pfun.io import read_str, with_effect, IOs
+from pfun.io import IOs, read_str, with_effect
 
 
 class MalformedTomlError(Exception):

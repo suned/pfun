@@ -1,8 +1,9 @@
-from hypothesis import given, assume
+from hypothesis import assume, given
 
-from pfun import cont, identity, compose
+from pfun import compose, cont, identity
 from tests.monad_test import MonadTest
-from tests.strategies import anything, unaries, conts
+from tests.strategies import anything, conts, unaries
+
 from .utils import recursion_limit
 
 

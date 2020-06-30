@@ -1,21 +1,23 @@
 import random
 
 import pytest
+from hypothesis import assume, given
+from hypothesis.strategies import integers
+from hypothesis.strategies import lists as lists_
 
-from pfun import List, identity, compose
-from pfun.list import with_effect, sequence, filter_m, map_m, value
-from hypothesis.strategies import integers, lists as lists_
-from hypothesis import given, assume
-from .strategies import anything, unaries, lists
+from pfun import List, compose, identity
+from pfun.list import filter_m, map_m, sequence, value, with_effect
+
 from .monad_test import MonadTest
 from .monoid_test import MonoidTest
+from .strategies import anything, lists, unaries
 from .utils import recursion_limit
 
 
 class TestList(MonadTest, MonoidTest):
-    @given(lists(), lists())
+    @given(lists(), anything())
     def test_append(self, l1, l2):
-        assert l1.append(l2) == l1 + l2
+        assert l1.append(l2) == l1 + (l2,)
 
     def test_empty(self):
         assert List().empty() == List()

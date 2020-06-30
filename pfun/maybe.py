@@ -1,30 +1,20 @@
-from typing import (
-    Generic,
-    TypeVar,
-    Callable,
-    Any,
-    Sequence,
-    Iterable,
-    cast,
-    Generator,
-    Union,
-    Optional
-)
-from functools import wraps
 from abc import ABC, abstractmethod
+from functools import wraps
+from typing import (Any, Callable, Generator, Generic, Iterable, Optional,
+                    Sequence, TypeVar, Union, cast)
 
+from .curry import curry
+from .either import Either, Left
 from .immutable import Immutable
 from .list import List
-from .curry import curry
-from .monad import Monad, map_m_, sequence_, filter_m_
+from .monad import Monad, filter_m_, map_m_, sequence_
 from .with_effect import with_effect_tail_rec
-from .either import Either, Left
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Maybe_(Immutable, Monad, ABC):  # type: ignore
+class Maybe_(Immutable, Monad, ABC):
     """
     Abstract super class for classes that represent computations that can fail.
     Should not be instantiated directly.
@@ -119,7 +109,7 @@ def _invoke_optional_arg(
         raise
 
 
-class Just(Maybe_, Generic[A]):  # type: ignore
+class Just(Maybe_, Generic[A]):
     """
     Subclass of :class:`Maybe` that represents a successful computation
 
@@ -155,7 +145,7 @@ class Just(Maybe_, Generic[A]):  # type: ignore
         return True
 
 
-class Nothing(Maybe_):  # type: ignore
+class Nothing(Maybe_):
     """
     Subclass of :class:`Maybe` that represents a failed computation
 

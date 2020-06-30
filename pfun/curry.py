@@ -1,11 +1,11 @@
-from typing import Callable
 import functools
 import inspect
+from typing import Callable
 
 from .immutable import Immutable
 
 
-class Curry(Immutable):  # type: ignore
+class Curry(Immutable):
     f: Callable
 
     def __repr__(self):

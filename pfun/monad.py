@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Any, Iterable
 from functools import reduce
+from typing import Any, Callable, Iterable
 
-from .functor import Functor
 from .curry import curry
+from .functor import Functor
 
 
 class Monad(Functor, ABC):

@@ -1,10 +1,10 @@
 from functools import wraps
-from typing import Generic, TypeVar, Callable, Iterable, cast, Generator, Any
+from typing import Any, Callable, Generator, Generic, Iterable, TypeVar, cast
 
-from .immutable import Immutable
 from .curry import curry
-from .trampoline import Trampoline, Done, Call
-from .monad import Monad, map_m_, sequence_, filter_m_
+from .immutable import Immutable
+from .monad import Monad, filter_m_, map_m_, sequence_
+from .trampoline import Call, Done, Trampoline
 from .with_effect import with_effect_
 
 Context = TypeVar('Context')
@@ -15,7 +15,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class Reader(Immutable, Generic[Context, Result_], Monad):  # type: ignore
+class Reader(Immutable, Generic[Context, Result_], Monad):
     """
     Represents a computation that is not yet completed, but
     will complete once given an object of type ``Context``
