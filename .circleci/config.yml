@@ -8,6 +8,7 @@ jobs:
   test:
     <<: *defaults
     steps:
+      - checkout
       - restore_cache:
           key: python-cache
       - run:
@@ -20,7 +21,6 @@ jobs:
           key: python-cache
           paths:
             - /.pyenv
-      - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "poetry.lock" }}
       - run:
