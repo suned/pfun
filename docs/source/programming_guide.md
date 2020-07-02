@@ -273,14 +273,13 @@ In its most basic form, the module pattern simply involves defining a [Protocol]
 In many cases the api for effects involved in the module pattern is split into three parts:
 
 - A _module_ class that provides the actual implementation
-- A _module provider_ that is a `typing_extensions.Protocol` that provides the module class as an attribute
+- A _module provider_ that is a `typing.Protocol` that provides the module class as an attribute
 - Functions that return effects with the module provider class as the environment type.
 
 Lets rewrite our example from before to follow the module pattern:
 ```python
-from typing import Any
+from typing import Any, Protocol
 from http.client import HTTPError
-from typing_extensions import Protocol
 
 from pfun.effect import Effect, get_environment
 
@@ -530,8 +529,7 @@ assert ref.value == (1,)
 
 `pfun.effect.ref` can of course be combined with the module pattern:
 ```python
-from typing import Tuple, Any, NoReturn
-from typing_extensions import Protocol
+from typing import Tuple, Any, NoReturn, Protocol
 
 from pfun.effect.ref import Ref
 from pfun.effect import get_environment, Effect
