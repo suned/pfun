@@ -1,13 +1,24 @@
 defaults: &defaults
   working_directory: ~/pfun
   docker:
-    - image: circleci/python:3.7.5
+    - image: demosdemon/pyenv
 
 version: 2
 jobs:
   test:
     <<: *defaults
     steps:
+      - restore_cache:
+          key: python-cache
+      - run:
+          name: install_python
+          command: pyenv install 3.7.5 && \
+            pyenv install 3.8.0 && \
+            pyenv local 3.7.5 3.8.0
+      - save_cache:
+          key: python-cache
+          paths:
+            - /.pyenv
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "poetry.lock" }}
