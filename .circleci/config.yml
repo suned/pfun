@@ -10,9 +10,11 @@ jobs:
     steps:
       - checkout
       - restore_cache:
+          key: python-cache
+      - restore_cache:
+          key: poetry-cache
+      - restore_cache:
           keys:
-            - python-cache
-            - poetry-cache
             - dependency-cache-{{ checksum "poetry.lock" }}
             - dependency-cache-
       - run:
