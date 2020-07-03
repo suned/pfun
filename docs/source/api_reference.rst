@@ -55,6 +55,11 @@ pfun.effect.subprocess
 .. automodule:: pfun.effect.subprocess
     :members:
 
+pfun.effect.logging
+-------------------
+.. automodule:: pfun.effect.logging
+    :members:
+
 pfun.effect.ref
 ---------------
 .. automodule:: pfun.effect.ref
