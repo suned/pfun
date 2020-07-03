@@ -71,7 +71,7 @@ In addition, `List` supplies functional operations such as `map` and `reduce` as
 instance methods
 
 ```python
-assert List(range(3)).reduce(sum) == 3
+assert List(range(3)).reduce(lambda a, b: a + b) == 3
 assert List(range(3)).map(str) == ['0', '1', '2']
 ```
 ### Dict
