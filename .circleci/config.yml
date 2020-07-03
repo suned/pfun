@@ -16,7 +16,7 @@ jobs:
             - dependency-cache-{{ checksum "poetry.lock" }}
             - dependency-cache-
       - run:
-          name: install_python
+          name: Install python
           command: |
             pyenv install --skip-existing 3.7.5 && \
             pyenv install --skip-existing 3.8.0 && \
@@ -32,12 +32,6 @@ jobs:
       - run:
           name: Install dependencies
           command: poetry install
-      - run:
-          name: Lint
-          command: poetry run pre-commit run --all
-      - run:
-          name: Test
-          command: poetry run tox
       - save_cache:
           key: dependency-cache-{{ checksum "poetry.lock" }}
           paths:
@@ -48,9 +42,15 @@ jobs:
           paths:
             - /.pyenv
       - save_cache:
-            key: poetry-cache
-            paths:
-              - $HOME/.poetry
+          key: poetry-cache
+          paths:
+            - $HOME/.poetry
+      - run:
+          name: Lint
+          command: poetry run pre-commit run --all
+      - run:
+          name: Test
+          command: poetry run tox
   release:
     <<: *defaults
     steps:
