@@ -290,3 +290,43 @@ class TestSubprocess:
 
         with pytest.raises(CalledProcessError):
             effect.subprocess.run_in_shell('exit 1').run(HasSubprocess())
+
+
+class HasLogging:
+    logging = effect.logging.Logging()
+
+
+class TestLogging:
+    @mock.patch('pfun.effect.logging.logging')
+    def test_get_logger(self, mock_logging):
+        effect.logging.get_logger('foo').run(HasLogging())
+        mock_logging.getLogger.assert_called_once_with('foo')
+
+    @mock.patch('pfun.effect.logging.logging')
+    @pytest.mark.parametrize(
+        'log_method',
+        ['debug', 'info', 'warning', 'error', 'critical', 'exception']
+    )
+    def test_logger_methods(self, mock_logging, log_method):
+        effect.logging.get_logger('foo').and_then(
+            lambda logger: getattr(logger, log_method)('test')
+        ).run(HasLogging())
+        exc_and_stack_info = log_method == 'exception'
+        getattr(
+            mock_logging.getLogger('foo'),
+            log_method
+        ).assert_called_once_with(
+            'test', exc_info=exc_and_stack_info, stack_info=exc_and_stack_info
+        )  # yapf: disable
+
+    @mock.patch('pfun.effect.logging.logging')
+    @pytest.mark.parametrize(
+        'log_method',
+        ['debug', 'info', 'warning', 'error', 'critical', 'exception']
+    )
+    def test_logging_methods(self, mock_logging, log_method):
+        getattr(effect.logging, log_method)('test').run(HasLogging())
+        exc_and_stack_info = log_method == 'exception'
+        getattr(mock_logging, log_method).assert_called_once_with(
+            'test', exc_info=exc_and_stack_info, stack_info=exc_and_stack_info
+        )
