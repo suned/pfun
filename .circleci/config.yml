@@ -1,12 +1,9 @@
-defaults: &defaults
-  working_directory: ~/pfun
-  docker:
-    - image: demosdemon/pyenv
-
 version: 2
 jobs:
   test:
-    <<: *defaults
+    working_directory: ~/pfun
+    docker:
+      - image: demosdemon/pyenv
     steps:
       - checkout
       - restore_cache:
@@ -54,21 +51,28 @@ jobs:
           name: Test
           command: poetry run tox
   release:
-    <<: *defaults
+    working_directory: ~/pfun
+    docker:
+      - image: circleci/python:3.7.5
     steps:
       - checkout
       - run:
-            name: Install depenencies
-            command: poetry install
+        name: Install poetry
+        command: |
+          POETRY_VERSION=1.0.9 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python && \
+          cat $HOME/.poetry/env >> $BASH_ENV
       - run:
-            name: Check version
-            command: poetry run python scripts/check_version.py pyproject.toml $CIRCLE_TAG
+          name: Install depenencies
+          command: poetry install
       - run:
-            name: Build
-            command: poetry build
+          name: Check version
+          command: poetry run python scripts/check_version.py pyproject.toml $CIRCLE_TAG
       - run:
-            name: Release
-            command: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
+          name: Build
+          command: poetry build
+      - run:
+          name: Release
+          command: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
 
 workflows:
   version: 2
