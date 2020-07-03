@@ -2,8 +2,6 @@ defaults: &defaults
   working_directory: ~/pfun
   docker:
     - image: demosdemon/pyenv
-  environment:
-    PATH: $HOME/.poetry/bin:$PATH
 
 version: 2
 jobs:
