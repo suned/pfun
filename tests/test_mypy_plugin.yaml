@@ -201,4 +201,4 @@
     def f(a: str, b: str) -> str:
       pass
 
-    reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.effect.Effect[Any, Union[builtins.ValueError, builtins.OSError], builtins.str*]'
+    reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'

@@ -312,7 +312,7 @@ def _combine_hook(context: FunctionContext):
             fallback=context.api.named_type('builtins.function')
         )
         ret_type = context.default_return_type.ret_type
-        combined_error_type = UnionType(set(error_types))
+        combined_error_type = UnionType(sorted(set(error_types), key=str))
         ret_type_args = ret_type.args
         ret_type_args[1] = combined_error_type
         ret_type_args[2] = map_return_type
