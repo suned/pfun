@@ -10,15 +10,18 @@ A = TypeVar('A')
 E = TypeVar('E')
 
 
-class Ref(Immutable, Generic[A]):
+class Ref(Immutable, Generic[A], init=False):
     """
     Wraps a value that can be mutated as an :class:`Effect`
 
     :attribute value: the wrapped value
-    :attribute lock: locks mutation of `value`
     """
+    _lock: Optional[Lock]
     value: A
-    lock: Optional[Lock] = None
+
+    def __init__(self, value: A):
+        object.__setattr__(self, 'value', value)
+        object.__setattr__(self, '_lock', None)
 
     @property
     def __lock(self) -> Lock:
@@ -28,12 +31,9 @@ class Ref(Immutable, Generic[A]):
         # it may lead to
         # RuntimeError: There is no current event loop in thread 'MainThread'.
         # see https://tinyurl.com/yc9kd77s
-        # In theory, users could still get this wrong by supplying
-        # their own lock as Ref(value, Lock()),
-        # but then they are on their own ¯\_(ツ)_/¯
-        if self.lock is None:
-            object.__setattr__(self, 'lock', Lock())
-        return cast(Lock, self.lock)
+        if self._lock is None:
+            object.__setattr__(self, '_lock', Lock())
+        return cast(Lock, self._lock)
 
     def get(self) -> Effect[Any, NoReturn, A]:
         """
@@ -111,8 +111,8 @@ class Ref(Immutable, Generic[A]):
         :example:
         >>> from pfun.either import Left, Right
         >>> ref = Ref('initial state')
-        >>> ref.try_modify(lambda _: Left('Whoops!')).run(None)
-        None
+        >>> ref.try_modify(lambda _: Left('Whoops!')).either().run(None)
+        Left('Whoops!')
         >>> ref.value
         'initial state'
         >>> ref.try_modify(lambda _: Right('new state')).run(None)
@@ -135,3 +135,107 @@ class Ref(Immutable, Generic[A]):
                 return Done(Right(None))
 
         return Effect(run_e)
+
+
+class LazyRef(Immutable, Generic[A], init=False):
+    """
+    Ref that is initialiazed lazily. Useful for references that need
+    to be initialized in the correct asyncio event loop thread.
+
+    :example:
+    >>> ref = LazyRef(lambda: 'state')
+    >>> ref.value
+    None
+    >>> ref.get()(None)
+    'state'
+    >>> ref.value
+    'state'
+    """
+    factory: Callable[[], A]
+    ref: Ref[Optional[A]]
+
+    def __init__(self, factory: Callable[[], A]):
+        """
+        :param factory: function that initializes the value
+        """
+        object.__setattr__(self, 'factory', factory)
+        object.__setattr__(self, 'ref', Ref(None))
+
+    def get(self) -> Effect[Any, NoReturn, A]:
+        """
+        Get an :class:`Effect` that reads the current state of the value
+
+        :example:
+        >>> ref = LazyRef(lambda: 'the state')
+        >>> ref.get().run(None)
+        'the state'
+
+        :return: :class:`Effect` that reads the current state
+        """
+        async def run_e(_):
+            async with self.ref._Ref__lock:
+                if self.ref.value is None:
+                    object.__setattr__(self.ref, 'value', self.factory())
+                return Done(Right(self.ref.value))
+        return Effect(run_e)
+
+    def put(self, value: A) -> Effect[Any, NoReturn, None]:
+        """
+        Get an :class:`Effect` that updates the current state of the value
+
+        :example:
+        >>> ref = LazyRef(lambda: 'initial state')
+        >>> ref.put('new state').run(None)
+        None
+        >>> ref.value
+        'new state'
+
+        :param value: new state
+        :return: :class:`Effect` that updates the state
+        """
+        return self.ref.put(value)
+
+    def modify(self,
+               f: Callable[[Optional[A]], A]) -> Effect[Any, NoReturn, None]:
+        """
+        Modify the value wrapped by this :class:`Ref` by \
+            applying `f` in isolation
+
+        :example:
+        >>> ref = LazyRef(lambda: [])
+        >>> ref.modify(lambda l: [1] if l is None else l + [1]).run(None)
+        None
+        >>> ref.value
+        [1]
+
+        :param f: function that accepts the current state and returns \
+            a new state
+        :return: :class:`Effect` that updates the state to the result of `f`
+        """
+        return self.ref.modify(f)
+
+    def try_modify(self, f: Callable[[Optional[A]], Either[E, A]]
+                   ) -> Effect[Any, E, None]:
+        """
+        Try to update the current state with the result of `f` if it succeeds.
+        The state is updated if `f` returns a :class:`Right` value, and kept
+        as is otherwise
+
+        :example:
+        >>> from pfun.either import Left, Right
+        >>> ref = LazyRef(lambda: 'initial state')
+        >>> ref.try_modify(lambda _: Left('Whoops!')).either().run(None)
+        Left('Whoops!')
+        >>> ref.value
+        None
+        >>> ref.try_modify(lambda _: Right('new state')).run(None)
+        None
+        >>> ref.value
+        'new state'
+
+        :param f: function that accepts the current state and \
+            returns a :class:`Right` wrapping a new state \
+            or a :class:`Left` value wrapping an error
+        :return: an :class:`Effect` that updates the state if `f` succeeds
+        """
+        return self.ref.try_modify(f)

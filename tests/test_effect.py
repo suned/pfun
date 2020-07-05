@@ -1,10 +1,15 @@
+import http
+from dataclasses import field
 from subprocess import CalledProcessError
+from typing import Any, NoReturn, Tuple
 from unittest import mock
 
+import aiohttp
 import pytest
 from hypothesis import assume, given
 
-from pfun import compose, effect, either, identity
+from pfun import Immutable, compose, effect, either, identity
+from pfun.effect.effect import Module
 
 from .monad_test import MonadTest
 from .strategies import anything, effects, unaries
@@ -172,13 +177,40 @@ class TestEffect(MonadTest):
 
         catched_value_error = effect.catch_all(lambda: f(True))
         catched_division_error = effect.catch_all(lambda: f(False))
-        with pytest.raises(Exception):
-            # todo
+        with pytest.raises(ValueError):
             catched_value_error.run(None)
 
-        with pytest.raises(Exception):
-            # todo
+        with pytest.raises(ZeroDivisionError):
             catched_division_error.run(None)
+
+
+class MyModule(Module, Immutable):
+    ref: effect.ref.Ref[Tuple[str, ...]
+                        ] = field(default_factory=lambda: effect.ref.Ref(()))
+
+    def initialize(self) -> effect.Effect[Any, NoReturn, Any]:
+        return self.ref.modify(lambda t: t + ('initialized!', ))
+
+    def finalize(self) -> effect.Effect[Any, NoReturn, Any]:
+        return self.ref.modify(lambda t: t + ('finalized!', ))
+
+
+class Provider(Immutable):
+    module: MyModule = field(default_factory=lambda: MyModule())
+
+
+class TestModule:
+    def test_success_module_setup_teardown(self):
+        provider = Provider()
+        assert effect.success('success!')(provider) == 'success!'
+        assert provider.module.ref.value == ('initialized!', 'finalized!')
+
+    def test_error_module_setup_teardown(self):
+        provider = Provider()
+        with pytest.raises(RuntimeError):
+            effect.error('success!')(provider)
+
+        assert provider.module.ref.value == ('initialized!', 'finalized!')
 
 
 class HasConsole:
@@ -275,6 +307,29 @@ class TestRef:
         assert ref.value == 1
 
 
+class TestLazyRef:
+    def test_get(self):
+        ref = effect.ref.LazyRef(lambda: 0)
+        assert ref.get().run(None) == 0
+
+    def test_put(self):
+        ref = effect.ref.LazyRef(lambda: 0)
+        ref.put(1).run(None)
+        assert ref.ref.value == 1
+
+    def test_modify(self):
+        ref = effect.ref.LazyRef(lambda: 0)
+        ref.modify(lambda _: 1).run(None)
+        assert ref.ref.value == 1
+
+    def test_try_modify(self):
+        ref = effect.ref.LazyRef(lambda: 0)
+        ref.try_modify(lambda _: either.Left('')).either().run(None)
+        assert ref.ref.value is None
+        ref.try_modify(lambda _: either.Right(1)).run(None)
+        assert ref.ref.value == 1
+
+
 class HasSubprocess:
     subprocess = effect.subprocess.Subprocess()
 
@@ -330,3 +385,79 @@ class TestLogging:
         getattr(mock_logging, log_method).assert_called_once_with(
             'test', exc_info=exc_and_stack_info, stack_info=exc_and_stack_info
         )
+
+
+class HasHTTP:
+    http = effect.http.HTTP()
+
+
+async def get_awaitable(value):
+    return value
+
+
+class MockRequest:
+    def __init__(self, result):
+        self.result = result
+
+    async def __aenter__(self):
+        mock_response = mock.MagicMock()
+        mock_response.read.return_value = get_awaitable(self.result)
+        mock_response.reason = 'OK'
+        mock_response.cookies = http.cookies.SimpleCookie()
+        mock_response.headers = dict()
+        mock_response.links = dict()
+        mock_response.status = 200
+        mock_response.char_set = 'utf8'
+        return mock_response
+
+    async def __aexit__(self, *args, **kwargs):
+        pass
+
+
+def mock_session(result: bytes = b'test'):
+    session = mock.MagicMock()
+    session.return_value.close.return_value = get_awaitable(None)
+    session.return_value.request.return_value = MockRequest(result)
+    return mock.patch('pfun.effect.http.aiohttp.ClientSession', session)
+
+
+class TestHTTP:
+    default_params = {
+        'params': None,
+        'data': None,
+        'json': None,
+        'cookies': None,
+        'headers': None,
+        'skip_auto_headers': None,
+        'auth': None,
+        'allow_redirects': True,
+        'max_redirects': 10,
+        'compress': None,
+        'chunked': None,
+        'expect100': False,
+        'raise_for_status': None,
+        'read_until_eof': True,
+        'proxy': None,
+        'proxy_auth': None,
+        'timeout': aiohttp.client.sentinel,
+        'ssl': None,
+        'verify_ssl': None,
+        'fingerprint': None,
+        'ssl_context': None,
+        'proxy_headers': None
+    }
+
+    def test_get_session(self):
+        with mock_session() as session:
+            assert effect.http.get_session()(HasHTTP()) == session()
+
+    @pytest.mark.parametrize(
+        'method', ['get', 'put', 'post', 'delete', 'patch', 'head', 'options']
+    )
+    def test_http_methods(self, method):
+        with mock_session() as session:
+            assert getattr(effect.http,
+                           method)('foo.com')(HasHTTP()).content == b'test'
+            session().request.assert_called_once_with(
+                method, 'foo.com', **self.default_params
+            )

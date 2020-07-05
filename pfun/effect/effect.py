@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+from abc import ABC, abstractmethod
 from functools import wraps
 from typing import (Any, Awaitable, Callable, Generator, Generic, Iterable,
-                    NoReturn, Type, TypeVar, Union)
+                    NoReturn, Tuple, Type, TypeVar, Union)
 
 from ..aio_trampoline import Call, Done, Trampoline
 from ..aio_trampoline import sequence as sequence_trampolines
@@ -17,6 +18,61 @@ E = TypeVar('E', covariant=True)
 E2 = TypeVar('E2')
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
+
+
+class Module(ABC):
+    """
+    ABC for classes participating in the module pattern that needs
+    to initialize or finalize resources *once* before and after
+    they are used. :class:`Effect` will combine the effects returned by
+    `initialize` and `finalize` when it is called.
+
+    :example:
+    >>> from pfun.effect.console import Console
+    >>> console = Console()
+    >>> class MyModule(Module):
+    ...     def initialize(self) -> Effect[Any, NoReturn, Any]:
+    ...         return console.print('initializing')
+    ...
+    ...     def finalize(self) -> Effect[Any, NoReturn, Any]:
+    ...         return console.print('finalizing')
+    >>> class Env:
+    ...     module = MyModule()
+    >>> success('yay!').run(Env())
+    initializing
+    finalizing
+    'yay!'
+    """
+    @abstractmethod
+    def initialize(self) -> Effect[Any, NoReturn, Any]:
+        """
+        Initialize module resources before its used with an effect
+
+        :return: :class:`Effect` that initializes resources
+        """
+        pass
+
+    @abstractmethod
+    def finalize(self) -> Effect[Any, NoReturn, Any]:
+        """
+        Finalize module resources after an effect is executed
+
+        :return: :class:`Effect` that finalizes resources
+        """
+        pass
+
+
+def _get_modules(o: object) -> Tuple[Module, ...]:
+    """
+    Get all members of `o` that is an instance of :class:`Module`
+
+    :param o: object to find modules in
+    :return: set of all module instances
+    """
+    try:
+        return tuple(e for e in vars(o).values() if isinstance(e, Module))
+    except TypeError:
+        return tuple()
 
 
 class Effect(Generic[R, E, A], Immutable):
@@ -155,6 +211,42 @@ class Effect(Generic[R, E, A], Immutable):
 
         return Effect(run_e)
 
+    def ensure(self, effect: Effect[Any, NoReturn, Any]) -> Effect[R, E, A]:
+        """
+        Create an :class:`Effect` that will always run `effect`, regardless
+        of whether this :class:`Effect` succeeds or fails. The result of
+        `effect` is ignored, and the resulting effect instead succeeds or fails
+        with the succes or error value of this effect. Useful for closing
+        resources.
+
+        :example:
+        >>> from pfun.effect.console import Console
+        >>> console = Console()
+        >>> finalizer = console.print('finalizing!')
+        >>> success('result').ensure(finalizer).run(None)
+        finalizing!
+        'result'
+        >>> error('whoops!').ensure(finalizer).run(None)
+        finalizing!
+        RuntimeError: whoops!
+
+        :param effect: :class:`Effect` to run after this effect terminates \
+            either successfully or with an error
+        :return: :class:`Effect` that fails or succeeds with the result of \
+            this effect, but always runs `effect`
+        """
+        return self.and_then(
+            lambda value: effect.  # type: ignore
+            discard_and_then(
+                success(value)
+            )
+        ).recover(
+            lambda reason: effect.  # type: ignore
+            discard_and_then(
+                error(reason)
+            )
+        )
+
     def run(self, r: R, asyncio_run=asyncio.run) -> A:
         """
         Run the function wrapped by this :class:`Effect`, including potential \
@@ -164,10 +256,16 @@ class Effect(Generic[R, E, A], Immutable):
         :param r: The environment with which to run this :class:`Effect`
         :param asyncio_run: Function to run the coroutine returned by the \
             wrapped function
-        :returns: The succesful result of the wrapped functions if it succeeds
+        :returns: The succesful result of the wrapped function if it succeeds
         """
         async def _run() -> A:
-            trampoline = await self.run_e(r)  # type: ignore
+            instance_modules = _get_modules(r)
+            class_modules = _get_modules(r.__class__)
+            modules = instance_modules + class_modules
+            init = sequence_async(module.initialize() for module in modules)
+            finalize = sequence_async(module.finalize() for module in modules)
+            effect = init.discard_and_then(self).ensure(finalize)
+            trampoline = await effect.run_e(r)  # type: ignore
             result = await trampoline.run()
             if isinstance(result, Left):
                 error = result.get
@@ -184,7 +282,7 @@ class Effect(Generic[R, E, A], Immutable):
 
     def map(self, f: Callable[[A], Union[Awaitable[B], B]]) -> Effect[R, E, B]:
         """
-        Map `f` over the produced by this :class:`Effect` once it is run
+        Map `f` over the result produced by this :class:`Effect` once it is run
 
         :example:
         >>> success(2).map(lambda v: v + 2).run(None)
@@ -268,6 +366,21 @@ def from_awaitable(awaitable: Awaitable[A1]) -> Effect[Any, NoReturn, A1]:
         return Done(Right(await awaitable))
 
     return Effect(run_e)
+
+
+def decorate(
+    f: Callable[[A1], Union[Awaitable[Either[E1, B1]], Either[E1, B1]]]
+) -> Callable[[A1], Effect[Any, E1, B1]]:
+    def _(a: A1) -> Effect[Any, E1, B1]:
+        async def run_e(_):
+            either = f(a)
+            if asyncio.iscoroutine(either):
+                either = await either
+            return Done(either)
+
+        return Effect(run_e)
+
+    return _
 
 
 B1 = TypeVar('B1')
@@ -461,7 +574,7 @@ EX = TypeVar('EX', bound=Exception)
 
 
 # @curry
-def catch(error_type: Type[EX],
+def catch(*error_type: Type[EX],
           ) -> Callable[[Callable[[], A1]], Effect[Any, EX, A1]]:
     """
     Catch exceptions raised by a function and push them into the error type \
@@ -479,8 +592,10 @@ def catch(error_type: Type[EX],
     def _(f):
         try:
             return success(f())
-        except error_type as e:
-            return error(e)
+        except Exception as e:
+            if any(isinstance(e, t) for t in error_type):
+                return error(e)
+            raise e
 
     return _
 
