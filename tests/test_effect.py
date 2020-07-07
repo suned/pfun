@@ -1,15 +1,13 @@
-import http
-from dataclasses import field
 from subprocess import CalledProcessError
-from typing import Any, NoReturn, Tuple
 from unittest import mock
 
 import aiohttp
+import asynctest
 import pytest
 from hypothesis import assume, given
 
-from pfun import Immutable, compose, effect, either, identity
-from pfun.effect.effect import Module
+from pfun import compose, effect, either, identity
+from pfun.effect.effect import Environment, Resource
 
 from .monad_test import MonadTest
 from .strategies import anything, effects, unaries
@@ -183,34 +181,95 @@ class TestEffect(MonadTest):
         with pytest.raises(ZeroDivisionError):
             catched_division_error.run(None)
 
+    def test_and_then_with_resources(self):
+        resource_1 = Resource(asynctest.MagicMock())
+        resource_2 = Resource(asynctest.MagicMock())
+        r1, r2 = resource_1.get().and_then(
+            lambda r1: resource_2.get().map(lambda r2: (r1, r2))
+        )(None)
+        resource_1.resource_factory.assert_called_once()
+        resource_2.resource_factory.assert_called_once()
+        assert resource_1.resource_factory.return_value == r1
+        assert resource_2.resource_factory.return_value == r2
 
-class MyModule(Module, Immutable):
-    ref: effect.ref.Ref[Tuple[str, ...]
-                        ] = field(default_factory=lambda: effect.ref.Ref(()))
+    def test_either_with_resource(self):
+        resource = Resource(asynctest.MagicMock())
+        assert resource.get().either()(None) == either.Right(
+            resource.resource_factory.return_value
+        )
 
-    def initialize(self) -> effect.Effect[Any, NoReturn, Any]:
-        return self.ref.modify(lambda t: t + ('initialized!', ))
+    def test_recover_with_resources(self):
+        resource_1 = Resource(asynctest.MagicMock())
+        resource_2 = Resource(asynctest.MagicMock())
+        r1, r2 = resource_1.get().and_then(
+            lambda r1: effect.error('whoops').recover(
+                lambda _: resource_2.get().map(lambda r2: (r1, r2))
+            )
+        )(None)
+        resource_1.resource_factory.assert_called_once()
+        resource_2.resource_factory.assert_called_once()
+        assert resource_1.resource_factory.return_value == r1
+        assert resource_2.resource_factory.return_value == r2
 
-    def finalize(self) -> effect.Effect[Any, NoReturn, Any]:
-        return self.ref.modify(lambda t: t + ('finalized!', ))
+    def test_map_with_resource(self):
+        resource = Resource(asynctest.MagicMock())
+        r = resource.get().map(identity)(None)
+        assert r == resource.resource_factory.return_value
+
+    def test_sequence_async_with_resources(self):
+        resource_1 = Resource(asynctest.MagicMock())
+        resource_2 = Resource(asynctest.MagicMock())
+        r1, r2 = effect.sequence_async(
+            (resource_1.get(), resource_2.get())
+        )(None)
+        resource_1.resource_factory.assert_called_once()
+        resource_2.resource_factory.assert_called_once()
+        assert resource_1.resource_factory.return_value == r1
+        assert resource_2.resource_factory.return_value == r2
+
+    def test_filter_m_with_resources(self):
+        resource = Resource(asynctest.MagicMock())
+        effect.filter_m(
+            lambda v: resource.get().
+            discard_and_then(effect.success(v % 2 == 0)), (1, 2, 3)
+        )(None)
+        resource.resource_factory.return_value.__aenter__.assert_called_once()
 
 
-class Provider(Immutable):
-    module: MyModule = field(default_factory=lambda: MyModule())
+class TestResoure:
+    def test_get(self):
+        resource = Resource(asynctest.MagicMock())
+        effect = resource.get()
+        assert effect.resource == resource
+        assert effect(None) == resource.resource_factory.return_value
+        resource.resource_factory.return_value.__aenter__.assert_called_once()
+        assert resource.resource is None
+
+    def test_resources_are_unique(self):
+        resource = Resource(asynctest.MagicMock())
+        r1, r2 = effect.sequence_async((resource.get(), resource.get()))(None)
+        assert r1 is r2
+        resource.resource_factory.return_value.__aenter__.assert_called_once()
 
 
-class TestModule:
-    def test_success_module_setup_teardown(self):
-        provider = Provider()
-        assert effect.success('success!')(provider) == 'success!'
-        assert provider.module.ref.value == ('initialized!', 'finalized!')
-
-    def test_error_module_setup_teardown(self):
-        provider = Provider()
-        with pytest.raises(RuntimeError):
-            effect.error('success!')(provider)
-
-        assert provider.module.ref.value == ('initialized!', 'finalized!')
+class TestEnvironment:
+    @pytest.mark.asyncio
+    async def test_add_resource(self):
+        exit_stack_mock = asynctest.MagicMock()
+        exit_stack_mock.enter_async_context = asynctest.CoroutineMock()
+        environment = Environment(None, exit_stack_mock)
+        assert (await environment.add_resource(None)) is environment
+        exit_stack_mock.enter_async_context.assert_not_awaited()
+        resource = Resource(asynctest.MagicMock)
+        new_environment = await environment.add_resource(resource)
+        assert new_environment is not environment
+        assert new_environment.exit_stack is environment.exit_stack
+        assert new_environment.resources == set([resource])
+        exit_stack_mock.enter_async_context.assert_awaited_once()
+        assert (
+            await new_environment.add_resource(resource)
+        ) is new_environment
+        exit_stack_mock.enter_async_context.assert_awaited_once()
 
 
 class HasConsole:
@@ -307,29 +366,6 @@ class TestRef:
         assert ref.value == 1
 
 
-class TestLazyRef:
-    def test_get(self):
-        ref = effect.ref.LazyRef(lambda: 0)
-        assert ref.get().run(None) == 0
-
-    def test_put(self):
-        ref = effect.ref.LazyRef(lambda: 0)
-        ref.put(1).run(None)
-        assert ref.ref.value == 1
-
-    def test_modify(self):
-        ref = effect.ref.LazyRef(lambda: 0)
-        ref.modify(lambda _: 1).run(None)
-        assert ref.ref.value == 1
-
-    def test_try_modify(self):
-        ref = effect.ref.LazyRef(lambda: 0)
-        ref.try_modify(lambda _: either.Left('')).either().run(None)
-        assert ref.ref.value is None
-        ref.try_modify(lambda _: either.Right(1)).run(None)
-        assert ref.ref.value == 1
-
-
 class HasSubprocess:
     subprocess = effect.subprocess.Subprocess()
 
@@ -395,32 +431,6 @@ async def get_awaitable(value):
     return value
 
 
-class MockRequest:
-    def __init__(self, result):
-        self.result = result
-
-    async def __aenter__(self):
-        mock_response = mock.MagicMock()
-        mock_response.read.return_value = get_awaitable(self.result)
-        mock_response.reason = 'OK'
-        mock_response.cookies = http.cookies.SimpleCookie()
-        mock_response.headers = dict()
-        mock_response.links = dict()
-        mock_response.status = 200
-        mock_response.char_set = 'utf8'
-        return mock_response
-
-    async def __aexit__(self, *args, **kwargs):
-        pass
-
-
-def mock_session(result: bytes = b'test'):
-    session = mock.MagicMock()
-    session.return_value.close.return_value = get_awaitable(None)
-    session.return_value.request.return_value = MockRequest(result)
-    return mock.patch('pfun.effect.http.aiohttp.ClientSession', session)
-
-
 class TestHTTP:
     default_params = {
         'params': None,
@@ -448,14 +458,24 @@ class TestHTTP:
     }
 
     def test_get_session(self):
-        with mock_session() as session:
+        with asynctest.patch(
+            'pfun.effect.http.aiohttp.ClientSession'
+        ) as session:
             assert effect.http.get_session()(HasHTTP()) == session()
 
     @pytest.mark.parametrize(
         'method', ['get', 'put', 'post', 'delete', 'patch', 'head', 'options']
     )
     def test_http_methods(self, method):
-        with mock_session() as session:
+        with asynctest.patch(
+            'pfun.effect.http.aiohttp.ClientSession'
+        ) as session:
+            read_mock = asynctest.CoroutineMock()
+            read_mock.return_value = b'test'
+            (
+                session.return_value.request.return_value.__aenter__.
+                return_value.read
+            ) = read_mock
             assert getattr(effect.http,
                            method)('foo.com')(HasHTTP()).content == b'test'
             session().request.assert_called_once_with(

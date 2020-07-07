@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from abc import ABC, abstractmethod
+from contextlib import AsyncExitStack
+from dataclasses import field
 from functools import wraps
-from typing import (Any, Awaitable, Callable, Generator, Generic, Iterable,
-                    NoReturn, Tuple, Type, TypeVar, Union)
+from typing import (Any, AsyncContextManager, Awaitable, Callable, Generator,
+                    Generic, Iterable, NoReturn, Optional, Set, Type, TypeVar,
+                    Union)
 
 from ..aio_trampoline import Call, Done, Trampoline
 from ..aio_trampoline import sequence as sequence_trampolines
@@ -19,67 +21,65 @@ E2 = TypeVar('E2')
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
 
+C = TypeVar('C', bound=AsyncContextManager)
 
-class Module(ABC):
+
+class Resource(Immutable, Generic[C]):
     """
-    ABC for classes participating in the module pattern that needs
-    to initialize or finalize resources *once* before and after
-    they are used. :class:`Effect` will combine the effects returned by
-    `initialize` and `finalize` when it is called.
+    Enables lazy initialisation of async context managers that should only be
+    entered once per effect invocation. If the same resource is acquired twice
+    by an effect using `get`, the same context manager will be returned. All
+    context managers controlled by resources are guaranteed to be entered
+    before the effect that requires it is invoked, and exited after it returns.
 
     :example:
-    >>> from pfun.effect.console import Console
-    >>> console = Console()
-    >>> class MyModule(Module):
-    ...     def initialize(self) -> Effect[Any, NoReturn, Any]:
-    ...         return console.print('initializing')
-    ...
-    ...     def finalize(self) -> Effect[Any, NoReturn, Any]:
-    ...         return console.print('finalizing')
-    >>> class Env:
-    ...     module = MyModule()
-    >>> success('yay!').run(Env())
-    initializing
-    finalizing
-    'yay!'
+    >>> from aiohttp import ClientSession
+    >>> resource = Resource(ClientSession)
+    >>> r1, r2 = resource.get().and_then(
+    ...     lambda r1: resource.get().map(lambda r2: (r1, r2))
+    ... )
+    >>> assert r1 is r2
     """
-    @abstractmethod
-    def initialize(self) -> Effect[Any, NoReturn, Any]:
-        """
-        Initialize module resources before its used with an effect
+    resource_factory: Callable[[], C]
+    resource: Optional[C] = None
 
-        :return: :class:`Effect` that initializes resources
-        """
-        pass
+    def get(self) -> Effect[Any, NoReturn, C]:
+        async def run_e(_):
+            return Done(Right(self.resource))
 
-    @abstractmethod
-    def finalize(self) -> Effect[Any, NoReturn, Any]:
-        """
-        Finalize module resources after an effect is executed
+        return Effect(run_e, self)
 
-        :return: :class:`Effect` that finalizes resources
-        """
-        pass
+    async def __aenter__(self):
+        object.__setattr__(self, 'resource', self.resource_factory())
+        return await self.resource.__aenter__()
+
+    async def __aexit__(self, *args, **kwargs):
+        resource = self.resource
+        object.__setattr__(self, 'resource', None)
+        return await resource.__aexit__(*args, **kwargs)
 
 
-def _get_modules(o: object) -> Tuple[Module, ...]:
-    """
-    Get all members of `o` that is an instance of :class:`Module`
+class Environment(Immutable, Generic[A]):
+    r: A
+    exit_stack: AsyncExitStack
+    resources: Set[Resource] = field(default_factory=lambda: set())
 
-    :param o: object to find modules in
-    :return: set of all module instances
-    """
-    try:
-        return tuple(e for e in vars(o).values() if isinstance(e, Module))
-    except TypeError:
-        return tuple()
+    async def add_resource(self,
+                           resource: Optional[Resource]) -> Environment[A]:
+        if resource is None or resource in self.resources:
+            return self
+        await self.exit_stack.enter_async_context(resource)
+        return Environment(
+            self.r, self.exit_stack, self.resources | set([resource])
+        )
 
 
 class Effect(Generic[R, E, A], Immutable):
     """
     Wrapper for functions that are allowed to perform side-effects
     """
-    run_e: Callable[[R], Awaitable[Trampoline[Either[E, A]]]]
+    run_e: Callable[[Environment[R]], Awaitable[Trampoline[Either[E, A]]]]
+    resource: Optional[Resource] = None
 
     def and_then(
         self,
@@ -101,7 +101,8 @@ class Effect(Generic[R, E, A], Immutable):
         :return: New :class:`Effect` which wraps the result of \
         passing the result of this :class:`Effect` instance to ``f``
         """
-        async def run_e(r: R) -> Trampoline[Either[Union[E, E2], B]]:
+        async def run_e(r: Environment[R]
+                        ) -> Trampoline[Either[Union[E, E2], B]]:
             async def thunk():
                 def cont(either: Either):
                     if isinstance(either, Left):
@@ -113,16 +114,18 @@ class Effect(Generic[R, E, A], Immutable):
                             effect = await next_
                         else:
                             effect = next_
-                        return await effect.run_e(r)
+                        new_r = await r.add_resource(effect.resource)
+                        return await effect.run_e(new_r)
 
                     return Call(thunk)
 
-                trampoline = await self.run_e(r)
+                new_r = await r.add_resource(self.resource)
+                trampoline = await self.run_e(new_r)
                 return trampoline.and_then(cont)
 
             return Call(thunk)
 
-        return Effect(run_e)
+        return Effect(run_e, self.resource)
 
     def discard_and_then(self, effect: Effect[Any, E2, B]
                          ) -> Effect[Any, Union[E, E2], B]:
@@ -162,14 +165,16 @@ class Effect(Generic[R, E, A], Immutable):
         :return: New :class:`Effect` that produces a :class:`Left[E]` if it \
             has failed, or a :class:`Right[A]` if it succeeds
         """
-        async def run_e(r: R) -> Trampoline[Either[NoReturn, Either[E, A]]]:
+        async def run_e(r: Environment[R]
+                        ) -> Trampoline[Either[NoReturn, Either[E, A]]]:
             async def thunk() -> Trampoline[Either[NoReturn, Either[E, A]]]:
-                trampoline = await self.run_e(r)  # type: ignore
+                new_r = await r.add_resource(self.resource)
+                trampoline = await self.run_e(new_r)  # type: ignore
                 return trampoline.and_then(lambda either: Done(Right(either)))
 
             return Call(thunk)
 
-        return Effect(run_e)
+        return Effect(run_e, self.resource)
 
     def recover(self,
                 f: Callable[[E], Effect[Any, E2, A]]) -> Effect[Any, E2, A]:
@@ -188,7 +193,7 @@ class Effect(Generic[R, E, A], Immutable):
         :return: New :class:`Effect` which wraps the result of \
         passing the error result of this :class:`Effect` instance to ``f``
         """
-        async def run_e(r: R) -> Trampoline[Either[E2, A]]:
+        async def run_e(r: Environment[R]) -> Trampoline[Either[E2, A]]:
             async def thunk():
                 def cont(either: Either):
                     if isinstance(either, Right):
@@ -200,16 +205,18 @@ class Effect(Generic[R, E, A], Immutable):
                             effect = await next_
                         else:
                             effect = next_
-                        return await effect.run_e(r)
+                        new_r = await r.add_resource(effect.resource)
+                        return await effect.run_e(new_r)
 
                     return Call(thunk)
 
-                trampoline = await self.run_e(r)
+                new_r = await r.add_resource(self.resource)
+                trampoline = await self.run_e(new_r)
                 return trampoline.and_then(cont)
 
             return Call(thunk)
 
-        return Effect(run_e)
+        return Effect(run_e, self.resource)
 
     def ensure(self, effect: Effect[Any, NoReturn, Any]) -> Effect[R, E, A]:
         """
@@ -237,14 +244,10 @@ class Effect(Generic[R, E, A], Immutable):
         """
         return self.and_then(
             lambda value: effect.  # type: ignore
-            discard_and_then(
-                success(value)
-            )
+            discard_and_then(success(value))
         ).recover(
             lambda reason: effect.  # type: ignore
-            discard_and_then(
-                error(reason)
-            )
+            discard_and_then(error(reason))
         )
 
     def run(self, r: R, asyncio_run=asyncio.run) -> A:
@@ -258,23 +261,20 @@ class Effect(Generic[R, E, A], Immutable):
             wrapped function
         :returns: The succesful result of the wrapped function if it succeeds
         """
-        async def _run() -> A:
-            instance_modules = _get_modules(r)
-            class_modules = _get_modules(r.__class__)
-            modules = instance_modules + class_modules
-            init = sequence_async(module.initialize() for module in modules)
-            finalize = sequence_async(module.finalize() for module in modules)
-            effect = init.discard_and_then(self).ensure(finalize)
-            trampoline = await effect.run_e(r)  # type: ignore
-            result = await trampoline.run()
-            if isinstance(result, Left):
-                error = result.get
-                if isinstance(error, Exception):
-                    raise error
+        async def _run() -> A:  # type: ignore
+            async with AsyncExitStack() as stack:
+                env = Environment(r, stack)
+                env = await env.add_resource(self.resource)
+                trampoline = await self.run_e(env)  # type: ignore
+                result = await trampoline.run()
+                if isinstance(result, Left):
+                    error = result.get
+                    if isinstance(error, Exception):
+                        raise error
+                    else:
+                        raise RuntimeError(repr(error))
                 else:
-                    raise RuntimeError(repr(error))
-            else:
-                return result.get
+                    return result.get
 
         return asyncio_run(_run())
 
@@ -292,7 +292,7 @@ class Effect(Generic[R, E, A], Immutable):
         :return: new :class:`Effect` with `f` applied to the \
             value produced by this :class:`Effect`.
         """
-        async def run_e(r: R) -> Trampoline[Either[E, B]]:
+        async def run_e(r: Environment[R]) -> Trampoline[Either[E, B]]:
             def cont(either):
                 async def thunk() -> Trampoline[Either]:
                     result = f(either.get)
@@ -304,10 +304,11 @@ class Effect(Generic[R, E, A], Immutable):
                     return Done(either)
                 return Call(thunk)
 
-            trampoline = await self.run_e(r)  # type: ignore
+            new_r = await r.add_resource(self.resource)
+            trampoline = await self.run_e(new_r)  # type: ignore
             return trampoline.and_then(cont)
 
-        return Effect(run_e)
+        return Effect(run_e, self.resource)
 
 
 R1 = TypeVar('R1')
@@ -343,8 +344,8 @@ def get_environment() -> Effect[Any, NoReturn, Any]:
 
     :return: :class:`Effect` that produces the enviroment passed to `run`
     """
-    async def run_e(r):
-        return Done(Right(r))
+    async def run_e(env):
+        return Done(Right(env.r))
 
     return Effect(run_e)
 
@@ -438,8 +439,11 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
     :param iterable: The iterable to collect results from
     :returns: ``Effect`` that produces collected results
     """
-    async def run_e(r):
-        awaitables = [e.run_e(r) for e in iterable]
+    async def run_e(r: Environment[R1]):
+        effects = list(iterable)
+        for effect in effects:
+            r = await r.add_resource(effect.resource)
+        awaitables = [e.run_e(r) for e in effects]  # type: ignore
         trampolines = await asyncio.gather(*awaitables)
         # TODO should this be run in an executor to avoid blocking?
         # maybe depending on the number of effects?
@@ -486,9 +490,13 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
     :param iterable: Iterable to map by ``f``
     :return: `iterable` mapped and filtered by `f`
     """
-    async def run_e(r):
+    async def run_e(r: Environment[R1]):
         async def thunk():
-            awaitables = [f(a).run_e(r) for a in iterable]
+            effects = [f(a) for a in iterable]
+            new_r = r
+            for effect in effects:
+                new_r = await new_r.add_resource(effect.resource)
+            awaitables = [e.run_e(new_r) for e in effects]
             trampolines = await asyncio.gather(*awaitables)
             trampoline = sequence_trampolines(trampolines)
             return trampoline.map(

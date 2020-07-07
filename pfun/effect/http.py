@@ -10,8 +10,7 @@ from typing_extensions import Protocol
 from ..dict import Dict
 from ..immutable import Immutable
 from ..maybe import Maybe, from_optional
-from .effect import Effect, Module, error, get_environment, success
-from .ref import LazyRef
+from .effect import Effect, Resource, error, get_environment, success
 
 try:
     import aiohttp
@@ -37,9 +36,8 @@ JSonPrim = Union[int, str, float, Dict[str, Any]]
 JSon = Union[Iterable[JSonPrim], JSonPrim]
 
 
-class HTTP(Immutable, Module, init=False):
-    session: LazyRef[aiohttp.ClientSession]
-    kwargs: dict
+class HTTP(Immutable, init=False):
+    session: Resource[aiohttp.ClientSession]
 
     def __init__(
         self,
@@ -61,7 +59,7 @@ class HTTP(Immutable, Module, init=False):
         trust_env: bool = False,
         trace_configs: Iterable[aiohttp.TraceConfig] = None
     ):
-        kwargs = {
+        kwargs: dict = {
             'connector': connector,
             'cookies': cookies,
             'headers': headers,
@@ -80,23 +78,11 @@ class HTTP(Immutable, Module, init=False):
             'trust_env': trust_env,
             'trace_configs': trace_configs
         }
-        object.__setattr__(self, 'kwargs', kwargs)
         object.__setattr__(
             self,
             'session',
-            LazyRef(lambda: aiohttp.ClientSession(**self.kwargs))
+            Resource(lambda: aiohttp.ClientSession(**kwargs))
         )
-
-    def initialize(self) -> Effect[Any, NoReturn, None]:
-        return self.session.modify(
-            lambda _: aiohttp.ClientSession(**self.kwargs)
-        )
-
-    def finalize(self) -> Effect[Any, NoReturn, None]:
-        async def close(session):
-            await session.close()
-
-        return self.session.get().map(close)
 
     def make_request(
         self,
