@@ -40,6 +40,6 @@ repos:
           name: mypy
           stages: [commit]
           language: system
-          entry: mypy pfun
+          entry: mypy pfun examples
           types: [python]
           pass_filenames: false

@@ -23,6 +23,18 @@ except ImportError:
 
 
 class Response(Immutable):
+    """
+    The result of making a HTTP request.
+
+    :attribute content: the response content
+    :attribute status: the request status
+    :attribute reason: the reason for the status request, e.g "OK"
+    :attribute cookies: the response cookies
+    :attribute headers: the response headers
+    :attribute links: the response http link header
+    :attribute encoding: encoding of the response content if present in the \
+        header or if detectable by chardet
+    """
     content: bytes
     status: int
     reason: Maybe[str]
@@ -37,6 +49,11 @@ JSon = Union[Iterable[JSonPrim], JSonPrim]
 
 
 class HTTP(Immutable, init=False):
+    """
+    Module for making HTTP requests. All keyword arguments are passed
+    to the wrapped :class:`aiohttp.ClientSession`. Refer to the originial \
+    documentation for their meaning.
+    """
     session: Resource[aiohttp.ClientSession]
 
     def __init__(
@@ -59,29 +76,31 @@ class HTTP(Immutable, init=False):
         trust_env: bool = False,
         trace_configs: Iterable[aiohttp.TraceConfig] = None
     ):
-        kwargs: dict = {
-            'connector': connector,
-            'cookies': cookies,
-            'headers': headers,
-            'skip_auto_headers': skip_auto_headers,
-            'auth': auth,
-            'json_serialize': json_serialize,
-            'version': version,
-            'cookie_jar': cookie_jar,
-            'read_timeout': read_timeout,
-            'conn_timeout': conn_timeout,
-            'timeout': timeout,
-            'raise_for_status': raise_for_status,
-            'connector_owner': connector_owner,
-            'auto_decompress': auto_decompress,
-            'requote_redirect_url': requote_redirect_url,
-            'trust_env': trust_env,
-            'trace_configs': trace_configs
-        }
         object.__setattr__(
             self,
             'session',
-            Resource(lambda: aiohttp.ClientSession(**kwargs))
+            Resource(
+                lambda: aiohttp.ClientSession(
+                    connector=connector,
+                    cookies=cookies,
+                    headers=headers,
+                    skip_auto_headers=skip_auto_headers,
+                    auth=auth,
+                    json_serialize=json_serialize,
+                    version=version,
+                    cookie_jar=cookie_jar,
+                    read_timeout=read_timeout,
+                    conn_timeout=conn_timeout,
+                    timeout=timeout,
+                    raise_for_status=raise_for_status,
+                    connector_owner=connector_owner,
+                    auto_decompress=auto_decompress,
+                    requote_redirect_url=requote_redirect_url,
+                    trust_env=trust_env,
+                    trace_configs=(trace_configs if trace_configs is None
+                                   else list(trace_configs))
+                )
+            )
         )
 
     def make_request(
@@ -111,6 +130,21 @@ class HTTP(Immutable, init=False):
         ssl_context: ssl.SSLContext = None,
         proxy_headers: Mapping = None
     ) -> Effect[Any, ClientError, Response]:
+        """
+        Make a request using HTTP verb `method` to URL `url`. All keyword
+        arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
+        to the original documentation for their meaning.
+
+        :example:
+        >>> http = HTTP()
+        >>> http.make_request('get', 'http://foo.com')(None)
+        Response(...)
+
+        :param method: HTTP method to use. One of `get`, `put`, `post`, \
+            `delete`, `patch`, `head` or `option`.
+        :param url: target URL for the request
+        :return: :class:`Effect` that produces a :class:`Response`
+        """
         async def _make_request(session: aiohttp.ClientSession
                                 ) -> Effect[Any, ClientError, Response]:
             try:
@@ -159,6 +193,12 @@ class HTTP(Immutable, init=False):
 
 
 class HasHTTP(Protocol):
+    """
+    Module provider providing the `http` module
+
+    :type http: HTTP
+    :attribute http: The HTTP module instance
+    """
     http: HTTP
 
 
@@ -206,7 +246,18 @@ def get(
     proxy_headers: Mapping = None
 ) -> Effect[HasHTTP, ClientError, Response]:
     """
+    Make a HTTP `get` request to URL `url`. All keyword
+    arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
+    to the original documentation for their meaning.
 
+    :example:
+    >>> class Env:
+    ...     http = HTTP()
+    >>> get('http://foo.com')(Env())
+    Response(...)
+
+    :param url: target URL for the request
+    :return: :class:`Effect` that produces a :class:`Response`
     """
     return get_environment().and_then(
         lambda env: env.http.make_request(
@@ -264,7 +315,18 @@ def put(
     proxy_headers: Mapping = None
 ) -> Effect[HasHTTP, ClientError, Response]:
     """
+    Make a HTTP `put` request to URL `url`. All keyword
+    arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
+    to the original documentation for their meaning.
 
+    :example:
+    >>> class Env:
+    ...     http = HTTP()
+    >>> put('http://foo.com')(Env())
+    Response(...)
+
+    :param url: target URL for the request
+    :return: :class:`Effect` that produces a :class:`Response`
     """
     return get_environment().and_then(
         lambda env: env.http.make_request(
@@ -322,7 +384,18 @@ def post(
     proxy_headers: Mapping = None
 ) -> Effect[HasHTTP, ClientError, Response]:
     """
+    Make a HTTP `post` request to URL `url`. All keyword
+    arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
+    to the original documentation for their meaning.
 
+    :example:
+    >>> class Env:
+    ...     http = HTTP()
+    >>> post('http://foo.com')(Env())
+    Response(...)
+
+    :param url: target URL for the request
+    :return: :class:`Effect` that produces a :class:`Response`
     """
     return get_environment().and_then(
         lambda env: env.http.make_request(
@@ -380,7 +453,18 @@ def delete(
     proxy_headers: Mapping = None
 ) -> Effect[HasHTTP, ClientError, Response]:
     """
+    Make a HTTP `delete` request to URL `url`. All keyword
+    arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
+    to the original documentation for their meaning.
 
+    :example:
+    >>> class Env:
+    ...     http = HTTP()
+    >>> delete('http://foo.com')(Env())
+    Response(...)
+
+    :param url: target URL for the request
+    :return: :class:`Effect` that produces a :class:`Response`
     """
     return get_environment().and_then(
         lambda env: env.http.make_request(
@@ -438,7 +522,18 @@ def head(
     proxy_headers: Mapping = None
 ) -> Effect[HasHTTP, ClientError, Response]:
     """
+    Make a HTTP `head` request to URL `url`. All keyword
+    arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
+    to the original documentation for their meaning.
 
+    :example:
+    >>> class Env:
+    ...     http = HTTP()
+    >>> head('http://foo.com')(Env())
+    Response(...)
+
+    :param url: target URL for the request
+    :return: :class:`Effect` that produces a :class:`Response`
     """
     return get_environment().and_then(
         lambda env: env.http.make_request(
@@ -496,7 +591,18 @@ def options(
     proxy_headers: Mapping = None
 ) -> Effect[HasHTTP, ClientError, Response]:
     """
+    Make a HTTP `options` request to URL `url`. All keyword
+    arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
+    to the original documentation for their meaning.
 
+    :example:
+    >>> class Env:
+    ...     http = HTTP()
+    >>> options('http://foo.com')(Env())
+    Response(...)
+
+    :param url: target URL for the request
+    :return: :class:`Effect` that produces a :class:`Response`
     """
     return get_environment().and_then(
         lambda env: env.http.make_request(
@@ -554,7 +660,18 @@ def patch(
     proxy_headers: Mapping = None
 ) -> Effect[HasHTTP, ClientError, Response]:
     """
+    Make a HTTP `patch` request to URL `url`. All keyword
+    arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
+    to the original documentation for their meaning.
 
+    :example:
+    >>> class Env:
+    ...     http = HTTP()
+    >>> patch('http://foo.com')(Env())
+    Response(...)
+
+    :param url: target URL for the request
+    :return: :class:`Effect` that produces a :class:`Response`
     """
     return get_environment().and_then(
         lambda env: env.http.make_request(
