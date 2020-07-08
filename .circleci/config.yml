@@ -30,7 +30,9 @@ jobs:
           command: poetry config virtualenvs.in-project true
       - run:
           name: Install dependencies
-          command: poetry install -E http
+          command: |
+            ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so
+            poetry install -E http
       - save_cache:
           key: dependency-cache-{{ checksum "poetry.lock" }}
           paths:
@@ -63,7 +65,9 @@ jobs:
             cat $HOME/.poetry/env >> $BASH_ENV
       - run:
           name: Install depenencies
-          command: poetry install -E http
+          command: |
+            ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so
+            poetry install -E http
       - run:
           name: Check version
           command: poetry run python scripts/check_version.py pyproject.toml $CIRCLE_TAG
