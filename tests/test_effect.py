@@ -7,7 +7,7 @@ import pytest
 from hypothesis import assume, given
 
 from pfun import compose, effect, either, identity
-from pfun.effect.effect import Environment, Resource
+from pfun.effect.effect import Resource
 
 from .monad_test import MonadTest
 from .strategies import anything, effects, unaries
@@ -181,66 +181,11 @@ class TestEffect(MonadTest):
         with pytest.raises(ZeroDivisionError):
             catched_division_error.run(None)
 
-    def test_and_then_with_resources(self):
-        resource_1 = Resource(asynctest.MagicMock())
-        resource_2 = Resource(asynctest.MagicMock())
-        r1, r2 = resource_1.get().and_then(
-            lambda r1: resource_2.get().map(lambda r2: (r1, r2))
-        )(None)
-        resource_1.resource_factory.assert_called_once()
-        resource_2.resource_factory.assert_called_once()
-        assert resource_1.resource_factory.return_value == r1
-        assert resource_2.resource_factory.return_value == r2
-
-    def test_either_with_resource(self):
-        resource = Resource(asynctest.MagicMock())
-        assert resource.get().either()(None) == either.Right(
-            resource.resource_factory.return_value
-        )
-
-    def test_recover_with_resources(self):
-        resource_1 = Resource(asynctest.MagicMock())
-        resource_2 = Resource(asynctest.MagicMock())
-        r1, r2 = resource_1.get().and_then(
-            lambda r1: effect.error('whoops').recover(
-                lambda _: resource_2.get().map(lambda r2: (r1, r2))
-            )
-        )(None)
-        resource_1.resource_factory.assert_called_once()
-        resource_2.resource_factory.assert_called_once()
-        assert resource_1.resource_factory.return_value == r1
-        assert resource_2.resource_factory.return_value == r2
-
-    def test_map_with_resource(self):
-        resource = Resource(asynctest.MagicMock())
-        r = resource.get().map(identity)(None)
-        assert r == resource.resource_factory.return_value
-
-    def test_sequence_async_with_resources(self):
-        resource_1 = Resource(asynctest.MagicMock())
-        resource_2 = Resource(asynctest.MagicMock())
-        r1, r2 = effect.sequence_async(
-            (resource_1.get(), resource_2.get())
-        )(None)
-        resource_1.resource_factory.assert_called_once()
-        resource_2.resource_factory.assert_called_once()
-        assert resource_1.resource_factory.return_value == r1
-        assert resource_2.resource_factory.return_value == r2
-
-    def test_filter_m_with_resources(self):
-        resource = Resource(asynctest.MagicMock())
-        effect.filter_m(
-            lambda v: resource.get().
-            discard_and_then(effect.success(v % 2 == 0)), (1, 2, 3)
-        )(None)
-        resource.resource_factory.return_value.__aenter__.assert_called_once()
-
 
 class TestResoure:
     def test_get(self):
         resource = Resource(asynctest.MagicMock())
         effect = resource.get()
-        assert effect.resource == resource
         assert effect(None) == resource.resource_factory.return_value
         resource.resource_factory.return_value.__aenter__.assert_called_once()
         assert resource.resource is None
@@ -250,26 +195,6 @@ class TestResoure:
         r1, r2 = effect.sequence_async((resource.get(), resource.get()))(None)
         assert r1 is r2
         resource.resource_factory.return_value.__aenter__.assert_called_once()
-
-
-class TestEnvironment:
-    @pytest.mark.asyncio
-    async def test_add_resource(self):
-        exit_stack_mock = asynctest.MagicMock()
-        exit_stack_mock.enter_async_context = asynctest.CoroutineMock()
-        environment = Environment(None, exit_stack_mock)
-        assert (await environment.add_resource(None)) is environment
-        exit_stack_mock.enter_async_context.assert_not_awaited()
-        resource = Resource(asynctest.MagicMock)
-        new_environment = await environment.add_resource(resource)
-        assert new_environment is not environment
-        assert new_environment.exit_stack is environment.exit_stack
-        assert new_environment.resources == set([resource])
-        exit_stack_mock.enter_async_context.assert_awaited_once()
-        assert (
-            await new_environment.add_resource(resource)
-        ) is new_environment
-        exit_stack_mock.enter_async_context.assert_awaited_once()
 
 
 class HasConsole:

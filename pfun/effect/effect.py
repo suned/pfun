@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import AsyncExitStack
-from dataclasses import field
 from functools import wraps
 from typing import (Any, AsyncContextManager, Awaitable, Callable, Generator,
-                    Generic, Iterable, NoReturn, Optional, Set, Type, TypeVar,
+                    Generic, Iterable, NoReturn, Optional, Type, TypeVar,
                     Union)
 
 from ..aio_trampoline import Call, Done, Trampoline
@@ -43,6 +42,7 @@ class Resource(Immutable, Generic[C]):
     ... )
     >>> assert r1 is r2
     >>> assert r1.closed
+    >>> assert resource.resource is None
 
     :attribute resource_factory: function to initialiaze the context manager
     """
@@ -65,24 +65,21 @@ class Resource(Immutable, Generic[C]):
 
         :return: :class:``Effect`` that produces the wrapped context manager
         """
-        async def run_e(_):
+        async def run_e(env: RuntimeEnv):
+            if self.resource is None:
+                # this is the first time this effect is called
+                object.__setattr__(
+                    self, 'resource', self.resource_factory()  # type: ignore
+                )
+                await env.exit_stack.enter_async_context(self)
             return Done(Right(self.resource))
 
-        return Effect(run_e, self)
+        return Effect(run_e)
 
     async def __aenter__(self):
-        """
-        Enter the wrapped context manager. Should be called at the
-        beginning of `Effect.run`
-        """
-        object.__setattr__(self, 'resource', self.resource_factory())
         return await self.resource.__aenter__()
 
     async def __aexit__(self, *args, **kwargs):
-        """
-        Enter the wrapped context manager. Should be called at the
-        end of `Effect.run`
-        """
         resource = self.resource
         object.__setattr__(self, 'resource', None)
         return await resource.__aexit__(*args, **kwargs)
@@ -95,21 +92,9 @@ class RuntimeEnv(Immutable, Generic[A]):
 
     :attribute r: The user supplied environment value
     :attribute exit_stack: AsyncExitStack used to enable Effect resources
-    :attribute resources: Resources that have already been added to the exit \
-        stack
     """
     r: A
     exit_stack: AsyncExitStack
-    resources: Set[Resource] = field(default_factory=lambda: set())
-
-    async def add_resource(self,
-                           resource: Optional[Resource]) -> RuntimeEnv[A]:
-        if resource is None or resource in self.resources:
-            return self
-        await self.exit_stack.enter_async_context(resource)
-        return RuntimeEnv(
-            self.r, self.exit_stack, self.resources | set([resource])
-        )
 
 
 class Effect(Generic[R, E, A], Immutable):
@@ -117,7 +102,6 @@ class Effect(Generic[R, E, A], Immutable):
     Wrapper for functions that are allowed to perform side-effects
     """
     run_e: Callable[[RuntimeEnv[R]], Awaitable[Trampoline[Either[E, A]]]]
-    resource: Optional[Resource] = None
 
     def and_then(
         self,
@@ -152,18 +136,16 @@ class Effect(Generic[R, E, A], Immutable):
                             effect = await next_
                         else:
                             effect = next_
-                        new_r = await r.add_resource(effect.resource)
-                        return await effect.run_e(new_r)
+                        return await effect.run_e(r)
 
                     return Call(thunk)
 
-                new_r = await r.add_resource(self.resource)
-                trampoline = await self.run_e(new_r)
+                trampoline = await self.run_e(r)
                 return trampoline.and_then(cont)
 
             return Call(thunk)
 
-        return Effect(run_e, self.resource)
+        return Effect(run_e)
 
     def discard_and_then(self, effect: Effect[Any, E2, B]
                          ) -> Effect[Any, Union[E, E2], B]:
@@ -206,13 +188,12 @@ class Effect(Generic[R, E, A], Immutable):
         async def run_e(r: RuntimeEnv[R]
                         ) -> Trampoline[Either[NoReturn, Either[E, A]]]:
             async def thunk() -> Trampoline[Either[NoReturn, Either[E, A]]]:
-                new_r = await r.add_resource(self.resource)
-                trampoline = await self.run_e(new_r)  # type: ignore
+                trampoline = await self.run_e(r)  # type: ignore
                 return trampoline.and_then(lambda either: Done(Right(either)))
 
             return Call(thunk)
 
-        return Effect(run_e, self.resource)
+        return Effect(run_e)
 
     def recover(self,
                 f: Callable[[E], Effect[Any, E2, A]]) -> Effect[Any, E2, A]:
@@ -243,18 +224,16 @@ class Effect(Generic[R, E, A], Immutable):
                             effect = await next_
                         else:
                             effect = next_
-                        new_r = await r.add_resource(effect.resource)
-                        return await effect.run_e(new_r)
+                        return await effect.run_e(r)
 
                     return Call(thunk)
 
-                new_r = await r.add_resource(self.resource)
-                trampoline = await self.run_e(new_r)
+                trampoline = await self.run_e(r)
                 return trampoline.and_then(cont)
 
             return Call(thunk)
 
-        return Effect(run_e, self.resource)
+        return Effect(run_e)
 
     def ensure(self, effect: Effect[Any, NoReturn, Any]) -> Effect[R, E, A]:
         """
@@ -302,7 +281,6 @@ class Effect(Generic[R, E, A], Immutable):
         async def _run() -> A:  # type: ignore
             async with AsyncExitStack() as stack:
                 env = RuntimeEnv(r, stack)
-                env = await env.add_resource(self.resource)
                 trampoline = await self.run_e(env)  # type: ignore
                 result = await trampoline.run()
                 if isinstance(result, Left):
@@ -342,11 +320,10 @@ class Effect(Generic[R, E, A], Immutable):
                     return Done(either)
                 return Call(thunk)
 
-            new_r = await r.add_resource(self.resource)
-            trampoline = await self.run_e(new_r)  # type: ignore
+            trampoline = await self.run_e(r)  # type: ignore
             return trampoline.and_then(cont)
 
-        return Effect(run_e, self.resource)
+        return Effect(run_e)
 
 
 R1 = TypeVar('R1')
@@ -478,10 +455,7 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
     :returns: ``Effect`` that produces collected results
     """
     async def run_e(r: RuntimeEnv[R1]):
-        effects = list(iterable)
-        for effect in effects:
-            r = await r.add_resource(effect.resource)
-        awaitables = [e.run_e(r) for e in effects]  # type: ignore
+        awaitables = [e.run_e(r) for e in iterable]  # type: ignore
         trampolines = await asyncio.gather(*awaitables)
         # TODO should this be run in an executor to avoid blocking?
         # maybe depending on the number of effects?
@@ -530,11 +504,7 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
     """
     async def run_e(r: RuntimeEnv[R1]):
         async def thunk():
-            effects = [f(a) for a in iterable]
-            new_r = r
-            for effect in effects:
-                new_r = await new_r.add_resource(effect.resource)
-            awaitables = [e.run_e(new_r) for e in effects]
+            awaitables = [f(a).run_e(r) for a in iterable]
             trampolines = await asyncio.gather(*awaitables)
             trampoline = sequence_trampolines(trampolines)
             return trampoline.map(
