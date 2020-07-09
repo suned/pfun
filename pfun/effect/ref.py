@@ -10,15 +10,18 @@ A = TypeVar('A')
 E = TypeVar('E')
 
 
-class Ref(Immutable, Generic[A]):
+class Ref(Immutable, Generic[A], init=False):
     """
     Wraps a value that can be mutated as an :class:`Effect`
 
     :attribute value: the wrapped value
-    :attribute lock: locks mutation of `value`
     """
+    _lock: Optional[Lock]
     value: A
-    lock: Optional[Lock] = None
+
+    def __init__(self, value: A):
+        object.__setattr__(self, 'value', value)
+        object.__setattr__(self, '_lock', None)
 
     @property
     def __lock(self) -> Lock:
@@ -28,12 +31,9 @@ class Ref(Immutable, Generic[A]):
         # it may lead to
         # RuntimeError: There is no current event loop in thread 'MainThread'.
         # see https://tinyurl.com/yc9kd77s
-        # In theory, users could still get this wrong by supplying
-        # their own lock as Ref(value, Lock()),
-        # but then they are on their own ¯\_(ツ)_/¯
-        if self.lock is None:
-            object.__setattr__(self, 'lock', Lock())
-        return cast(Lock, self.lock)
+        if self._lock is None:
+            object.__setattr__(self, '_lock', Lock())
+        return cast(Lock, self._lock)
 
     def get(self) -> Effect[Any, NoReturn, A]:
         """
@@ -111,8 +111,8 @@ class Ref(Immutable, Generic[A]):
         :example:
         >>> from pfun.either import Left, Right
         >>> ref = Ref('initial state')
-        >>> ref.try_modify(lambda _: Left('Whoops!')).run(None)
-        None
+        >>> ref.try_modify(lambda _: Left('Whoops!')).either().run(None)
+        Left('Whoops!')
         >>> ref.value
         'initial state'
         >>> ref.try_modify(lambda _: Right('new state')).run(None)

@@ -65,6 +65,15 @@ pfun.effect.ref
 .. automodule:: pfun.effect.ref
     :members:
 
+pfun.effect.http
+----------------
+.. note::
+    This module requires optional dependencies. You can install them together
+    with ``pfun`` using ``pip install pfun[http]``.
+
+.. automodule:: pfun.effect.http
+    :members:
+
 pfun.maybe
 ----------
 .. autofunction:: pfun.maybe.maybe

@@ -12,3 +12,4 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 extensions = ['recommonmark', 'sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx_autodoc_typehints', 'sphinx_rtd_theme']
 html_theme = 'sphinx_rtd_theme'
+intersphinx_mapping = {'aiohttp': ('https://docs.aiohttp.org/en/stable/', None)}

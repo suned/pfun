@@ -331,6 +331,24 @@ def tail_rec(f: Callable[[A], Maybe[Either[A, B]]], a: A) -> Maybe[B]:
     return Just(either.get)
 
 
+def from_optional(optional: Optional[A]) -> Maybe[A]:
+    """
+    Return a possible None value to `Maybe`
+
+    :example:
+    >>> from_optional('value')
+    Just('value')
+    >>> from_optional(None)
+    Nothing()
+
+    :param optional: optional value to convert to `Maybe`
+    :return: `Just(optional)` if `optional` is not `None`, `Nothing` otherwise
+    """
+    if optional is None:
+        return Nothing()
+    return Just(optional)
+
+
 __all__ = [
     'Maybe',
     'Just',
@@ -341,5 +359,6 @@ __all__ = [
     'sequence',
     'filter_m',
     'with_effect',
-    'Maybes'
+    'Maybes',
+    'from_optional'
 ]
