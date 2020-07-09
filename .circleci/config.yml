@@ -66,7 +66,7 @@ jobs:
       - run:
           name: Install depenencies
           command: |
-            ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so
+            sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so
             poetry install -E http
       - run:
           name: Check version
