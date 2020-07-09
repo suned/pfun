@@ -1,10 +1,13 @@
 from subprocess import CalledProcessError
 from unittest import mock
 
+import aiohttp
+import asynctest
 import pytest
 from hypothesis import assume, given
 
 from pfun import compose, effect, either, identity
+from pfun.effect.effect import Resource
 
 from .monad_test import MonadTest
 from .strategies import anything, effects, unaries
@@ -172,13 +175,26 @@ class TestEffect(MonadTest):
 
         catched_value_error = effect.catch_all(lambda: f(True))
         catched_division_error = effect.catch_all(lambda: f(False))
-        with pytest.raises(Exception):
-            # todo
+        with pytest.raises(ValueError):
             catched_value_error.run(None)
 
-        with pytest.raises(Exception):
-            # todo
+        with pytest.raises(ZeroDivisionError):
             catched_division_error.run(None)
+
+
+class TestResoure:
+    def test_get(self):
+        resource = Resource(asynctest.MagicMock())
+        effect = resource.get()
+        assert effect(None) == resource.resource_factory.return_value
+        resource.resource_factory.return_value.__aenter__.assert_called_once()
+        assert resource.resource is None
+
+    def test_resources_are_unique(self):
+        resource = Resource(asynctest.MagicMock())
+        r1, r2 = effect.sequence_async((resource.get(), resource.get()))(None)
+        assert r1 is r2
+        resource.resource_factory.return_value.__aenter__.assert_called_once()
 
 
 class HasConsole:
@@ -330,3 +346,63 @@ class TestLogging:
         getattr(mock_logging, log_method).assert_called_once_with(
             'test', exc_info=exc_and_stack_info, stack_info=exc_and_stack_info
         )
+
+
+class HasHTTP:
+    http = effect.http.HTTP()
+
+
+async def get_awaitable(value):
+    return value
+
+
+class TestHTTP:
+    default_params = {
+        'params': None,
+        'data': None,
+        'json': None,
+        'cookies': None,
+        'headers': None,
+        'skip_auto_headers': None,
+        'auth': None,
+        'allow_redirects': True,
+        'max_redirects': 10,
+        'compress': None,
+        'chunked': None,
+        'expect100': False,
+        'raise_for_status': None,
+        'read_until_eof': True,
+        'proxy': None,
+        'proxy_auth': None,
+        'timeout': aiohttp.client.sentinel,
+        'ssl': None,
+        'verify_ssl': None,
+        'fingerprint': None,
+        'ssl_context': None,
+        'proxy_headers': None
+    }
+
+    def test_get_session(self):
+        with asynctest.patch(
+            'pfun.effect.http.aiohttp.ClientSession'
+        ) as session:
+            assert effect.http.get_session()(HasHTTP()) == session()
+
+    @pytest.mark.parametrize(
+        'method', ['get', 'put', 'post', 'delete', 'patch', 'head', 'options']
+    )
+    def test_http_methods(self, method):
+        with asynctest.patch(
+            'pfun.effect.http.aiohttp.ClientSession'
+        ) as session:
+            read_mock = asynctest.CoroutineMock()
+            read_mock.return_value = b'test'
+            (
+                session.return_value.request.return_value.__aenter__.
+                return_value.read
+            ) = read_mock
+            assert getattr(effect.http,
+                           method)('foo.com')(HasHTTP()).content == b'test'
+            session().request.assert_called_once_with(
+                method, 'foo.com', **self.default_params
+            )
