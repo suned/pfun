@@ -46,7 +46,7 @@ class Resource(Immutable, Generic[C]):
 
     :attribute resource_factory: function to initialiaze the context manager
     """
-    resource_factory: Callable[[], C]
+    resource_factory: Callable[[], Union[C, Awaitable[C]]]
     resource: Optional[C] = None
 
     def get(self) -> Effect[Any, NoReturn, C]:
@@ -68,8 +68,11 @@ class Resource(Immutable, Generic[C]):
         async def run_e(env: RuntimeEnv):
             if self.resource is None:
                 # this is the first time this effect is called
+                resource = self.resource_factory()  # type:ignore
+                if asyncio.iscoroutine(resource):
+                    resource = await resource
                 object.__setattr__(
-                    self, 'resource', self.resource_factory()  # type: ignore
+                    self, 'resource', resource
                 )
                 await env.exit_stack.enter_async_context(self)
             return Done(Right(self.resource))
@@ -590,7 +593,7 @@ EX = TypeVar('EX', bound=Exception)
 
 
 # @curry
-def catch(*error_type: Type[EX],
+def catch(error_type: Type[EX],
           ) -> Callable[[Callable[[], A1]], Effect[Any, EX, A1]]:
     """
     Catch exceptions raised by a function and push them into the error type \

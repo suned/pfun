@@ -11,6 +11,7 @@ from ..dict import Dict
 from ..immutable import Immutable
 from ..maybe import Maybe, from_optional
 from .effect import Effect, Resource, error, get_environment, success
+from .parse import JSon
 
 try:
     import aiohttp
@@ -42,10 +43,6 @@ class Response(Immutable):
     headers: Dict[str, str]
     links: Dict[str, str]
     encoding: Maybe[str]
-
-
-JSonPrim = Union[int, str, float, Dict[str, Any]]
-JSon = Union[Iterable[JSonPrim], JSonPrim]
 
 
 class HTTP(Immutable, init=False):
