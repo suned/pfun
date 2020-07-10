@@ -23,7 +23,7 @@ B = TypeVar('B')
 C = TypeVar('C', bound=AsyncContextManager)
 
 
-class Resource(Immutable, Generic[C]):
+class Resource(Immutable, Generic[E, C]):
     """
     Enables lazy initialisation of global async context managers that should \
     only be entered once per effect invocation. If the same resource is \
@@ -46,10 +46,11 @@ class Resource(Immutable, Generic[C]):
 
     :attribute resource_factory: function to initialiaze the context manager
     """
-    resource_factory: Callable[[], Union[C, Awaitable[C]]]
-    resource: Optional[C] = None
+    resource_factory: Callable[[],
+                               Union[Either[E, C], Awaitable[Either[E, C]]]]
+    resource: Optional[Either[E, C]] = None
 
-    def get(self) -> Effect[Any, NoReturn, C]:
+    def get(self) -> Effect[Any, E, C]:
         """
         Create an :class:``Effect` that produces the initialized
         context manager.
@@ -71,21 +72,21 @@ class Resource(Immutable, Generic[C]):
                 resource = self.resource_factory()  # type:ignore
                 if asyncio.iscoroutine(resource):
                     resource = await resource
-                object.__setattr__(
-                    self, 'resource', resource
-                )
+                object.__setattr__(self, 'resource', resource)
                 await env.exit_stack.enter_async_context(self)
-            return Done(Right(self.resource))
+            return Done(self.resource)
 
         return Effect(run_e)
 
     async def __aenter__(self):
-        return await self.resource.__aenter__()
+        if isinstance(self.resource, Right):
+            return await self.resource.get.__aenter__()
 
     async def __aexit__(self, *args, **kwargs):
         resource = self.resource
         object.__setattr__(self, 'resource', None)
-        return await resource.__aexit__(*args, **kwargs)
+        if isinstance(self.resource, Right):
+            return await resource.get.__aexit__(*args, **kwargs)
 
 
 class RuntimeEnv(Immutable, Generic[A]):
@@ -611,10 +612,8 @@ def catch(error_type: Type[EX],
     def _(f):
         try:
             return success(f())
-        except Exception as e:
-            if any(isinstance(e, t) for t in error_type):
-                return error(e)
-            raise e
+        except error_type as e:
+            return error(e)
 
     return _
 

@@ -8,6 +8,7 @@ from typing import Any, Callable, Iterable, Mapping, NoReturn, Union
 from typing_extensions import Protocol
 
 from ..dict import Dict
+from ..either import Right
 from ..immutable import Immutable
 from ..maybe import Maybe, from_optional
 from .effect import Effect, Resource, error, get_environment, success
@@ -51,7 +52,7 @@ class HTTP(Immutable, init=False):
     to the wrapped :class:`aiohttp.ClientSession`. Refer to the originial \
     documentation for their meaning.
     """
-    session: Resource[aiohttp.ClientSession]
+    session: Resource[NoReturn, aiohttp.ClientSession]
 
     def __init__(
         self,
@@ -77,7 +78,7 @@ class HTTP(Immutable, init=False):
             self,
             'session',
             Resource(
-                lambda: aiohttp.ClientSession(
+                lambda: Right(aiohttp.ClientSession(
                     connector=connector,
                     cookies=cookies,
                     headers=headers,
@@ -96,7 +97,7 @@ class HTTP(Immutable, init=False):
                     trust_env=trust_env,
                     trace_configs=(trace_configs if trace_configs is None
                                    else list(trace_configs))
-                )
+                ))
             )
         )
 
