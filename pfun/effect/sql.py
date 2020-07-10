@@ -36,11 +36,9 @@ T = TypeVar('T')
 def as_type(type_: Type[T], results: Results
             ) -> Effect[Any, TypeError, List[T]]:
     try:
-        if isinstance(results, List):
-            return success(
-                List(type_(**row) for row in results)  # type: ignore
-            )
-        return success(type_(**results))  # type: ignore
+        return success(
+            List(type_(**row) for row in results)  # type: ignore
+        )
     except TypeError as e:
         return error(e)
 

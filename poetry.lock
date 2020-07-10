@@ -40,14 +40,6 @@ version = "*"
 speedups = ["aiodns", "brotlipy", "cchardet"]
 
 [[package]]
-category = "main"
-description = "Simple SQL in Python."
-name = "aiosql"
-optional = true
-python-versions = ">=3.6,<4.0"
-version = "3.1.0"
-
-[[package]]
 category = "dev"
 description = "A configurable sidebar-enabled Sphinx theme"
 name = "alabaster"
@@ -1206,10 +1198,10 @@ testing = ["jaraco.itertools", "func-timeout"]
 
 [extras]
 http = ["aiohttp"]
-sql = ["aiosql", "asyncpg"]
+sql = ["asyncpg"]
 
 [metadata]
-content-hash = "caa904e0fc1a0f1060965e9d425310123cd05c8c34a4af0400daf81a321e406a"
+content-hash = "94f51baef04a378df99cce7a5af147c7dc911f5b2bffb1b0148de68b034a065d"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1230,10 +1222,6 @@ aiohttp = [
     {file = "aiohttp-3.6.2-cp37-cp37m-win_amd64.whl", hash = "sha256:32e5f3b7e511aa850829fbe5aa32eb455e5534eaa4b1ce93231d00e2f76e5654"},
     {file = "aiohttp-3.6.2-py3-none-any.whl", hash = "sha256:460bd4237d2dbecc3b5ed57e122992f60188afe46e7319116da5eb8a9dfedba4"},
     {file = "aiohttp-3.6.2.tar.gz", hash = "sha256:259ab809ff0727d0e834ac5e8a283dc5e3e0ecc30c4d80b3cd17a4139ce1f326"},
-]
-aiosql = [
-    {file = "aiosql-3.1.0-py3-none-any.whl", hash = "sha256:e6a6b0efd9e39732479efa9b12ae17cdb4c2f7da76be5335128d6ec8a332d8f2"},
-    {file = "aiosql-3.1.0.tar.gz", hash = "sha256:8d6981ca42c6d298ea71da8d4dacd01592d983ca59ff5c1c9869cc3511f045ad"},
 ]
 alabaster = [
     {file = "alabaster-0.7.12-py2.py3-none-any.whl", hash = "sha256:446438bdcca0e05bd45ea2de1668c1d9b032e1a9154c2c259092d77031ddd359"},
