@@ -594,7 +594,7 @@ EX = TypeVar('EX', bound=Exception)
 
 
 # @curry
-def catch(error_type: Type[EX],
+def catch(*error_type: Type[EX],
           ) -> Callable[[Callable[[], A1]], Effect[Any, EX, A1]]:
     """
     Catch exceptions raised by a function and push them into the error type \
@@ -612,8 +612,10 @@ def catch(error_type: Type[EX],
     def _(f):
         try:
             return success(f())
-        except error_type as e:
-            return error(e)
+        except Exception as e:
+            if any(isinstance(e, t) for t in error_type):
+                return error(e)
+            raise e
 
     return _
 
