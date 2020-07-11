@@ -80,6 +80,9 @@ pfun.effect.sql
     This module requires optional dependencies. You can install them together
     with ``pfun`` using ``pip install pfun[sql]``.
 
+.. note::
+    ``pfun.effect.sql`` currently only supports Postgres databases
+
 .. automodule:: pfun.effect.sql
     :members:
 
