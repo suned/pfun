@@ -6,7 +6,7 @@ import asynctest
 import pytest
 from hypothesis import assume, given
 
-from pfun import Dict, List, compose, effect, either, identity
+from pfun import Dict, Immutable, List, compose, effect, either, identity
 from pfun.effect.effect import Resource
 
 from .monad_test import MonadTest
@@ -482,3 +482,13 @@ class TestSQL:
                     'name': 'bob', 'age': 32
                 }), )
             )
+
+    def test_as_type(self):
+        class User(Immutable):
+            name: str
+            age: int
+
+        results = List((Dict({'name': 'bob', 'age': 32}), ))
+        assert effect.sql.as_type(User)(results)(None) == List(
+            (User('bob', 32), )
+        )
