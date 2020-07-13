@@ -1,3 +1,4 @@
+import pytest
 from hypothesis import assume, given
 
 from pfun import Dict
@@ -17,14 +18,16 @@ def test_setitem(d):
 @given(dicts())
 def test_get_existing_key(d):
     d = d.set('key', 'value')
-    assert d['key'] == Just('value')
+    assert d['key'] == 'value'
     assert d.get('key') == Just('value')
 
 
 @given(dicts())
 def test_get_missing_key(d):
     assume('key' not in d)
-    assert d['key'] == Nothing()
+
+    with pytest.raises(KeyError):
+        d['key']
     assert d.get('key') == Nothing()
 
 
@@ -34,4 +37,4 @@ def test_update(d):
     new_d = d.update({'key': 'value'})
     assert 'key' not in d
     assert new_d != d
-    assert new_d['key'] == Just('value')
+    assert new_d['key'] == 'value'

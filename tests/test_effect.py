@@ -6,7 +6,7 @@ import asynctest
 import pytest
 from hypothesis import assume, given
 
-from pfun import compose, effect, either, identity
+from pfun import Dict, Immutable, List, compose, effect, either, identity
 from pfun.effect.effect import Resource
 
 from .monad_test import MonadTest
@@ -184,17 +184,19 @@ class TestEffect(MonadTest):
 
 class TestResoure:
     def test_get(self):
-        resource = Resource(asynctest.MagicMock())
+        mock_resource = asynctest.MagicMock()
+        resource = Resource(lambda: either.Right(mock_resource))
         effect = resource.get()
-        assert effect(None) == resource.resource_factory.return_value
-        resource.resource_factory.return_value.__aenter__.assert_called_once()
+        assert effect(None) == mock_resource
+        mock_resource.__aenter__.assert_called_once()
         assert resource.resource is None
 
     def test_resources_are_unique(self):
-        resource = Resource(asynctest.MagicMock())
+        mock_resource = asynctest.MagicMock()
+        resource = Resource(lambda: either.Right(mock_resource))
         r1, r2 = effect.sequence_async((resource.get(), resource.get()))(None)
         assert r1 is r2
-        resource.resource_factory.return_value.__aenter__.assert_called_once()
+        mock_resource.__aenter__.assert_called_once()
 
 
 class HasConsole:
@@ -406,3 +408,87 @@ class TestHTTP:
             session().request.assert_called_once_with(
                 method, 'foo.com', **self.default_params
             )
+
+
+class HasSQL:
+    sql = effect.sql.SQL('postgres://test@host/test_db')
+
+
+class TestSQL:
+    def test_get_connetion(self):
+        with asynctest.patch(
+            'pfun.effect.sql.asyncpg.connect'
+        ) as connect_mock:
+            connect_mock.return_value.close = asynctest.CoroutineMock()
+            assert effect.sql.get_connection()(
+                HasSQL()
+            ) == connect_mock.return_value
+            connect_mock.assert_called_once_with(
+                'postgres://test@host/test_db'
+            )
+
+    def test_execute(self):
+        with asynctest.patch(
+            'pfun.effect.sql.asyncpg.connect'
+        ) as connect_mock:
+            connect_mock.return_value.close = asynctest.CoroutineMock()
+            connect_mock.return_value.execute = asynctest.CoroutineMock(
+                return_value='SELECT 1'
+            )
+            assert effect.sql.execute('select * from users')(
+                HasSQL()
+            ) == 'SELECT 1'
+
+    def test_execute_many(self):
+        with asynctest.patch(
+            'pfun.effect.sql.asyncpg.connect'
+        ) as connect_mock:
+            connect_mock.return_value.close = asynctest.CoroutineMock()
+            connect_mock.return_value.executemany = asynctest.CoroutineMock(
+                return_value=('SELECT 1', )
+            )
+            assert effect.sql.execute_many('select * from users',
+                                           ['arg'])(HasSQL()
+                                                    ) == ('SELECT 1', )
+
+    def test_fetch_one(self):
+        with asynctest.patch(
+            'pfun.effect.sql.asyncpg.connect'
+        ) as connect_mock:
+            connect_mock.return_value.close = asynctest.CoroutineMock()
+            connect_mock.return_value.fetch_row = asynctest.CoroutineMock(
+                return_value={
+                    'name': 'bob', 'age': 32
+                }
+            )
+            assert effect.sql.fetch_one('select * from users')(
+                HasSQL()
+            ) == Dict({
+                'name': 'bob', 'age': 32
+            })
+
+    def test_fetch(self):
+        with asynctest.patch(
+            'pfun.effect.sql.asyncpg.connect'
+        ) as connect_mock:
+            connect_mock.return_value.close = asynctest.CoroutineMock()
+            connect_mock.return_value.fetch = asynctest.CoroutineMock(
+                return_value=({
+                    'name': 'bob', 'age': 32
+                }, )
+            )
+            assert effect.sql.fetch('select * from users')(HasSQL()) == List(
+                (Dict({
+                    'name': 'bob', 'age': 32
+                }), )
+            )
+
+    def test_as_type(self):
+        class User(Immutable):
+            name: str
+            age: int
+
+        results = List((Dict({'name': 'bob', 'age': 32}), ))
+        assert effect.sql.as_type(User)(results)(None) == List(
+            (User('bob', 32), )
+        )

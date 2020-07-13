@@ -93,18 +93,18 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         return key in self._d
 
-    def __getitem__(self, key: K) -> Maybe[V]:
+    def __getitem__(self, key: K) -> V:
         """
         get the value associated with a key
 
         :example:
         >>> Dict(key='value')['key']
-        Just('value')
+        'value'
 
         :param key: the key to retrieve
         :return: value associated with key
         """
-        return self.get(key)
+        return self._d[key]
 
     def __iter__(self) -> Iterator[K]:
         """
@@ -172,10 +172,8 @@ class Dict(Immutable, Generic[K, V], init=False):
         get the value associated with a key
 
         :example:
-        >>> Dict().get('key', 'default')
+        >>> Dict().get('key')
         Just('default')
-        >>> Dict(key='value').get('key', 'default')
-        Just('value')
 
         :param key: the key to retrieve
         :param default: value to return if the key is not found
