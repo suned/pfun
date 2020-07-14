@@ -271,6 +271,20 @@ class Effect(Generic[R, E, A], Immutable):
             discard_and_then(error(reason))
         )
 
+    async def run_async(self, r: R) -> A:  # type: ignore
+        async with AsyncExitStack() as stack:
+            env = RuntimeEnv(r, stack)
+            trampoline = await self.run_e(env)  # type: ignore
+            result = await trampoline.run()
+            if isinstance(result, Left):
+                error = result.get
+                if isinstance(error, Exception):
+                    raise error
+                else:
+                    raise RuntimeError(repr(error))
+            else:
+                return result.get
+
     def run(self, r: R, asyncio_run=asyncio.run) -> A:
         """
         Run the function wrapped by this :class:`Effect`, including potential \
@@ -282,21 +296,8 @@ class Effect(Generic[R, E, A], Immutable):
             wrapped function
         :returns: The succesful result of the wrapped function if it succeeds
         """
-        async def _run() -> A:  # type: ignore
-            async with AsyncExitStack() as stack:
-                env = RuntimeEnv(r, stack)
-                trampoline = await self.run_e(env)  # type: ignore
-                result = await trampoline.run()
-                if isinstance(result, Left):
-                    error = result.get
-                    if isinstance(error, Exception):
-                        raise error
-                    else:
-                        raise RuntimeError(repr(error))
-                else:
-                    return result.get
 
-        return asyncio_run(_run())
+        return asyncio_run(self.run_async(r))
 
     __call__ = run
 
