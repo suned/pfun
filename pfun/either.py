@@ -8,7 +8,6 @@ from typing import (Any, Callable, Generator, Generic, Iterable, TypeVar,
 from .curry import curry
 from .immutable import Immutable
 from .monad import Monad, filter_m_, map_m_, sequence_
-from .with_effect import with_effect_tail_rec
 
 A = TypeVar('A', covariant=True)
 B = TypeVar('B', covariant=True)
@@ -285,30 +284,6 @@ def tail_rec(f: Callable[[D], Either[C, Either[D, B]]], a: D) -> Either[C, B]:
 Eithers = Generator[Either[A, B], B, C]
 
 
-def with_effect(f: Callable[..., Eithers[A, B, C]]
-                ) -> Callable[..., Either[A, C]]:
-    """
-    Decorator for functions that
-    return a generator of eithers and a final result.
-    Iteraters over the yielded eithers and sends back the
-    unwrapped values using "and_then"
-
-    :example:
-    >>> @with_effect
-    ... def f() -> Eithers[int, int]:
-    ...     a = yield Right(2)
-    ...     b = yield Right(2)
-    ...     return a + b
-    >>> f()
-    Right(4)
-
-    :param f: generator function to decorate
-    :return: `f` decorated such that generated :class:`Either` \
-        will be chained together with `and_then`
-    """
-    return with_effect_tail_rec(Right, f, tail_rec)  # type: ignore
-
-
 def catch(f: Callable[..., A]) -> Callable[..., Either[Exception, A]]:
     @wraps(f)
     def decorator(*args, **kwargs) -> Either[Exception, A]:
@@ -328,7 +303,6 @@ __all__ = [
     'map_m',
     'sequence',
     'filter_m',
-    'with_effect',
     'Eithers',
     'catch'
 ]

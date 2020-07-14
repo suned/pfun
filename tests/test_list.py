@@ -6,15 +6,14 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import lists as lists_
 
 from pfun import List, compose, identity
-from pfun.list import filter_m, map_m, sequence, value, with_effect
+from pfun.list import filter_m, map_m, sequence, value
 
 from .monad_test import MonadTest
-from .monoid_test import MonoidTest
 from .strategies import anything, lists, unaries
 from .utils import recursion_limit
 
 
-class TestList(MonadTest, MonoidTest):
+class TestList(MonadTest):
     @given(lists(), anything())
     def test_append(self, l1, l2):
         assert l1.append(l2) == l1 + (l2,)
@@ -106,24 +105,6 @@ class TestList(MonadTest, MonoidTest):
     @given(lists(), lists())
     def test_zip(self, l1, l2):
         assert List(l1.zip(l2)) == List(zip(l1, l2))
-
-    def test_with_effect(self):
-        @with_effect
-        def f():
-            a = yield value(2)
-            b = yield value(2)
-            return a + b
-
-        assert f() == value(4)
-
-        @with_effect
-        def test_stack_safety():
-            for _ in range(500):
-                yield value(1)
-            return None
-
-        with recursion_limit(100):
-            test_stack_safety()
 
     def test_sequence(self):
         assert sequence([value(v) for v in range(3)]) == value((0, 1, 2))

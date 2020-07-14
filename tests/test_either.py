@@ -3,8 +3,7 @@ from typing import Any
 from hypothesis import assume, given
 
 from pfun import Unary, compose, identity
-from pfun.either import (Either, Left, Right, either, filter_m, map_m,
-                         sequence, with_effect)
+from pfun.either import Either, Left, Right, either, filter_m, map_m, sequence
 from tests.monad_test import MonadTest
 from tests.strategies import anything, eithers, unaries
 
@@ -67,32 +66,6 @@ class TestEither(MonadTest):
     def test_either_decorator(self):
         result_int = either(int)
         assert result_int('1') == Right(1)
-
-    def test_with_effect(self):
-        @with_effect
-        def f():
-            a = yield Right(2)
-            b = yield Right(2)
-            return a + b
-
-        assert f() == Right(4)
-
-        @with_effect
-        def g():
-            a = yield Right(2)
-            b = yield Left('error')
-            return a + b
-
-        assert g() == Left('error')
-
-        @with_effect
-        def test_stack_safety():
-            for _ in range(500):
-                yield Right(1)
-            return None
-
-        with recursion_limit(100):
-            test_stack_safety()
 
     def test_sequence(self):
         assert sequence([Right(v) for v in range(3)]) == Right((0, 1, 2))

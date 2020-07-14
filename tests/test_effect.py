@@ -6,8 +6,9 @@ import asynctest
 import pytest
 from hypothesis import assume, given
 
-from pfun import Dict, Immutable, List, compose, effect, either, identity
-from pfun.effect.effect import Resource
+from pfun import (Dict, Immutable, List, compose, console, effect, either,
+                  files, http, identity, logging, ref, sql, subprocess)
+from pfun.effect import Resource
 
 from .monad_test import MonadTest
 from .strategies import anything, effects, unaries
@@ -99,24 +100,6 @@ class TestEffect(MonadTest):
     def test_map_m(self):
         assert effect.map_m(effect.success, range(3)).run(None) == (0, 1, 2)
 
-    def test_with_effect(self):
-        @effect.with_effect
-        def f():
-            a = yield effect.success(2)
-            b = yield effect.success(2)
-            return a + b
-
-        @effect.with_effect
-        def test_stack_safety():
-            for _ in range(500):
-                yield effect.success(1)
-            return None
-
-        with recursion_limit(100):
-            test_stack_safety().run(None)
-
-        assert f().run(None) == 4
-
     def test_either(self):
         success = effect.success(1)
         error = effect.error('error')
@@ -200,71 +183,69 @@ class TestResoure:
 
 
 class HasConsole:
-    console = effect.console.Console()
+    console = console.Console()
 
 
 def mock_open(read_data=None):
-    return mock.patch(
-        'pfun.effect.files.open', mock.mock_open(read_data=read_data)
-    )
+    return mock.patch('pfun.files.open', mock.mock_open(read_data=read_data))
 
 
 class TestConsole:
     def test_print_line(self, capsys) -> None:
 
-        e = effect.console.print_line('Hello, world!')
+        e = console.print_line('Hello, world!')
         e.run(HasConsole())
         captured = capsys.readouterr()
         assert captured.out == 'Hello, world!\n'
 
     def test_get_line(self) -> None:
         with mock.patch(
-            'pfun.effect.console.input', return_value='Hello!'
+            'pfun.console.input', return_value='Hello!'
         ) as mocked_input:
-            e = effect.console.get_line('Say hello')
+            e = console.get_line('Say hello')
             assert e.run(HasConsole()) == 'Hello!'
             mocked_input.assert_called_once_with('Say hello')
 
 
 class HasFiles:
-    files = effect.files.Files()
+    files = files.Files()
 
 
 class TestFiles:
     def test_read(self):
         with mock_open('content'):
-            e = effect.files.read('foo.txt')
+            e = files.read('foo.txt')
             assert e.run(HasFiles()) == 'content'
 
     def test_write(self):
         with mock_open() as mocked_open:
-            e = effect.files.write('foo.txt', 'content')
+            e = files.write('foo.txt', 'content')
             e.run(HasFiles())
             mocked_open.assert_called_once_with('foo.txt', 'w')
             mocked_open().write.assert_called_once_with('content')
 
     def test_read_bytes(self):
         with mock_open(b'content'):
-            e = effect.files.read_bytes('foo.txt')
+            e = files.read_bytes('foo.txt')
             assert e.run(HasFiles()) == b'content'
 
     def test_write_bytes(self):
         with mock_open() as mocked_open:
-            e = effect.files.write_bytes('foo.txt', b'content')
+            e = files.write_bytes('foo.txt', b'content')
             e.run(HasFiles())
             mocked_open.assert_called_once_with('foo.txt', 'wb')
             mocked_open().write.assert_called_once_with(b'content')
 
     def test_append(self):
         with mock_open() as mocked_open:
-            e = effect.files.append('foo.txt', 'content')
+            e = files.append('foo.txt', 'content')
             e.run(HasFiles())
             mocked_open.assert_called_once_with('foo.txt', 'a+')
             mocked_open().write.assert_called_once_with('content')
 
     def test_append_bytes(self):
         with mock_open() as mocked_open:
-            e = effect.files.append_bytes('foo.txt', b'content')
+            e = files.append_bytes('foo.txt', b'content')
             e.run(HasFiles())
             mocked_open.assert_called_once_with('foo.txt', 'ab+')
             mocked_open().write.assert_called_once_with(b'content')
@@ -272,34 +253,34 @@ class TestFiles:
 
 class TestRef:
     def test_get(self):
-        ref = effect.ref.Ref(0)
-        assert ref.get().run(None) == 0
+        int_ref = ref.Ref(0)
+        assert int_ref.get().run(None) == 0
 
     def test_put(self):
-        ref = effect.ref.Ref(0)
-        ref.put(1).run(None)
-        assert ref.value == 1
+        int_ref = ref.Ref(0)
+        int_ref.put(1).run(None)
+        assert int_ref.value == 1
 
     def test_modify(self):
-        ref = effect.ref.Ref(0)
-        ref.modify(lambda _: 1).run(None)
-        assert ref.value == 1
+        int_ref = ref.Ref(0)
+        int_ref.modify(lambda _: 1).run(None)
+        assert int_ref.value == 1
 
     def test_try_modify(self):
-        ref = effect.ref.Ref(0)
-        ref.try_modify(lambda _: either.Left('')).either().run(None)
-        assert ref.value == 0
-        ref.try_modify(lambda _: either.Right(1)).run(None)
-        assert ref.value == 1
+        int_ref = ref.Ref(0)
+        int_ref.try_modify(lambda _: either.Left('')).either().run(None)
+        assert int_ref.value == 0
+        int_ref.try_modify(lambda _: either.Right(1)).run(None)
+        assert int_ref.value == 1
 
 
 class HasSubprocess:
-    subprocess = effect.subprocess.Subprocess()
+    subprocess = subprocess.Subprocess()
 
 
 class TestSubprocess:
     def test_run_in_shell(self):
-        stdout, stderr = effect.subprocess.run_in_shell(
+        stdout, stderr = subprocess.run_in_shell(
             'echo "test"'
         ).run(
             HasSubprocess()
@@ -307,26 +288,26 @@ class TestSubprocess:
         assert stdout == b'test\n'
 
         with pytest.raises(CalledProcessError):
-            effect.subprocess.run_in_shell('exit 1').run(HasSubprocess())
+            subprocess.run_in_shell('exit 1').run(HasSubprocess())
 
 
 class HasLogging:
-    logging = effect.logging.Logging()
+    logging = logging.Logging()
 
 
 class TestLogging:
-    @mock.patch('pfun.effect.logging.logging')
+    @mock.patch('pfun.logging.logging')
     def test_get_logger(self, mock_logging):
-        effect.logging.get_logger('foo').run(HasLogging())
+        logging.get_logger('foo').run(HasLogging())
         mock_logging.getLogger.assert_called_once_with('foo')
 
-    @mock.patch('pfun.effect.logging.logging')
+    @mock.patch('pfun.logging.logging')
     @pytest.mark.parametrize(
         'log_method',
         ['debug', 'info', 'warning', 'error', 'critical', 'exception']
     )
     def test_logger_methods(self, mock_logging, log_method):
-        effect.logging.get_logger('foo').and_then(
+        logging.get_logger('foo').and_then(
             lambda logger: getattr(logger, log_method)('test')
         ).run(HasLogging())
         exc_and_stack_info = log_method == 'exception'
@@ -337,13 +318,13 @@ class TestLogging:
             'test', exc_info=exc_and_stack_info, stack_info=exc_and_stack_info
         )  # yapf: disable
 
-    @mock.patch('pfun.effect.logging.logging')
+    @mock.patch('pfun.logging.logging')
     @pytest.mark.parametrize(
         'log_method',
         ['debug', 'info', 'warning', 'error', 'critical', 'exception']
     )
     def test_logging_methods(self, mock_logging, log_method):
-        getattr(effect.logging, log_method)('test').run(HasLogging())
+        getattr(logging, log_method)('test').run(HasLogging())
         exc_and_stack_info = log_method == 'exception'
         getattr(mock_logging, log_method).assert_called_once_with(
             'test', exc_info=exc_and_stack_info, stack_info=exc_and_stack_info
@@ -351,7 +332,7 @@ class TestLogging:
 
 
 class HasHTTP:
-    http = effect.http.HTTP()
+    http = http.HTTP()
 
 
 async def get_awaitable(value):
@@ -385,25 +366,21 @@ class TestHTTP:
     }
 
     def test_get_session(self):
-        with asynctest.patch(
-            'pfun.effect.http.aiohttp.ClientSession'
-        ) as session:
-            assert effect.http.get_session()(HasHTTP()) == session()
+        with asynctest.patch('pfun.http.aiohttp.ClientSession') as session:
+            assert http.get_session()(HasHTTP()) == session()
 
     @pytest.mark.parametrize(
         'method', ['get', 'put', 'post', 'delete', 'patch', 'head', 'options']
     )
     def test_http_methods(self, method):
-        with asynctest.patch(
-            'pfun.effect.http.aiohttp.ClientSession'
-        ) as session:
+        with asynctest.patch('pfun.http.aiohttp.ClientSession') as session:
             read_mock = asynctest.CoroutineMock()
             read_mock.return_value = b'test'
             (
                 session.return_value.request.return_value.__aenter__.
                 return_value.read
             ) = read_mock
-            assert getattr(effect.http,
+            assert getattr(http,
                            method)('foo.com')(HasHTTP()).content == b'test'
             session().request.assert_called_once_with(
                 method, 'foo.com', **self.default_params
@@ -411,73 +388,58 @@ class TestHTTP:
 
 
 class HasSQL:
-    sql = effect.sql.SQL('postgres://test@host/test_db')
+    sql = sql.SQL('postgres://test@host/test_db')
 
 
 class TestSQL:
     def test_get_connetion(self):
-        with asynctest.patch(
-            'pfun.effect.sql.asyncpg.connect'
-        ) as connect_mock:
+        with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
             connect_mock.return_value.close = asynctest.CoroutineMock()
-            assert effect.sql.get_connection()(
-                HasSQL()
-            ) == connect_mock.return_value
+            assert sql.get_connection()(HasSQL()) == connect_mock.return_value
             connect_mock.assert_called_once_with(
                 'postgres://test@host/test_db'
             )
 
     def test_execute(self):
-        with asynctest.patch(
-            'pfun.effect.sql.asyncpg.connect'
-        ) as connect_mock:
+        with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
             connect_mock.return_value.close = asynctest.CoroutineMock()
             connect_mock.return_value.execute = asynctest.CoroutineMock(
                 return_value='SELECT 1'
             )
-            assert effect.sql.execute('select * from users')(
-                HasSQL()
-            ) == 'SELECT 1'
+            assert sql.execute('select * from users')(HasSQL()) == 'SELECT 1'
 
     def test_execute_many(self):
-        with asynctest.patch(
-            'pfun.effect.sql.asyncpg.connect'
-        ) as connect_mock:
+        with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
             connect_mock.return_value.close = asynctest.CoroutineMock()
             connect_mock.return_value.executemany = asynctest.CoroutineMock(
                 return_value=('SELECT 1', )
             )
-            assert effect.sql.execute_many('select * from users',
-                                           ['arg'])(HasSQL()
-                                                    ) == ('SELECT 1', )
+            assert sql.execute_many('select * from users',
+                                    ['arg'])(HasSQL()) == ('SELECT 1', )
 
     def test_fetch_one(self):
-        with asynctest.patch(
-            'pfun.effect.sql.asyncpg.connect'
-        ) as connect_mock:
+        with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
             connect_mock.return_value.close = asynctest.CoroutineMock()
             connect_mock.return_value.fetch_row = asynctest.CoroutineMock(
                 return_value={
                     'name': 'bob', 'age': 32
                 }
             )
-            assert effect.sql.fetch_one('select * from users')(
-                HasSQL()
-            ) == Dict({
-                'name': 'bob', 'age': 32
-            })
+            assert sql.fetch_one('select * from users')(HasSQL()) == Dict(
+                {
+                    'name': 'bob', 'age': 32
+                }
+            )
 
     def test_fetch(self):
-        with asynctest.patch(
-            'pfun.effect.sql.asyncpg.connect'
-        ) as connect_mock:
+        with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
             connect_mock.return_value.close = asynctest.CoroutineMock()
             connect_mock.return_value.fetch = asynctest.CoroutineMock(
                 return_value=({
                     'name': 'bob', 'age': 32
                 }, )
             )
-            assert effect.sql.fetch('select * from users')(HasSQL()) == List(
+            assert sql.fetch('select * from users')(HasSQL()) == List(
                 (Dict({
                     'name': 'bob', 'age': 32
                 }), )
@@ -489,6 +451,4 @@ class TestSQL:
             age: int
 
         results = List((Dict({'name': 'bob', 'age': 32}), ))
-        assert effect.sql.as_type(User)(results)(None) == List(
-            (User('bob', 32), )
-        )
+        assert sql.as_type(User)(results)(None) == List((User('bob', 32), ))

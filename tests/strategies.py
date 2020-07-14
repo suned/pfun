@@ -3,12 +3,8 @@ from hypothesis.strategies import (binary, booleans, builds, composite,
 from hypothesis.strategies import lists as lists_
 from hypothesis.strategies import none, one_of, text, tuples
 
-from pfun import (Dict, List, aio_trampoline, cont, effect, free, maybe,
-                  reader, state, trampoline, writer)
+from pfun import Dict, List, aio_trampoline, effect, maybe, trampoline
 from pfun.either import Left, Right
-from pfun.io import get_line, put_line, read_bytes, read_str
-from pfun.io import value as IO
-from pfun.io import write_bytes, write_str
 
 
 def _everything(allow_nan=False):

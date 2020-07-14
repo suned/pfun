@@ -4,7 +4,6 @@ from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
 from .curry import curry
 from .immutable import Immutable
 from .monad import Monad, filter_m_, map_m_, sequence_
-from .with_effect import with_effect_
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -171,31 +170,6 @@ def filter_m(f: Callable[[A], Trampoline[bool]],
 
 Trampolines = Generator[Trampoline[A], A, B]
 
-
-def with_effect(f: Callable[..., Trampolines[A, B]]
-                ) -> Callable[..., Trampoline[B]]:
-    """
-    Decorator for functions that
-    return a generator of trampolines and a final result.
-    Iteraters over the yielded trampolines and sends back the
-    unwrapped values using "and_then"
-
-    :example:
-    >>> @with_effect
-    ... def f() -> Trampolines[int, int]:
-    ...     a = yield Done(2)
-    ...     b = yield Done(2)
-    ...     return a + b
-    >>> f()
-    Done(4)
-
-    :param f: generator function to decorate
-    :return: `f` decorated such that generated :class:`Trampoline` \
-        will be chained together with `and_then`
-    """
-    return with_effect_(Done, f)  # type: ignore
-
-
 __all__ = [
     'Trampoline',
     'Done',
@@ -204,6 +178,5 @@ __all__ = [
     'map_m',
     'sequence',
     'filter_m',
-    'Trampolines',
-    'with_effect'
+    'Trampolines'
 ]

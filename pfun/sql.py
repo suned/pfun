@@ -3,12 +3,12 @@ from typing import Any, Iterable, Type, TypeVar
 
 from typing_extensions import Protocol
 
-from ..curry import curry
-from ..dict import Dict
-from ..either import Either, Left, Right
-from ..immutable import Immutable
-from ..list import List
+from .curry import curry
+from .dict import Dict
 from .effect import Effect, Resource, error, get_environment, success
+from .either import Either, Left, Right
+from .immutable import Immutable
+from .list import List
 
 try:
     import asyncpg

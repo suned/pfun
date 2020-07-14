@@ -111,64 +111,10 @@ pfun.either
 .. autoclass:: pfun.result.Left
     :members:
 
-pfun.result
------------
-.. autofunction:: pfun.result.result
-
-.. autoclass:: pfun.result.Result
-    :members:
-
-pfun.reader
------------
-
-.. automodule:: pfun.reader
-    :members:
-
-pfun.writer
------------
-
-.. automodule:: pfun.writer
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,__setattr__,__repr__
-
-
-pfun.state
-----------
-
-.. automodule:: pfun.state
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,__setattr__,__repr__
-
-pfun.io
--------
-
-.. automodule:: pfun.io
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,__setattr__,__repr__
-
 pfun.trampoline
 ---------------
 
 .. automodule:: pfun.trampoline
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,__setattr__,__repr__
-
-
-pfun.cont
----------
-
-.. automodule:: pfun.cont
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,__setattr__,__repr__
-
-pfun.free
----------
-.. automodule:: pfun.free
     :members:
     :special-members:
     :exclude-members: __weakref__,__setattr__,__repr__

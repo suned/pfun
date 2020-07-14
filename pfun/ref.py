@@ -1,10 +1,10 @@
 from asyncio import Lock
 from typing import Any, Callable, Generic, NoReturn, Optional, TypeVar, cast
 
-from ..aio_trampoline import Done, Trampoline
-from ..either import Either, Left, Right
-from ..immutable import Immutable
+from .aio_trampoline import Done, Trampoline
 from .effect import Effect
+from .either import Either, Left, Right
+from .immutable import Immutable
 
 A = TypeVar('A')
 E = TypeVar('E')

@@ -1,25 +1,18 @@
 from functools import reduce
-from typing import (Callable, Generator, Generic, Iterable, Optional, Tuple,
-                    TypeVar, cast)
+from typing import (Callable, Generator, Iterable, Optional, Tuple, TypeVar,
+                    cast)
 
 from .curry import curry
-from .immutable import Immutable
 from .monad import Monad, filter_m_, map_m_, sequence_
-from .monoid import Monoid
-from .with_effect import with_effect_eager
 
 A = TypeVar('A')
 B = TypeVar('B')
 
 
-class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
-    _iterable: Tuple[A]
-
-    def __init__(self, iterable: Iterable[A] = ()):
-        object.__setattr__(self, '_iterable', tuple(iterable))
+class List(Monad, Tuple[A, ...]):
 
     def __repr__(self):
-        return f"List({repr(self._iterable)})"
+        return f"List({super().__repr__()})"
 
     def empty(self) -> 'List[A]':
         return List()
@@ -38,7 +31,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param initializer: Starting value for aggregation
         :return: Aggregated result
         """
-        return reduce(f, self._iterable, initializer)  # type: ignore
+        return reduce(f, self, initializer)  # type: ignore
 
     def append(self, a: A) -> 'List[A]':
         """
@@ -51,7 +44,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param a: Element to append
         :return: New :class:`List` with ``a`` appended
         """
-        return List(self._iterable + (a,))
+        return List(self + (a,))
 
     def extend(self, iterable: Iterable[A]) -> 'List[A]':
         """
@@ -64,7 +57,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param iterable: Iterable to extend by
         :return: New :class:`List` with extended by ``iterable``
         """
-        return self + list(iterable)
+        return self + tuple(iterable)
 
     def __add__(self, other: Iterable[A]) -> 'List[A]':
         """
@@ -77,7 +70,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param other: list to concatenate with
         :return: new :class:`List` concatenated with ``other``
         """
-        return List(self._iterable + tuple(other))
+        return List(tuple(self) + tuple(other))
 
     def __radd__(self, other: Iterable[A]) -> 'List[A]':
         """
@@ -90,7 +83,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param other: list to concatenate with
         :return: new :class:`List` concatenated with ``other``
         """
-        return List(tuple(other) + self._iterable)
+        return List(tuple(other) + tuple(self))
 
     def map(self, f: Callable[[A], B]) -> 'List[B]':
         """
@@ -116,7 +109,7 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param f: Function to filter by
         :return: new :class:`List` filtered by ``f``
         """
-        return List(filter(f, self._iterable))
+        return List(filter(f, self))
 
     def and_then(self, f: 'Callable[[A], List[B]]') -> 'List[B]':
         """
@@ -142,16 +135,10 @@ class List(Monoid, Monad, Generic[A], Iterable[A], Immutable, init=False):
         :param other: Iterable to zip with
         :return: Zip with ``other``
         """
-        return zip(self._iterable, other)
+        return zip(self, other)
 
     def reverse(self) -> 'List[A]':
-        return List(reversed(self._iterable))
-
-    def __len__(self):
-        return len(self._iterable)
-
-    def __iter__(self):
-        return iter(self._iterable)
+        return List(reversed(self))
 
 
 def value(a: A) -> List[A]:
@@ -215,29 +202,6 @@ def filter_m(f: Callable[[A], List[bool]],
 Lists = Generator[List[A], A, B]
 
 
-def with_effect(f: Callable[..., Lists[A, B]]) -> Callable[..., List[B]]:
-    """
-    Decorator for functions that
-    return a generator of lists and a final result.
-    Iteraters over the yielded lists and sends back the
-    unwrapped values using "and_then"
-
-    :example:
-    >>> @with_effect
-    ... def f() -> Lists[int, int]:
-    ...     a = yield List([2])
-    ...     b = yield List([2])
-    ...     return a + b
-    >>> f()
-    List((4,))
-
-    :param f: generator function to decorate
-    :return: `f` decorated such that generated :class:`List` \
-        will be chained together with `and_then`
-    """
-    return with_effect_eager(value, f)  # type: ignore
-
-
 __all__ = [
-    'List', 'value', 'map_m', 'sequence', 'filter_m', 'Lists', 'with_effect'
+    'List', 'value', 'map_m', 'sequence', 'filter_m', 'Lists'
 ]

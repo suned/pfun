@@ -1,7 +1,7 @@
 from hypothesis import assume, given
 
 from pfun import compose, identity
-from pfun.trampoline import Done, filter_m, map_m, sequence, with_effect
+from pfun.trampoline import Done, filter_m, map_m, sequence
 
 from .monad_test import MonadTest
 from .strategies import anything, trampolines, unaries
@@ -39,24 +39,6 @@ class TestTrampoline(MonadTest):
     def test_composition_law(self, f, g, value):
         h = compose(f, g)
         assert Done(value).map(g).map(f).run() == Done(value).map(h).run()
-
-    def test_with_effect(self):
-        @with_effect
-        def f():
-            a = yield Done(2)
-            b = yield Done(2)
-            return a + b
-
-        assert f().run() == 4
-
-        @with_effect
-        def test_stack_safety():
-            for _ in range(500):
-                yield Done(1)
-            return None
-
-        with recursion_limit(100):
-            test_stack_safety().run()
 
     def test_sequence(self):
         assert sequence([Done(v) for v in range(3)]).run() == (0, 1, 2)

@@ -3,10 +3,10 @@ from typing import Any, NoReturn
 
 from typing_extensions import Protocol
 
-from ..aio_trampoline import Done, Trampoline
-from ..either import Either, Right
-from ..immutable import Immutable
+from .aio_trampoline import Done, Trampoline
 from .effect import Effect, get_environment
+from .either import Either, Right
+from .immutable import Immutable
 
 
 class Console(Immutable):

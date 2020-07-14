@@ -8,7 +8,6 @@ from .either import Either, Left
 from .immutable import Immutable
 from .list import List
 from .monad import Monad, filter_m_, map_m_, sequence_
-from .with_effect import with_effect_tail_rec
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -277,29 +276,6 @@ R = TypeVar('R')
 Maybes = Generator[Maybe[S], S, R]
 
 
-def with_effect(f: Callable[..., Maybes[Any, R]]) -> Callable[..., Maybe[R]]:
-    """
-    Decorator for functions that
-    return a generator of maybes and a final result.
-    Iteraters over the yielded maybes and sends back the
-    unwrapped values using "and_then"
-
-    :example:
-    >>> @with_effect
-    ... def f() -> Maybes[int, int]:
-    ...     a = yield Just(2)
-    ...     b = yield Just(2)
-    ...     return a + b
-    >>> f()
-    Just(4)
-
-    :param f: generator function to decorate
-    :return: `f` decorated such that generated :class:`Maybe` \
-        will be chained together with `and_then`
-    """
-    return with_effect_tail_rec(Just, f, tail_rec)
-
-
 def tail_rec(f: Callable[[A], Maybe[Either[A, B]]], a: A) -> Maybe[B]:
     """
     Run a stack safe recursive monadic function `f`
@@ -358,7 +334,6 @@ __all__ = [
     'map_m',
     'sequence',
     'filter_m',
-    'with_effect',
     'Maybes',
     'from_optional'
 ]

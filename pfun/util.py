@@ -103,4 +103,4 @@ def pipeline(
     return compose(*reversed(rest), second, first)
 
 
-__all__ = ['always', 'compose', 'pipeline', 'identity']
+__all__ = ['always', 'compose', 'pipeline', 'identity', 'Unary', 'Predicate']

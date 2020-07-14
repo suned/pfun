@@ -17,20 +17,8 @@ _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 _MAYBE = 'pfun.maybe.maybe'
-_MAYBE_WITH_EFFECT = 'pfun.maybe.with_effect'
-_LIST_WITH_EFFECT = 'pfun.liste.with_effect'
-_EITHER_WITH_EFFECT = 'pfun.either.with_effect'
-_READER_WITH_EFFECT = 'pfun.reader.with_effect'
-_WRITER_WITH_EFFECT = 'pfun.writer.with_effect'
-_STATE_WITH_EFFECT = 'pfun.state.with_effect'
-_IO_WITH_EFFECT = 'pfun.io.with_effect'
-_TRAMPOLINE_WITH_EFFECT = 'pfun.trampoline.with_effect'
-_FREE_WITH_EFFECT = 'pfun.free.with_effect'
 _RESULT = 'pfun.result.result'
-_IO = 'pfun.io.io'
-_READER = 'pfun.reader.reader'
 _EITHER = 'pfun.either.either'
-_READER_AND_THEN = 'pfun.reader.Reader.and_then'
 _EFFECT_COMBINE = 'pfun.effect.combine'
 _EITHER_CATCH = 'pfun.either.catch'
 
@@ -208,12 +196,12 @@ def _immutable_hook(context: ClassDefContext):
 
 def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     def base_repr(base):
-        if 'pfun.effect.Intersection' in base.type.fullname:
+        if 'pfun.Intersection' in base.type.fullname:
             return ', '.join([repr(b) for b in base.type.bases])
         return repr(base)
 
     def get_bases(base):
-        if 'pfun.effect.Intersection' in base.type.fullname:
+        if 'pfun.Intersection' in base.type.fullname:
             bases = set()
             for b in base.type.bases:
                 bases |= get_bases(b)
@@ -279,7 +267,7 @@ def _get_environment_hook(context: FunctionContext):
     if context.api.return_types == []:
         return context.default_return_type
     type_context = context.api.return_types[-1]
-    if type_context.type.fullname == 'pfun.effect.effect.Effect':
+    if type_context.type.fullname == 'pfun.effect.Effect':
         type_context = get_proper_type(type_context)
         args = context.default_return_type.args
         inferred_r = type_context.args[0]
@@ -381,8 +369,6 @@ def _lift_hook(context: FunctionContext) -> Type:
 
 
 def _lift_call_hook(context: MethodContext) -> Type:
-    import ipdb
-    ipdb.set_trace()
     arg_types = []
     for arg_type in context.arg_types[0]:
         arg_types.append(arg_type.args[-1])
@@ -409,30 +395,19 @@ class PFun(Plugin):
             _MAYBE,
             _RESULT,
             _EITHER,
-            _IO,
-            _READER,
-            _MAYBE_WITH_EFFECT,
-            _EITHER_WITH_EFFECT,
-            _LIST_WITH_EFFECT,
-            _READER_WITH_EFFECT,
-            _WRITER_WITH_EFFECT,
-            _STATE_WITH_EFFECT,
-            _IO_WITH_EFFECT,
-            _TRAMPOLINE_WITH_EFFECT,
-            _FREE_WITH_EFFECT,
             _EITHER_CATCH
         ):
             return _variadic_decorator_hook
-        if fullname == 'pfun.effect.effect.get_environment':
+        if fullname == 'pfun.effect.get_environment':
             return _get_environment_hook
-        if fullname == 'pfun.effect.effect.combine':
+        if fullname == 'pfun.effect.combine':
             return _combine_hook
         return None
 
     def get_method_hook(self, fullname: str):
-        if fullname == 'pfun.effect.effect.Effect.and_then':
+        if fullname == 'pfun.effect.Effect.and_then':
             return _effect_and_then_hook
-        if fullname == 'pfun.effect.effect.Effect.recover':
+        if fullname == 'pfun.effect.Effect.recover':
             return _effect_recover_hook
 
     def get_base_class_hook(self, fullname: str):

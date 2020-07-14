@@ -2,11 +2,11 @@ from typing import Any
 
 from typing_extensions import Protocol
 
-from ..aio_trampoline import Done, Trampoline
-from ..curry import curry
-from ..either import Either, Left, Right
-from ..immutable import Immutable
+from .aio_trampoline import Done, Trampoline
+from .curry import curry
 from .effect import Effect, get_environment
+from .either import Either, Left, Right
+from .immutable import Immutable
 
 
 class Files(Immutable):
