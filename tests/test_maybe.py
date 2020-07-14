@@ -4,7 +4,7 @@ from hypothesis import assume, given
 
 from pfun import List, Unary, compose, identity
 from pfun.maybe import (Just, Maybe, Nothing, filter_m, flatten, map_m, maybe,
-                        sequence, with_effect)
+                        sequence)
 
 from .monad_test import MonadTest
 from .strategies import anything, lists, maybes, unaries
@@ -92,32 +92,6 @@ class TestMaybe(MonadTest):
     @given(lists([maybes()]))
     def test_flatten(self, maybe_list):
         assert flatten(maybe_list) == List(m.get for m in maybe_list if m)
-
-    def test_with_effect(self):
-        @with_effect
-        def f():
-            a = yield Just(2)
-            b = yield Just(2)
-            return a + b
-
-        assert f() == Just(4)
-
-        @with_effect
-        def g():
-            a = yield Just(2)
-            b = yield Nothing()
-            return a + b
-
-        assert g() == Nothing()
-
-        @with_effect
-        def test_stack_safety():
-            for _ in range(500):
-                yield Just(1)
-            return None
-
-        with recursion_limit(100):
-            test_stack_safety()
 
     def test_sequence(self):
         assert sequence([Just(v) for v in range(3)]) == Just((0, 1, 2))

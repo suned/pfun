@@ -7,11 +7,11 @@ from typing import Any, Callable, Iterable, Mapping, NoReturn, Union
 
 from typing_extensions import Protocol
 
-from ..dict import Dict
-from ..either import Right
-from ..immutable import Immutable
-from ..maybe import Maybe, from_optional
+from .dict import Dict
 from .effect import Effect, Resource, error, get_environment, success
+from .either import Right
+from .immutable import Immutable
+from .maybe import Maybe, from_optional
 from .parse import JSon
 
 try:
