@@ -1,34 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, NoReturn, Tuple, TypeVar
-
 from fastapi import FastAPI
 from typing_extensions import Protocol
 
-from pfun import Immutable
-from pfun.effect import Effect, get_environment, sql
-
-app = FastAPI()
-
-
-class Model:
-    def get_todos(self) -> Effect[sql.HasSQL, Exception, Todos]:
-        return sql.fetch('select * from todos').and_then(
-            sql.as_type(Todo)
-        ).map(tuple)
-
-
-class HasModel(Protocol):
-    model: Model
-
-
-R = TypeVar('R')
-E = TypeVar('E')
-A = TypeVar('A')
-
-Depends = Effect[R, NoReturn, A]
-IO = Effect[Any, NoReturn, A]
-TryIO = Effect[Any, E, A]
+from pfun import Depends, Effect, Immutable, List, get_environment, sql
 
 
 class Todo(Immutable):
@@ -36,22 +11,34 @@ class Todo(Immutable):
     content: str
 
 
-Todos = Tuple[Todo, ...]
+Todos = List[Todo]
 
 
-class View:
-    async def get_todos(self) -> Todos:
-        todos: Depends[HasModel, Todos] = get_environment().and_then(
-            lambda env: env.model.get_todos()
+class Model:
+    def get_todos(self) -> Effect[sql.HasSQL, Exception, Todos]:
+        return sql.fetch('select * from todos').and_then(
+            sql.as_type(Todo)
         )
-        return await todos.run_async(Env())
+
+
+class HasModel(Protocol):
+    model: Model
 
 
 class Env:
-    model = Model()
-    sql = sql.SQL('postgres://postgres:password@localhost/todo')
+    model: Model = Model()
+    # this is bad
+    sql: sql.SQL = sql.SQL('postgres://postgres:password@localhost/todo')
 
 
-view = View()
+app = FastAPI()
 
-app.get("/")(view.get_todos)
+
+@app.get("/")
+async def get_todos() -> Todos:
+    # this is a litle fucked
+    todos: Depends[Env, Todos] = get_environment().and_then(
+        lambda env: env.model.get_todos()
+    )
+    # this is annoying
+    return await todos.run_async(Env())
