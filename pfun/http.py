@@ -8,7 +8,8 @@ from typing import Any, Callable, Iterable, Mapping, NoReturn, Union
 from typing_extensions import Protocol
 
 from .dict import Dict
-from .effect import Effect, Resource, error, get_environment, success
+from .effect import (Depends, Effect, Resource, TryIO, error, get_environment,
+                     success)
 from .either import Right
 from .immutable import Immutable
 from .maybe import Maybe, from_optional
@@ -127,7 +128,7 @@ class HTTP(Immutable, init=False):
         fingerprint: bytes = None,
         ssl_context: ssl.SSLContext = None,
         proxy_headers: Mapping = None
-    ) -> Effect[Any, ClientError, Response]:
+    ) -> TryIO[ClientError, Response]:
         """
         Make a request using HTTP verb `method` to URL `url`. All keyword
         arguments are passed to :meth:`aiohttp.ClientSession.request`. Refer
@@ -144,7 +145,7 @@ class HTTP(Immutable, init=False):
         :return: :class:`Effect` that produces a :class:`Response`
         """
         async def _make_request(session: aiohttp.ClientSession
-                                ) -> Effect[Any, ClientError, Response]:
+                                ) -> TryIO[ClientError, Response]:
             try:
                 async with session.request(
                     method,
@@ -200,7 +201,7 @@ class HasHTTP(Protocol):
     http: HTTP
 
 
-def get_session() -> Effect[HasHTTP, NoReturn, aiohttp.ClientSession]:
+def get_session() -> Depends[HasHTTP, aiohttp.ClientSession]:
     """
     Get an effect that produces an :class:`aiohttp.ClientSession`.
     Use this if you need features of `aiohttp` that are not supported
@@ -215,7 +216,9 @@ def get_session() -> Effect[HasHTTP, NoReturn, aiohttp.ClientSession]:
     >>> get_session().map(use_session).run(Env())
     "<!doctype html> ..."
     """
-    return get_environment().and_then(lambda env: env.http.session.get())
+    return get_environment(HasHTTP).and_then(
+        lambda env: env.http.session.get()
+    )
 
 
 def get(
@@ -257,7 +260,7 @@ def get(
     :param url: target URL for the request
     :return: :class:`Effect` that produces a :class:`Response`
     """
-    return get_environment().and_then(
+    return get_environment(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'get',
             url,
@@ -395,7 +398,7 @@ def post(
     :param url: target URL for the request
     :return: :class:`Effect` that produces a :class:`Response`
     """
-    return get_environment().and_then(
+    return get_environment(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'post',
             url,
@@ -464,7 +467,7 @@ def delete(
     :param url: target URL for the request
     :return: :class:`Effect` that produces a :class:`Response`
     """
-    return get_environment().and_then(
+    return get_environment(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'delete',
             url,
@@ -533,7 +536,7 @@ def head(
     :param url: target URL for the request
     :return: :class:`Effect` that produces a :class:`Response`
     """
-    return get_environment().and_then(
+    return get_environment(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'head',
             url,
@@ -602,7 +605,7 @@ def options(
     :param url: target URL for the request
     :return: :class:`Effect` that produces a :class:`Response`
     """
-    return get_environment().and_then(
+    return get_environment(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'options',
             url,
@@ -671,7 +674,7 @@ def patch(
     :param url: target URL for the request
     :return: :class:`Effect` that produces a :class:`Response`
     """
-    return get_environment().and_then(
+    return get_environment(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'patch',
             url,

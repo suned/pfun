@@ -10,8 +10,7 @@ from mypy.nodes import ARG_POS, Block, ClassDef, NameExpr, TypeInfo
 from mypy.plugin import ClassDefContext, FunctionContext, MethodContext, Plugin
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.types import (ARG_POS, AnyType, CallableType, Instance, Overloaded,
-                        Type, TypeVarDef, TypeVarId, TypeVarType, UnionType,
-                        get_proper_type)
+                        Type, TypeVarDef, TypeVarId, TypeVarType, UnionType)
 
 _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
@@ -263,20 +262,6 @@ def _effect_and_then_hook(context: MethodContext) -> Type:
         return return_type
 
 
-def _get_environment_hook(context: FunctionContext):
-    if context.api.return_types == []:
-        return context.default_return_type
-    type_context = context.api.return_types[-1]
-    if type_context.type.fullname == 'pfun.effect.Effect':
-        type_context = get_proper_type(type_context)
-        args = context.default_return_type.args
-        inferred_r = type_context.args[0]
-        args[0] = inferred_r
-        args[-1] = inferred_r
-        return context.default_return_type.copy_modified(args=args)
-    return context.default_return_type
-
-
 def _combine_hook(context: FunctionContext):
     result_types = []
     error_types = []
@@ -398,8 +383,6 @@ class PFun(Plugin):
             _EITHER_CATCH
         ):
             return _variadic_decorator_hook
-        if fullname == 'pfun.effect.get_environment':
-            return _get_environment_hook
         if fullname == 'pfun.effect.combine':
             return _combine_hook
         return None

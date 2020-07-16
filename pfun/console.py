@@ -1,10 +1,10 @@
 import asyncio
-from typing import Any, NoReturn
+from typing import NoReturn
 
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done, Trampoline
-from .effect import Effect, get_environment
+from .effect import IO, Effect, get_environment
 from .either import Either, Right
 from .immutable import Immutable
 
@@ -13,7 +13,7 @@ class Console(Immutable):
     """
     Module that enables printing to stdout and reading from stdin
     """
-    def print(self, msg: str = '') -> Effect[Any, NoReturn, None]:
+    def print(self, msg: str = '') -> IO[None]:
         """
         Get an effect that prints to stdout
 
@@ -31,7 +31,7 @@ class Console(Immutable):
 
         return Effect(run_e)
 
-    def input(self, prompt: str = '') -> Effect[Any, NoReturn, str]:
+    def input(self, prompt: str = '') -> IO[str]:
         """
         Get an effect that reads from stdin
 
@@ -76,7 +76,8 @@ def print_line(msg: str = '') -> Effect[HasConsole, NoReturn, None]:
     :return: :class:`Effect` that prints to the console using the \
         :class:`HasConsole` provided to `run`
     """
-    return get_environment().and_then(lambda env: env.console.print(msg))
+    return get_environment(HasConsole
+                           ).and_then(lambda env: env.console.print(msg))
 
 
 def get_line(prompt: str = '') -> Effect[HasConsole, NoReturn, str]:
@@ -94,4 +95,5 @@ def get_line(prompt: str = '') -> Effect[HasConsole, NoReturn, str]:
     :param prompt: prompt to display in console
     :return: an :class:`Effect` that produces a `str` read from stdin
     """
-    return get_environment().and_then(lambda env: env.console.input(prompt))
+    return get_environment(HasConsole
+                           ).and_then(lambda env: env.console.input(prompt))
