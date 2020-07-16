@@ -1,11 +1,11 @@
 import logging
 from types import TracebackType
-from typing import Any, NoReturn, Optional, Tuple, Type, Union
+from typing import Optional, Tuple, Type, Union
 
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done
-from .effect import Effect, get_environment
+from .effect import IO, Depends, Effect, get_environment
 from .either import Right
 from .immutable import Immutable
 
@@ -24,7 +24,7 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.debug`
 
@@ -51,7 +51,7 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.info`
 
@@ -78,7 +78,7 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.warning`
 
@@ -105,7 +105,7 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.error`
 
@@ -132,7 +132,7 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.critical`
 
@@ -159,7 +159,7 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = True,
         exc_info: Union[bool, ExcInfo] = True
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.exception`
 
@@ -210,7 +210,7 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.debug`
 
@@ -236,7 +236,7 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.info`
 
@@ -262,7 +262,7 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.warning`
 
@@ -288,7 +288,7 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.error`
 
@@ -314,7 +314,7 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.info`
 
@@ -340,7 +340,7 @@ class Logging:
         msg: str,
         stack_info: bool = True,
         exc_info: Union[bool, ExcInfo] = True
-    ) -> Effect[Any, NoReturn, None]:
+    ) -> IO[None]:
         """
         Create an effect that calls built-in `logging.exception`
 
@@ -373,7 +373,7 @@ class HasLogging(Protocol):
 
 
 def get_logger(name: Optional[str] = None
-               ) -> Effect[HasLogging, NoReturn, Logger]:
+               ) -> Depends[HasLogging, Logger]:
     """
     Create an effect that produces a :class:`Logger` by calling built-in
     logging.getLogger
@@ -395,7 +395,7 @@ def get_logger(name: Optional[str] = None
 
 def debug(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
-) -> Effect[HasLogging, NoReturn, None]:
+) -> Depends[HasLogging, None]:
     """
     Create an effect that calls built-in `logging.debug`
 
@@ -419,7 +419,7 @@ def debug(
 
 def info(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
-) -> Effect[HasLogging, NoReturn, None]:
+) -> Depends[HasLogging, None]:
     """
     Create an effect that calls built-in `logging.info`
 
@@ -443,7 +443,7 @@ def info(
 
 def warning(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
-) -> Effect[HasLogging, NoReturn, None]:
+) -> Depends[HasLogging, None]:
     """
     Create an effect that calls built-in `logging.warning`
 
@@ -467,7 +467,7 @@ def warning(
 
 def error(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
-) -> Effect[HasLogging, NoReturn, None]:
+) -> Depends[HasLogging, None]:
     """
     Create an effect that calls built-in `logging.error`
 
@@ -491,7 +491,7 @@ def error(
 
 def critical(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
-) -> Effect[HasLogging, NoReturn, None]:
+) -> Depends[HasLogging, None]:
     """
     Create an effect that calls built-in `logging.critical`
 
@@ -515,7 +515,7 @@ def critical(
 
 def exception(
     msg: str, stack_info: bool = True, exc_info: Union[bool, ExcInfo] = True
-) -> Effect[HasLogging, NoReturn, None]:
+) -> Depends[HasLogging, None]:
     """
     Create an effect that calls built-in `logging.exception`
 

@@ -1,10 +1,8 @@
-from typing import Any
-
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done, Trampoline
 from .curry import curry
-from .effect import Effect, get_environment
+from .effect import Effect, TryIO, get_environment
 from .either import Either, Left, Right
 from .immutable import Immutable
 
@@ -13,7 +11,7 @@ class Files(Immutable):
     """
     Module that enables reading and writing from files
     """
-    def read(self, path: str) -> Effect[Any, OSError, str]:
+    def read(self, path: str) -> Effect[object, OSError, str]:
         """
         get an :class:`Effect` that reads the content of a file as a str
 
@@ -34,7 +32,7 @@ class Files(Immutable):
 
         return Effect(run_e)
 
-    def read_bytes(self, path: str) -> Effect[Any, OSError, bytes]:
+    def read_bytes(self, path: str) -> TryIO[OSError, bytes]:
         """
         get an :class:`Effect` that reads the content of a file as bytes
 
@@ -55,7 +53,7 @@ class Files(Immutable):
 
         return Effect(run_e)
 
-    def write(self, path: str, content: str) -> Effect[Any, OSError, None]:
+    def write(self, path: str, content: str) -> TryIO[OSError, None]:
         """
         Get an :class:`Effect` that writes to a file
 
@@ -81,8 +79,7 @@ class Files(Immutable):
 
         return Effect(run_e)
 
-    def write_bytes(self, path: str,
-                    content: bytes) -> Effect[Any, OSError, None]:
+    def write_bytes(self, path: str, content: bytes) -> TryIO[OSError, None]:
         """
         Get an :class:`Effect` that writes to a file
 
@@ -108,7 +105,7 @@ class Files(Immutable):
 
         return Effect(run_e)
 
-    def append(self, path: str, content: str) -> Effect[Any, OSError, None]:
+    def append(self, path: str, content: str) -> TryIO[OSError, None]:
         """
         Get an :class:`Effect` that appends to a file
 
@@ -134,8 +131,7 @@ class Files(Immutable):
 
         return Effect(run_e)
 
-    def append_bytes(self, path: str,
-                     content: bytes) -> Effect[Any, OSError, None]:
+    def append_bytes(self, path: str, content: bytes) -> TryIO[OSError, None]:
         """
         Get an :class:`Effect` that appends to a file
 
@@ -184,7 +180,7 @@ def read(path: str) -> Effect[HasFiles, OSError, str]:
     :param path: path to file
     :return: :class:`Effect` that reads file located at `path`
     """
-    return get_environment().and_then(lambda env: env.files.read(path))
+    return get_environment(HasFiles).and_then(lambda env: env.files.read(path))
 
 
 @curry
@@ -204,8 +200,9 @@ def write(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     :param: content the content to write
     :return: :class:`Effect` that that writes `content` to file at `path`
     """
-    return get_environment(
-    ).and_then(lambda env: env.files.write(path, content))
+    return get_environment(HasFiles).and_then(
+        lambda env: env.files.write(path, content)
+    )
 
 
 def read_bytes(path: str) -> Effect[HasFiles, OSError, bytes]:
@@ -221,7 +218,8 @@ def read_bytes(path: str) -> Effect[HasFiles, OSError, bytes]:
     :param path: path to file
     :return: :class:`Effect` that reads file located at `path`
     """
-    return get_environment().and_then(lambda env: env.files.read_bytes(path))
+    return get_environment(HasFiles
+                           ).and_then(lambda env: env.files.read_bytes(path))
 
 
 @curry
@@ -241,8 +239,9 @@ def write_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     :param: content the content to write
     :return: :class:`Effect` that that writes `content` to file at `path`
     """
-    return get_environment(
-    ).and_then(lambda env: env.files.write_bytes(path, content))
+    return get_environment(HasFiles).and_then(
+        lambda env: env.files.write_bytes(path, content)
+    )
 
 
 @curry
@@ -262,8 +261,9 @@ def append(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     :param: content the content to append
     :return: :class:`Effect` that that appends `content` to file at `path`
     """
-    return get_environment(
-    ).and_then(lambda env: env.files.append(path, content))
+    return get_environment(HasFiles).and_then(
+        lambda env: env.files.append(path, content)
+    )
 
 
 @curry
@@ -283,5 +283,6 @@ def append_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     :param: content the content to append
     :return: :class:`Effect` that that appends `content` to file at `path`
     """
-    return get_environment(
-    ).and_then(lambda env: env.files.append_bytes(path, content))
+    return get_environment(HasFiles).and_then(
+        lambda env: env.files.append_bytes(path, content)
+    )

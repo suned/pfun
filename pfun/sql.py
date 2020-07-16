@@ -5,7 +5,7 @@ from typing_extensions import Protocol
 
 from .curry import curry
 from .dict import Dict
-from .effect import Effect, Resource, error, get_environment, success
+from .effect import Effect, Resource, TryIO, error, get_environment, success
 from .either import Either, Left, Right
 from .immutable import Immutable
 from .list import List
@@ -39,8 +39,7 @@ T = TypeVar('T')
 
 
 @curry
-def as_type(type_: Type[T],
-            results: Results) -> Effect[Any, TypeError, List[T]]:
+def as_type(type_: Type[T], results: Results) -> TryIO[TypeError, List[T]]:
     """
     Convert database results to `type_`
 
@@ -99,9 +98,8 @@ class SQL(Immutable, init=False):
 
         object.__setattr__(self, 'connection', Resource(connection_factory))
 
-    def get_connection(
-        self
-    ) -> Effect[Any, asyncpg.PostgresError, asyncpg.Connection]:
+    def get_connection(self
+                       ) -> TryIO[asyncpg.PostgresError, asyncpg.Connection]:
         """
         Get an :class:`Effect` that produces a
         :class:`asyncpg.Connection`. Used to work with `asyncpg` directly.
@@ -115,8 +113,8 @@ class SQL(Immutable, init=False):
         """
         return self.connection.get().map(lambda c: c.connection)
 
-    def execute(self, query: str, *args: Any, timeout: float = None
-                ) -> Effect[Any, asyncpg.PostgresError, str]:
+    def execute(self, query: str, *args: Any,
+                timeout: float = None) -> TryIO[asyncpg.PostgresError, str]:
         """
         Get an :class:`Effect` that executes `query`
 
@@ -134,7 +132,7 @@ class SQL(Immutable, init=False):
         :param timetout: query timeout
         """
         async def _execute(connection: asyncpg.Connection
-                           ) -> Effect[Any, asyncpg.PostgresError, str]:
+                           ) -> TryIO[asyncpg.PostgresError, str]:
             try:
                 result = await connection.execute(
                     query, *args, timeout=timeout
@@ -147,7 +145,7 @@ class SQL(Immutable, init=False):
 
     def execute_many(
         self, query: str, args: Iterable[Any], timeout: float = None
-    ) -> Effect[Any, asyncpg.PostgresError, Iterable[str]]:
+    ) -> TryIO[asyncpg.PostgresError, Iterable[str]]:
         """
         Get an :class:`Effect` that executes `query` for each argument \
         in `args`
@@ -165,7 +163,7 @@ class SQL(Immutable, init=False):
         :param timetout: query timeout
         """
         async def _execute_many(connection: asyncpg.Connection
-                                ) -> Effect[Any, asyncpg.PostgresError, str]:
+                                ) -> TryIO[asyncpg.PostgresError, str]:
             try:
                 result = await connection.executemany(
                     query, *args, timeout=timeout
@@ -176,8 +174,8 @@ class SQL(Immutable, init=False):
 
         return self.get_connection().and_then(_execute_many)
 
-    def fetch(self, query: str, *args: Any, timeout: float = None
-              ) -> Effect[Any, asyncpg.PostgresError, Results]:
+    def fetch(self, query: str, *args: Any,
+              timeout: float = None) -> TryIO[asyncpg.PostgresError, Results]:
         """
         Get an :class:`Effect` that executes `query` and returns the results
         as a :class:`List` of :class:`Dict`
@@ -192,7 +190,7 @@ class SQL(Immutable, init=False):
         :param timetout: query timeout
         """
         async def _fetch(connection: asyncpg.Connection
-                         ) -> Effect[Any, asyncpg.PostgresError, Results]:
+                         ) -> TryIO[asyncpg.PostgresError, Results]:
             try:
                 result = await connection.fetch(query, *args, timeout=timeout)
                 result = List(Dict(record) for record in result)
@@ -203,7 +201,7 @@ class SQL(Immutable, init=False):
         return self.get_connection().and_then(_fetch)
 
     def fetch_one(self, query: str, *args: Any, timeout: float = None
-                  ) -> Effect[Any, asyncpg.PostgresError, Dict[str, Any]]:
+                  ) -> TryIO[asyncpg.PostgresError, Dict[str, Any]]:
         """
         Get an :class:`Effect` that executes `query` and returns the first \
         result as a :class:`Dict`
@@ -217,9 +215,8 @@ class SQL(Immutable, init=False):
         :param args: arguments for query
         :param timetout: query timeout
         """
-        async def _fetch_row(
-            connection: asyncpg.Connection
-        ) -> Effect[Any, asyncpg.PostgresError, Dict[str, Any]]:
+        async def _fetch_row(connection: asyncpg.Connection
+                             ) -> TryIO[asyncpg.PostgresError, Dict[str, Any]]:
             try:
                 result = await connection.fetch_row(
                     query, *args, timeout=timeout
@@ -252,7 +249,8 @@ def get_connection(
 
     :return: :class:`Effect` that produces :class:`asyncpg.Connection`
     """
-    return get_environment().and_then(lambda env: env.sql.get_connection())
+    return get_environment(HasSQL
+                           ).and_then(lambda env: env.sql.get_connection())
 
 
 def execute(query: str, *args: Any, timeout: float = None
@@ -274,8 +272,9 @@ def execute(query: str, *args: Any, timeout: float = None
     :param args: arguments for query
     :param timetout: query timeout
     """
-    return get_environment(
-    ).and_then(lambda env: env.sql.execute(query, *args, timeout=timeout))
+    return get_environment(HasSQL).and_then(
+        lambda env: env.sql.execute(query, *args, timeout=timeout)
+    )
 
 
 def execute_many(query: str, args: Iterable[Any], timeout: float = None
@@ -297,8 +296,9 @@ def execute_many(query: str, args: Iterable[Any], timeout: float = None
     :param args: arguments for query
     :param timetout: query timeout
     """
-    return get_environment(
-    ).and_then(lambda env: env.sql.execute_many(query, args, timeout=timeout))
+    return get_environment(HasSQL).and_then(
+        lambda env: env.sql.execute_many(query, args, timeout=timeout)
+    )
 
 
 def fetch(query: str, *args: Any, timeout: float = None
@@ -317,8 +317,9 @@ def fetch(query: str, *args: Any, timeout: float = None
     :param args: arguments for query
     :param timetout: query timeout
     """
-    return get_environment(
-    ).and_then(lambda env: env.sql.fetch(query, *args, timeout=timeout))
+    return get_environment(HasSQL).and_then(
+        lambda env: env.sql.fetch(query, *args, timeout=timeout)
+    )
 
 
 def fetch_one(query: str, *args: Any, timeout: float = None
@@ -337,5 +338,6 @@ def fetch_one(query: str, *args: Any, timeout: float = None
     :param args: arguments for query
     :param timetout: query timeout
     """
-    return get_environment(
-    ).and_then(lambda env: env.sql.fetch_one(query, *args, timeout=timeout))
+    return get_environment(HasSQL).and_then(
+        lambda env: env.sql.fetch_one(query, *args, timeout=timeout)
+    )

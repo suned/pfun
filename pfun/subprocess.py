@@ -1,11 +1,11 @@
 import asyncio
 from subprocess import PIPE, CalledProcessError
-from typing import IO, Any, Tuple, Union
+from typing import IO, Tuple, Union
 
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done
-from .effect import Effect, get_environment
+from .effect import Effect, TryIO, get_environment
 from .either import Left, Right
 from .immutable import Immutable
 
@@ -20,7 +20,7 @@ class Subprocess(Immutable):
         stdin: Union[IO, int] = PIPE,
         stdout: Union[IO, int] = PIPE,
         stderr: Union[IO, int] = PIPE
-    ) -> Effect[Any, CalledProcessError, Tuple[bytes, bytes]]:
+    ) -> TryIO[CalledProcessError, Tuple[bytes, bytes]]:
         """
         Get an :class:`Effect` that runs `cmd` in the shell
 
@@ -84,6 +84,6 @@ def run_in_shell(
     :return: :class:`Effect` that runs `cmd` in the shell and produces \
         a tuple of `(stdout, stderr)`
     """
-    return get_environment().and_then(
+    return get_environment(HasSubprocess).and_then(
         lambda env: env.subprocess.run_in_shell(cmd, stdin, stdout, stderr)
     )

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import AsyncExitStack
-from typing import (Any, AsyncContextManager, Awaitable, Callable, Generator,
-                    Generic, Iterable, NoReturn, Optional, Type, TypeVar,
-                    Union)
+from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
+                    Iterable, NoReturn, Optional, Type, TypeVar, Union,
+                    overload)
 
 from .aio_trampoline import Call, Done, Trampoline
 from .aio_trampoline import sequence as sequence_trampolines
@@ -49,7 +49,7 @@ class Resource(Immutable, Generic[E, C]):
                                Union[Either[E, C], Awaitable[Either[E, C]]]]
     resource: Optional[Either[E, C]] = None
 
-    def get(self) -> Effect[Any, E, C]:
+    def get(self) -> Effect[object, E, C]:
         """
         Create an :class:``Effect` that produces the initialized
         context manager.
@@ -238,7 +238,7 @@ class Effect(Generic[R, E, A], Immutable):
 
         return Effect(run_e)
 
-    def ensure(self, effect: Effect[Any, NoReturn, Any]) -> Effect[R, E, A]:
+    def ensure(self, effect: Effect[Any, NoReturn, Any]) -> Effect[Any, E, A]:
         """
         Create an :class:`Effect` that will always run `effect`, regardless
         of whether this :class:`Effect` succeeds or fails. The result of
@@ -334,7 +334,7 @@ E1 = TypeVar('E1')
 A1 = TypeVar('A1')
 
 
-def success(value: A1) -> Effect[Any, NoReturn, A1]:
+def success(value: A1) -> Effect[object, NoReturn, A1]:
     """
     Wrap a function in :class:`Effect` that does nothing but return ``value``
 
@@ -351,14 +351,28 @@ def success(value: A1) -> Effect[Any, NoReturn, A1]:
     return Effect(run_e)
 
 
-def get_environment() -> Effect[Any, NoReturn, Any]:
+@overload
+def get_environment(r_type: None = None) -> Depends:
+    pass
+
+
+@overload
+def get_environment(r_type: Type[R1] = None) -> Depends[R1, R1]:
+    pass
+
+
+def get_environment(r_type=None):
     """
     Get an :class:`Effect` that produces the environment passed to `run` \
     when executed
 
     :example:
-    >>> get_environment().run('environment')
+    >>> get_environment(str).run('environment')
     'environment'
+
+    :param r_type: The expected environment type of the resulting effect. \
+        Used ONLY for type-checking and doesn't impact runtime behaviour in \
+        any way
 
     :return: :class:`Effect` that produces the enviroment passed to `run`
     """
@@ -368,7 +382,7 @@ def get_environment() -> Effect[Any, NoReturn, Any]:
     return Effect(run_e)
 
 
-def from_awaitable(awaitable: Awaitable[A1]) -> Effect[Any, NoReturn, A1]:
+def from_awaitable(awaitable: Awaitable[A1]) -> Effect[object, NoReturn, A1]:
     """
     Create an :class:`Effect` that produces the result of awaiting `awaitable`
 
@@ -385,25 +399,6 @@ def from_awaitable(awaitable: Awaitable[A1]) -> Effect[Any, NoReturn, A1]:
         return Done(Right(await awaitable))
 
     return Effect(run_e)
-
-
-def decorate(
-    f: Callable[[A1], Union[Awaitable[Either[E1, B1]], Either[E1, B1]]]
-) -> Callable[[A1], Effect[Any, E1, B1]]:
-    def _(a: A1) -> Effect[Any, E1, B1]:
-        async def run_e(_):
-            either = f(a)
-            if asyncio.iscoroutine(either):
-                either = await either
-            return Done(either)
-
-        return Effect(run_e)
-
-    return _
-
-
-B1 = TypeVar('B1')
-Effects = Generator[Effect[R1, E1, Any], Any, B1]
 
 
 def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
@@ -482,8 +477,8 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
     return Effect(run_e)
 
 
-def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]
-            ) -> Effect[Any, E1, A1]:
+def absolve(effect: Effect[R1, NoReturn, Either[E1, A1]]
+            ) -> Effect[R1, E1, A1]:
     """
     Move the error type from an :class:`Effect` producing an :class:`Either` \
     into the error channel of the :class:`Effect`
@@ -508,7 +503,7 @@ def absolve(effect: Effect[Any, NoReturn, Either[E1, A1]]
     return Effect(run_e)
 
 
-def error(reason: E1) -> Effect[Any, E1, NoReturn]:
+def error(reason: E1) -> Effect[object, E1, NoReturn]:
     """
     Create an :class:`Effect` that does nothing but fail with `reason`
 
@@ -556,7 +551,7 @@ EX = TypeVar('EX', bound=Exception)
 
 # @curry
 def catch(*error_type: Type[EX],
-          ) -> Callable[[Callable[[], A1]], Effect[Any, EX, A1]]:
+          ) -> Callable[[Callable[[], A1]], Effect[object, EX, A1]]:
     """
     Catch exceptions raised by a function and push them into the error type \
     of an :class:`Effect`
@@ -581,7 +576,7 @@ def catch(*error_type: Type[EX],
     return _
 
 
-def catch_all(f: Callable[[], A1]) -> Effect[Any, Exception, A1]:
+def catch_all(f: Callable[[], A1]) -> Effect[object, Exception, A1]:
     """
     Return an :class:`Effect` that can fail with any exceptions raised by `f`
 
@@ -603,8 +598,8 @@ def catch_all(f: Callable[[], A1]) -> Effect[Any, Exception, A1]:
     return Effect(run_e)
 
 
-IO = Effect[Any, NoReturn, A1]
-TryIO = Effect[Any, E1, A1]
+IO = Effect[object, NoReturn, A1]
+TryIO = Effect[object, E1, A1]
 Depends = Effect[R1, NoReturn, A1]
 
 

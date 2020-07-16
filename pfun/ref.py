@@ -1,8 +1,8 @@
 from asyncio import Lock
-from typing import Any, Callable, Generic, NoReturn, Optional, TypeVar, cast
+from typing import Callable, Generic, NoReturn, Optional, TypeVar, cast
 
 from .aio_trampoline import Done, Trampoline
-from .effect import Effect
+from .effect import IO, Effect, TryIO
 from .either import Either, Left, Right
 from .immutable import Immutable
 
@@ -35,7 +35,7 @@ class Ref(Immutable, Generic[A], init=False):
             object.__setattr__(self, '_lock', Lock())
         return cast(Lock, self._lock)
 
-    def get(self) -> Effect[Any, NoReturn, A]:
+    def get(self) -> IO[A]:
         """
         Get an :class:`Effect` that reads the current state of the value
 
@@ -55,7 +55,7 @@ class Ref(Immutable, Generic[A], init=False):
     def __repr__(self):
         return f'Ref({repr(self.value)})'
 
-    def put(self, value: A) -> Effect[Any, NoReturn, None]:
+    def put(self, value: A) -> IO[None]:
         """
         Get an :class:`Effect` that updates the current state of the value
 
@@ -77,7 +77,7 @@ class Ref(Immutable, Generic[A], init=False):
 
         return Effect(run_e)
 
-    def modify(self, f: Callable[[A], A]) -> Effect[Any, NoReturn, None]:
+    def modify(self, f: Callable[[A], A]) -> IO[None]:
         """
         Modify the value wrapped by this :class:`Ref` by \
             applying `f` in isolation
@@ -102,7 +102,7 @@ class Ref(Immutable, Generic[A], init=False):
         return Effect(run_e)
 
     def try_modify(self,
-                   f: Callable[[A], Either[E, A]]) -> Effect[Any, E, None]:
+                   f: Callable[[A], Either[E, A]]) -> TryIO[E, None]:
         """
         Try to update the current state with the result of `f` if it succeeds.
         The state is updated if `f` returns a :class:`Right` value, and kept
