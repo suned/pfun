@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import AsyncExitStack
+from functools import wraps
 from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
                     Iterable, NoReturn, Optional, Type, TypeVar, Union,
                     overload)
@@ -20,6 +21,69 @@ A = TypeVar('A', covariant=True)
 B = TypeVar('B')
 
 C = TypeVar('C', bound=AsyncContextManager)
+
+F = TypeVar('F', bound=Callable[..., 'Effect'])
+
+
+def add_repr(f: F) -> F:
+    """
+    Decorator for functions that return effects that adds repr strings
+    based on the function name and args.
+
+    :example:
+    >>> @add_repr
+    >>> def do_something(value):
+    ...     return success(value)
+    >>> do_something(1)
+    do_something(1)
+
+    :param f: function to be decorated
+    :return: decorated function
+    """
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        effect = f(*args, **kwargs)
+        args_repr = ', '.join([repr(arg) for arg in args])
+        kwargs_repr = ', '.join(
+            [f'{name}={repr(value)}' for name, value in kwargs.items()]
+        )
+        sig_repr = args_repr + ((', ' + kwargs_repr) if kwargs_repr else '')
+        repr_ = f'{f.__name__}({sig_repr})'
+        return effect.with_repr(repr_)
+
+    return decorator  # type: ignore
+
+
+def add_method_repr(f: F) -> F:
+    """
+    Decorator for methods that return effects that add repr strings based
+    on the class, method and args.
+
+    :example:
+    >>> from pfun import Immutable
+    >>> class Foo(Immutable):
+    ...     @add_method_repr
+    ...     def do_something(value):
+    ...         return success(value)
+    >>> Foo().do_something(1)
+    Foo().do_something(1)
+
+    :param f: the method to be decorated
+    :return: decorated method
+    """
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        effect = f(*args, **kwargs)
+        self, *args = args
+        args_repr = ', '.join([repr(arg) for arg in args])
+        kwargs_repr = ', '.join(
+            [f'{name}={repr(value)}' for name, value in kwargs.items()]
+        )
+        sig_repr = args_repr + ((', ' + kwargs_repr) if kwargs_repr else '')
+        repr_ = f'{repr(self)}.{f.__name__}({sig_repr})'
+        return effect.with_repr(repr_)
+
+    return decorator  # type: ignore
 
 
 class Resource(Immutable, Generic[E, C]):
@@ -105,7 +169,18 @@ class Effect(Generic[R, E, A], Immutable):
     Wrapper for functions that are allowed to perform side-effects
     """
     run_e: Callable[[RuntimeEnv[R]], Awaitable[Trampoline[Either[E, A]]]]
+    _repr: str = ''
 
+    def with_repr(self, s: str) -> Effect[R, E, A]:
+        return Effect(self.run_e, s)  # type: ignore
+
+    def __repr__(self):
+        if not self._repr:
+            return f'Effect(run_e={repr(self.run_e)})'
+
+        return self._repr
+
+    @add_method_repr
     def and_then(
         self,
         f: Callable[[A],
@@ -150,6 +225,7 @@ class Effect(Generic[R, E, A], Immutable):
 
         return Effect(run_e)
 
+    @add_method_repr
     def discard_and_then(self, effect: Effect[Any, E2, B]
                          ) -> Effect[Any, Union[E, E2], B]:
         """
@@ -173,6 +249,7 @@ class Effect(Generic[R, E, A], Immutable):
         """
         return self.and_then(lambda _: effect)  # type: ignore
 
+    @add_method_repr
     def either(self) -> Effect[R, NoReturn, Either[E, A]]:
         """
         Push the potential error into the success channel as an either, \
@@ -198,6 +275,7 @@ class Effect(Generic[R, E, A], Immutable):
 
         return Effect(run_e)
 
+    @add_method_repr
     def recover(self,
                 f: Callable[[E], Effect[Any, E2, A]]) -> Effect[Any, E2, A]:
         """
@@ -238,6 +316,7 @@ class Effect(Generic[R, E, A], Immutable):
 
         return Effect(run_e)
 
+    @add_method_repr
     def ensure(self, effect: Effect[Any, NoReturn, Any]) -> Effect[Any, E, A]:
         """
         Create an :class:`Effect` that will always run `effect`, regardless
@@ -270,7 +349,7 @@ class Effect(Generic[R, E, A], Immutable):
             discard_and_then(error(reason))
         )
 
-    async def run_async(self, r: R) -> A:  # type: ignore
+    async def __call__(self, r: R) -> A:  # type: ignore
         async with AsyncExitStack() as stack:
             env = RuntimeEnv(r, stack)
             trampoline = await self.run_e(env)  # type: ignore
@@ -296,10 +375,9 @@ class Effect(Generic[R, E, A], Immutable):
         :returns: The succesful result of the wrapped function if it succeeds
         """
 
-        return asyncio_run(self.run_async(r))
+        return asyncio_run(self(r))
 
-    __call__ = run
-
+    @add_method_repr
     def map(self, f: Callable[[A], Union[Awaitable[B], B]]) -> Effect[R, E, B]:
         """
         Map `f` over the result produced by this :class:`Effect` once it is run
@@ -335,6 +413,7 @@ E1 = TypeVar('E1')
 A1 = TypeVar('A1')
 
 
+@add_repr
 def success(value: A1) -> Effect[object, NoReturn, A1]:
     """
     Wrap a function in :class:`Effect` that does nothing but return ``value``
@@ -380,9 +459,13 @@ def get_environment(r_type=None):
     async def run_e(env):
         return Done(Right(env.r))
 
-    return Effect(run_e)
+    return Effect(
+        run_e,
+        f'get_environment({r_type.__name__ if r_type is not None else ""})'
+    )
 
 
+@add_repr
 def from_awaitable(awaitable: Awaitable[A1]) -> Effect[object, NoReturn, A1]:
     """
     Create an :class:`Effect` that produces the result of awaiting `awaitable`
@@ -402,6 +485,7 @@ def from_awaitable(awaitable: Awaitable[A1]) -> Effect[object, NoReturn, A1]:
     return Effect(run_e)
 
 
+@add_repr
 def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
                    ) -> Effect[R1, E1, Iterable[A1]]:
     """
@@ -427,6 +511,7 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
 
 
 @curry
+@add_repr
 def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
           iterable: Iterable[A1]) -> Effect[R1, E1, Iterable[A1]]:
     """
@@ -448,6 +533,7 @@ def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
 
 
 @curry
+@add_repr
 def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
              iterable: Iterable[A]) -> Effect[R1, E1, Iterable[A]]:
     """
@@ -478,6 +564,7 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
     return Effect(run_e)
 
 
+@add_repr
 def absolve(effect: Effect[R1, NoReturn, Either[E1, A1]]
             ) -> Effect[R1, E1, A1]:
     """
@@ -504,6 +591,7 @@ def absolve(effect: Effect[R1, NoReturn, Either[E1, A1]]
     return Effect(run_e)
 
 
+@add_repr
 def error(reason: E1) -> Effect[object, E1, NoReturn]:
     """
     Create an :class:`Effect` that does nothing but fail with `reason`
@@ -542,7 +630,11 @@ def combine(*effects: Effect[R1, E1, A2]
     """
     def _(f: Callable[..., A1]):
         effect = sequence_async(effects)
-        return effect.map(lambda seq: f(*seq))
+        args_repr = ", ".join([repr(effect) for effect in effects])
+        repr_ = f'combine({args_repr})({repr(f)})'
+        return effect.map(lambda seq: f(*seq)).with_repr(
+            repr_
+        )
 
     return _
 
@@ -551,7 +643,7 @@ EX = TypeVar('EX', bound=Exception)
 
 
 # @curry
-def catch(*error_type: Type[EX],
+def catch(error_type: Type[EX],
           ) -> Callable[[Callable[[], A1]], Effect[object, EX, A1]]:
     """
     Catch exceptions raised by a function and push them into the error type \
@@ -567,16 +659,16 @@ def catch(*error_type: Type[EX],
         passed function
     """
     def _(f):
+        repr_ = f'catch({error_type.__name__})({repr(f)})'
         try:
-            return success(f())
-        except Exception as e:
-            if any(isinstance(e, t) for t in error_type):
-                return error(e)
-            raise e
+            return success(f()).with_repr(repr_)
+        except error_type as e:
+            return error(e).with_repr(repr_)
 
     return _
 
 
+@add_repr
 def catch_all(f: Callable[[], A1]) -> Effect[object, Exception, A1]:
     """
     Return an :class:`Effect` that can fail with any exceptions raised by `f`
@@ -602,7 +694,6 @@ def catch_all(f: Callable[[], A1]) -> Effect[object, Exception, A1]:
 IO = Effect[object, NoReturn, A1]
 TryIO = Effect[object, E1, A1]
 Depends = Effect[R1, NoReturn, A1]
-
 
 __all__ = [
     'Effect',

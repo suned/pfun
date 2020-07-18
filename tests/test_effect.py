@@ -170,14 +170,16 @@ class TestResoure:
         mock_resource = asynctest.MagicMock()
         resource = Resource(lambda: either.Right(mock_resource))
         effect = resource.get()
-        assert effect(None) == mock_resource
+        assert effect.run(None) == mock_resource
         mock_resource.__aenter__.assert_called_once()
         assert resource.resource is None
 
     def test_resources_are_unique(self):
         mock_resource = asynctest.MagicMock()
         resource = Resource(lambda: either.Right(mock_resource))
-        r1, r2 = effect.sequence_async((resource.get(), resource.get()))(None)
+        r1, r2 = effect.sequence_async(
+            (resource.get(), resource.get())
+        ).run(None)
         assert r1 is r2
         mock_resource.__aenter__.assert_called_once()
 
@@ -367,7 +369,7 @@ class TestHTTP:
 
     def test_get_session(self):
         with asynctest.patch('pfun.http.aiohttp.ClientSession') as session:
-            assert http.get_session()(HasHTTP()) == session()
+            assert http.get_session().run(HasHTTP()) == session()
 
     @pytest.mark.parametrize(
         'method', ['get', 'put', 'post', 'delete', 'patch', 'head', 'options']
@@ -380,8 +382,9 @@ class TestHTTP:
                 session.return_value.request.return_value.__aenter__.
                 return_value.read
             ) = read_mock
-            assert getattr(http,
-                           method)('foo.com')(HasHTTP()).content == b'test'
+            assert getattr(http, method)('foo.com').run(
+                HasHTTP()
+            ).content == b'test'
             session().request.assert_called_once_with(
                 method, 'foo.com', **self.default_params
             )
@@ -395,7 +398,9 @@ class TestSQL:
     def test_get_connetion(self):
         with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
             connect_mock.return_value.close = asynctest.CoroutineMock()
-            assert sql.get_connection()(HasSQL()) == connect_mock.return_value
+            assert sql.get_connection().run(
+                HasSQL()
+            ) == connect_mock.return_value
             connect_mock.assert_called_once_with(
                 'postgres://test@host/test_db'
             )
@@ -406,7 +411,9 @@ class TestSQL:
             connect_mock.return_value.execute = asynctest.CoroutineMock(
                 return_value='SELECT 1'
             )
-            assert sql.execute('select * from users')(HasSQL()) == 'SELECT 1'
+            assert sql.execute('select * from users').run(
+                HasSQL()
+            ) == 'SELECT 1'
 
     def test_execute_many(self):
         with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
@@ -415,7 +422,7 @@ class TestSQL:
                 return_value=('SELECT 1', )
             )
             assert sql.execute_many('select * from users',
-                                    ['arg'])(HasSQL()) == ('SELECT 1', )
+                                    ['arg']).run(HasSQL()) == ('SELECT 1', )
 
     def test_fetch_one(self):
         with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
@@ -425,7 +432,7 @@ class TestSQL:
                     'name': 'bob', 'age': 32
                 }
             )
-            assert sql.fetch_one('select * from users')(HasSQL()) == Dict(
+            assert sql.fetch_one('select * from users').run(HasSQL()) == Dict(
                 {
                     'name': 'bob', 'age': 32
                 }
@@ -439,7 +446,7 @@ class TestSQL:
                     'name': 'bob', 'age': 32
                 }, )
             )
-            assert sql.fetch('select * from users')(HasSQL()) == List(
+            assert sql.fetch('select * from users').run(HasSQL()) == List(
                 (Dict({
                     'name': 'bob', 'age': 32
                 }), )
@@ -451,4 +458,6 @@ class TestSQL:
             age: int
 
         results = List((Dict({'name': 'bob', 'age': 32}), ))
-        assert sql.as_type(User)(results)(None) == List((User('bob', 32), ))
+        assert sql.as_type(User)(results).run(None) == List(
+            (User('bob', 32), )
+        )

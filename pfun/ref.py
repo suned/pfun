@@ -2,7 +2,7 @@ from asyncio import Lock
 from typing import Callable, Generic, NoReturn, Optional, TypeVar, cast
 
 from .aio_trampoline import Done, Trampoline
-from .effect import IO, Effect, TryIO
+from .effect import IO, Effect, TryIO, add_method_repr
 from .either import Either, Left, Right
 from .immutable import Immutable
 
@@ -35,6 +35,7 @@ class Ref(Immutable, Generic[A], init=False):
             object.__setattr__(self, '_lock', Lock())
         return cast(Lock, self._lock)
 
+    @add_method_repr
     def get(self) -> IO[A]:
         """
         Get an :class:`Effect` that reads the current state of the value
@@ -50,11 +51,12 @@ class Ref(Immutable, Generic[A], init=False):
             async with self.__lock:
                 return Done(Right(self.value))
 
-        return Effect(run_e)
+        return Effect(run_e, f'pfun.ref.{repr(self)}.get()')
 
     def __repr__(self):
         return f'Ref({repr(self.value)})'
 
+    @add_method_repr
     def put(self, value: A) -> IO[None]:
         """
         Get an :class:`Effect` that updates the current state of the value
@@ -77,6 +79,7 @@ class Ref(Immutable, Generic[A], init=False):
 
         return Effect(run_e)
 
+    @add_method_repr
     def modify(self, f: Callable[[A], A]) -> IO[None]:
         """
         Modify the value wrapped by this :class:`Ref` by \
@@ -101,6 +104,7 @@ class Ref(Immutable, Generic[A], init=False):
 
         return Effect(run_e)
 
+    @add_method_repr
     def try_modify(self,
                    f: Callable[[A], Either[E, A]]) -> TryIO[E, None]:
         """

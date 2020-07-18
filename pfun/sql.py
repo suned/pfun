@@ -5,7 +5,8 @@ from typing_extensions import Protocol
 
 from .curry import curry
 from .dict import Dict
-from .effect import Effect, Resource, TryIO, error, get_environment, success
+from .effect import (Effect, Resource, TryIO, add_repr, error, get_environment,
+                     success)
 from .either import Either, Left, Right
 from .immutable import Immutable
 from .list import List
@@ -235,6 +236,7 @@ class HasSQL(Protocol):
     sql: SQL
 
 
+@add_repr
 def get_connection(
 ) -> Effect[HasSQL, asyncpg.PostgresError, asyncpg.Connection]:
     """
@@ -253,6 +255,7 @@ def get_connection(
                            ).and_then(lambda env: env.sql.get_connection())
 
 
+@add_repr
 def execute(query: str, *args: Any, timeout: float = None
             ) -> Effect[HasSQL, asyncpg.PostgresError, str]:
     """
@@ -277,6 +280,7 @@ def execute(query: str, *args: Any, timeout: float = None
     )
 
 
+@add_repr
 def execute_many(query: str, args: Iterable[Any], timeout: float = None
                  ) -> Effect[HasSQL, asyncpg.PostgresError, Iterable[str]]:
     """
@@ -301,6 +305,7 @@ def execute_many(query: str, args: Iterable[Any], timeout: float = None
     )
 
 
+@add_repr
 def fetch(query: str, *args: Any, timeout: float = None
           ) -> Effect[HasSQL, asyncpg.PostgresError, Results]:
     """
@@ -322,6 +327,7 @@ def fetch(query: str, *args: Any, timeout: float = None
     )
 
 
+@add_repr
 def fetch_one(query: str, *args: Any, timeout: float = None
               ) -> Effect[HasSQL, asyncpg.PostgresError, Dict[str, Any]]:
     """

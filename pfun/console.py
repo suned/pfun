@@ -4,7 +4,7 @@ from typing import NoReturn
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done, Trampoline
-from .effect import IO, Effect, get_environment
+from .effect import IO, Effect, add_repr, get_environment
 from .either import Either, Right
 from .immutable import Immutable
 
@@ -62,6 +62,7 @@ class HasConsole(Protocol):
     console: Console
 
 
+@add_repr
 def print_line(msg: str = '') -> Effect[HasConsole, NoReturn, None]:
     """
     Get an :class:`Effect` that prints to the console and succeeds with `None`
@@ -80,6 +81,7 @@ def print_line(msg: str = '') -> Effect[HasConsole, NoReturn, None]:
                            ).and_then(lambda env: env.console.print(msg))
 
 
+@add_repr
 def get_line(prompt: str = '') -> Effect[HasConsole, NoReturn, str]:
     """
     Get an :class:`Effect` that reads a `str` from stdin

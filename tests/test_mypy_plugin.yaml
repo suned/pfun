@@ -120,6 +120,18 @@
       e1: Effect[P1, NoReturn, str]
       e2: Effect[P2, NoReturn, int]
       reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.effect.Intersection[main.P1, main.P2], <nothing>, builtins.int*]'
+- case: effect_and_then_combines_protocols_for_type_aliases
+  main: |
+    from typing_extensions import Protocol
+    from pfun import Depends, IO
+
+    class P1(Protocol):
+      p1_attr: str
+
+    e1: Depends[P1, str]
+    e2: IO[str]
+
+    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[main.P1, <nothing>, builtins.str*]'
 - case: effect_and_then_does_not_combine_non_protocols
   main: |
     from typing import NoReturn
@@ -154,13 +166,6 @@
     e2: Effect[str, NoReturn, str]
 
     reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[Any, <nothing>, builtins.str]'
-- case: get_environment_infers_type
-  main: |
-     from typing import NoReturn
-     from pfun.effect import Effect, get_environment
-
-     def f() -> Effect[int, NoReturn, str]:
-         return get_environment().map(lambda env: env.upper())  # E: "int" has no attribute "upper"
 - case: effect_combine_checks_args
   main: |
     from typing import Any, NoReturn

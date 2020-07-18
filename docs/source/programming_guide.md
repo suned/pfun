@@ -123,10 +123,10 @@ assert f(1)(1) == 3
 ```
 
 ## Effectful (But Side-Effect Free) Functional Programming
-In functional programming, programs are built by composing functions that have no side-effects. This means that things that we normally model as side-effects in imperative programming such as performing io or raising exceptions are modelled differently. The best way to deal with side-effecty things such as io or error handling with `pfun` is to use the `pfun.effect` module, which lets you work with side-effecty stuff in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "[functional effect system](https://en.wikipedia.org/wiki/Effect_system)", which is precisely what `pfun.effect` is.
+In functional programming, programs are built by composing functions that have no side-effects. This means that problems that we normally solve using side-effects in imperative programming such as performing io or raising exceptions are solved differently. The best way to deal with side-effects such as io or error handling with `pfun` is to use the `pfun.Effect` type, which let's you express side-effects in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "[functional effect system](https://en.wikipedia.org/wiki/Effect_system)", which is precisely what `pfun.effect` is.
 
 ### Effect
-The core type you will use when expressing side-effects with `pfun` is `pfun.effect.Effect`. `Effect` is a callable that
+The core type you will use when expressing side-effects with `pfun` is `pfun.Effect`. `Effect` has a function `run` that perfoms the side-effect it represents. `run` is a function that:
 
 - Takes exactly one argument
 - May or may not perform side-effects when called (including raising exceptions)
@@ -143,7 +143,7 @@ A = TypeVar('A', covariant=True)
 
 
 class Effect(Generic[R, E, A]):
-    def __call__(self, r: R) -> A:
+    def run(self, r: R) -> A:
         """
         May raise E
         """
@@ -152,14 +152,14 @@ class Effect(Generic[R, E, A]):
 In other words, `Effect` takes three type paramaters: `R`, `E` and `A`. We'll study them one at a time.
 
 #### The Success Type
-The `A` in `Effect[R, E, A]` is the _success type_. This is the type that the effect function will return if no error occurs. For example, in an `Effect` instance that reads a file as a `str`, `A` would be parameterized with `str`. You can create an `Effect` instance that succeeds with the value `a` using `effect.success(a)`:
+The `A` in `Effect[R, E, A]` is the _success type_. This is the type that the effect function will return if no error occurs. For example, in an `Effect` instance that reads a file as a `str`, `A` would be parameterized with `str`. You can create an `Effect` instance that succeeds with the value `a` using `pfun.success(a)`:
 
 ```python
 from typing import Any, NoReturn
 from pfun import success, Effect
 
 e: Effect[object, NoReturn, str] = success('Success!')
-assert e(None) == 'Success!'
+assert e.run(None) == 'Success!'
 ```
 (You don't actually have to write the type of `e` explicitly, as it can be inferred by your type checker. We do it here simply because it's instructive to look at the types). Don't worry about the meaning of `object` and `NoReturn` for now, we'll explain that later. For now, just understand that when `e` has the type `Effect[object, NoReturn, str]`, it means that when you call `e` with any parameter, it will return a `str` (the value `Success!`).
 
@@ -167,20 +167,20 @@ You can work with the success value of an effect using instance methods of `Effe
 
 ```python
 e: Effect[object, NoReturn, str] = success(1).map(str)
-assert e(None) == "1"
+assert e.run(None) == "1"
 ```
 
 If you want to transform the result of an `Effect` with a function that produces other side effects (that is, returns an `Effect` instance), you use `and_then`:
 ```python
 add_1 = lambda v: success(v + 1)
 e: Effect[Any, NoReturn, int] = success(1).and_then(add_1)
-assert e(None) == 2
+assert e.run(None) == 2
 ```
 (for those with previous functional programming experince, `and_then` is the "bind" operation of `Effect`).
 
 
 #### The Error Type
-The `E` in `Effect[R, E, A]` is the _error type_. This is type that the effect function will raise if it fails. You can create an effect that does nothing but fail using `pfun.effect.error`:
+The `E` in `Effect[R, E, A]` is the _error type_. This is type that the `run` function will raise if it fails. You can create an effect that does nothing but fail using `pfun.effect.error`:
 
 ```python
 from typing import Any, NoReturn
@@ -189,7 +189,7 @@ from pfun import Effect, error
 
 
 e: Effect[object, str, NoReturn] = error('Whoops!')
-e(None)  # raises: RuntimeError('Whoops!')
+e.run(None)  # raises: RuntimeError('Whoops!')
 ```
 
 For a concrete example, take a look at the `pfun.files` module that helps you read from files:
@@ -203,12 +203,12 @@ from pfun.files import Files
 
 files = Files()
 e: Effect[object, OSError, str] = files.read('doesnt_exist.txt')
-e(None)  # raises OSError
+e.run(None)  # raises OSError
 ```
 Don't worry about the api of `files` for now, simply notice that when `e` has the type `Effect[object, OSError, str]`, it means that when you execute `e` it can produce a `str` or fail with `OSError`. Having the the error type explicitly modelled in the type signature of `e` allows type safe error handling as we'll see later.
 
 #### The Environment Type
-Finally, let's look at `R` in `Effect[R, E, A]`: the _environment type_. `R` is the argument that your effect function requires to produce its result. It allows you to parameterize the side-effect that your `Effect` implements which improves re-useability and testability. For example, imagine that you want to use `Effect` to model the side-effect of reading from a database. The function that reads from the database requires a connection string as an argument to connect. If `Effect` did not take a parameter you would have to pass around the connection string as a parameter through function calls, all the way down to where the connection string was needed.
+Finally, let's look at `R` in `Effect[R, E, A]`: the _environment type_. `R` is the argument that `run` requires to produce its result. It allows you to parameterize the side-effect that your `Effect` implements which improves re-useability and testability. For example, imagine that you want to use `Effect` to model the side-effect of reading from a database. The function that reads from the database requires a connection string as an argument to connect. If `Effect` did not take a parameter you would have to pass around the connection string as a parameter through function calls, all the way down to where the connection string was needed.
 
 The environment type allows you to pass in the connection string at the edge of your program, rather than threading it through a potentially deep stack of function calls:
 
@@ -233,17 +233,19 @@ if __name__ == '__main__':
     program = main()
 
     # run in production
-    program('user@prod_db')
+    program.run('user@prod_db')
 
     # run in development
-    program('user@dev_db')
+    program.run('user@dev_db')
 ```
 In the next section, we will discuss this _dependency injection_ capability of `Effect` in detail.
 
 #### The Module Pattern
 This section is dedicated to the environment type `R`. In most examples we have looked at so far, `R` is parameterized with `object`. This means that it can safely be called with any value (since all Python values are sub-types of `object`). This is mostly useful when you're working with effects that don't use the environment argument for anything, in which case any value will do.
 
-In the previous section we saw how the `R` parameter of `Effect` can be used for dependency injection. But what happens when we try to combine two effects with different environment types with `and_then`? The `Effect` instance returned by `and_then` must have an environment type that is a combination of the environment types of both the combined effects, since the environment passed to the combined effect is also passed to the two other effects. Consider for example this effect, that uses the `execute` function from above to get database results, and combines it with a function `make_request` that calls an api, and requires a `Credentials` instance as the environment type:
+In the previous section we saw how the `R` parameter of `Effect` can be used for dependency injection. But what happens when we try to combine two effects with different environment types with `and_then`? The `Effect` instance returned by `and_then` must have an environment type that is a combination of the environment types of both the combined effects, since the environment passed to the combined effect is also passed to the other effects.
+
+Consider for example this effect, that uses the `execute` function from above to get database results, and combines it with a function `make_request` that calls an api, and requires a `Credentials` instance as the environment type:
 
 ```python
 class Credentials:
@@ -256,9 +258,9 @@ def make_request(results: List[DBRow]) -> Effect[Credentials, HTTPError, bytes]:
 results: effect.Effect[str, IOError, List[DBRow]] = execute('select * from users;')
 response: effect.Effect[..., Union[IOError, HTTPError], HTTPResponse]
 response = results.and_then(make_request)
-response(...)  # What could this argument be?
+response.run(...)  # What could this argument be?
 ```
-To call the `response` function, we need an instance of a type that is a `str` and a `Credentials` instance _at the same time_, because that argument must be passed to both the effect returned by `execute` and by `make_request`. Ideally, we want `response` to have the type `Effect[Intersection[Credentials, str], IOError, bytes]`, where `Intersection[Credentials, str]` indicates that the environment type must be both of type `Credentials` and of type `str`.
+To call the `response.run` function, we need an instance of a type that is a `str` and a `Credentials` instance _at the same time_, because that argument must be passed to both the effect returned by `execute` and by `make_request`. Ideally, we want `response` to have the type `Effect[Intersection[Credentials, str], IOError, bytes]`, where `Intersection[Credentials, str]` indicates that the environment type must be both of type `Credentials` and of type `str`.
 
 In theory such an object could exist (defined as `class MyEnv(Credentials, str): ...`), but there are no straight-forward way of expressing that
 type dynamically in the Python type system. As a consequence, `pfun` infers the resulting effect with the `R` parameterized as `typing.Any`, which in this case means that `pfun` could not assign a meaningful type to `R`.
@@ -279,7 +281,7 @@ Lets rewrite our example from before to follow the module pattern:
 from typing import Any, Protocol
 from http.client import HTTPError
 
-from pfun.effect import Effect, get_environment
+from pfun import Effect, get_environment
 
 class Requests:
     """
@@ -332,7 +334,7 @@ def execute(query: str) -> Effect[HasDatabase, IOError, List[DBRow]]:
 ```
 There are two _modules_: `Requests` and `Database` that provide implementations. There are two corresponding _module providers_: `HasRequests` and `HasDatabase`. Finally there are two functions `execute` and `make_request` that puts it all together.
 
-Pay attention to the fact that `execute` and `make_request` look quite similar: they both start by calling `pfun.effect.get_environment`. This function returns an effect that succeeds with the environment value that will eventually be passed as the argument to the final effect (in this example the effect produced by `execute(...).and_then(make_request)`). The optional parameter passed to `get_environment` is merely for type-checking purposes, and doesn't change the result in any way.
+Pay attention to the fact that `execute` and `make_request` look quite similar: they both start by calling `pfun.get_environment`. This function returns an effect that succeeds with the environment value that will eventually be passed as the argument to the final effect (in this example the effect produced by `execute(...).and_then(make_request)`). The optional parameter passed to `get_environment` is merely for type-checking purposes, and doesn't change the result in any way.
 
 If we combine the new functions `execute` and `make_request` that both has protocols as the environment types, `pfun` can infer a meaningful type, and make sure that the environment type that is eventually passed to the whole program provides both the `requests` and the `database` attributes:
 
@@ -354,9 +356,9 @@ class Env:
     database = Database('user@prod_db')
 
 
-effect(Env())
+effect.run(Env())
 ```
-MyPy would tell you the call `effect(Env())` is a type error since `Env` does not have a `requests` attribute. It's worth understanding the module pattern, since `pfun` uses it pervasively in its api, e.g in `pfun.effect.files` and `pfun.effect.console`, in order that `pfun` can infer the environment type of effects resulting from combining functions from `pfun` with user defined functions that also follow the module pattern.
+MyPy would tell you the call `effect.run(Env())` is a type error since `Env` doesn't have a `requests` attribute. It's worth understanding the module pattern, since `pfun` uses it pervasively in its api, e.g in `pfun.files` and `pfun.console`, in order that `pfun` can infer the environment type of effects resulting from combining functions from `pfun` with user defined functions that also follow the module pattern.
 
 A very attractive added bonus of the module pattern is that mocking out particular dependencies of your program becomes extremely simple, and by extension that unit testing becomes easier:
 ```python
@@ -372,13 +374,13 @@ assert make_request([])(mock_env) == b'Mocked!'
 
 
 #### Error Handling
-In this section, we'll look at how to handle errors of effects with type safety. In previous sections we have already spent some time looking at the `Effect` error type. In many of the examples so far, the error type was `typing.NoReturn`. An `Effect` with this error type can never return a value for an error, or in other words, it can never fail (as those effects returned by `pfun.effect.success`). In the rest of this section we'll of course be pre-occupied with effects that _can_ fail.
+In this section, we'll look at how to handle errors of effects with type safety. In previous sections we have already spent some time looking at the `Effect` error type. In many of the examples so far, the error type was `typing.NoReturn`. An `Effect` with this error type can never return a value for an error, or in other words, it can never fail (as those effects returned by `pfun.success`). In the rest of this section we'll of course be pre-occupied with effects that _can_ fail.
 
 When you combine side effects using `Effect.and_then`, `pfun` uses `typing.Union` to combine error types, in order that the resulting effect captures all potential errors in its error type:
 ```python
 from typing import List
 
-from pfun.effect.files import Files
+from pfun.files import Files
 
 
 def parse(content: str) -> effect.Effect[object, ZeroDivisionError, List[int]]:
@@ -386,16 +388,16 @@ def parse(content: str) -> effect.Effect[object, ZeroDivisionError, List[int]]:
 
 
 files = Files()
-e: effect.Effect[object, Union[OSError, ZeroDivisionError], List[int]]
+e: Effect[object, Union[OSError, ZeroDivisionError], List[int]]
 e = files.read('foo.txt').and_then(parse)
 ```
 `e` has `Union[OSError, ZeroDivisionError]` as its error type because it can fail if `files.read` fails, _or_ if `parse` fails. This compositional aspect of the error type of `Effect` means that accurate and complex error types are built up from combining simple error types. Moreover, it makes reasoning about error handling easy because errors disappear from the type when they are handled, as we shall see next.
 
-The most low level function you can use to handle errors is `Effect.either`, which surfaces any errors that may have occurred as a `pfun.either.Either`, where a `pfun.either.Right` signifies a successful computation and a `pfun.either.Left` a failed computation:
+The most low level function you can use to handle errors is `Effect.either`, which surfaces any errors that may have occurred as a `pfun.Either`, where a `pfun.Right` signifies a successful computation and a `pfun.Left` a failed computation:
 ```python
 from typing import NoReturn
-from pfun.effect import Effect, files
-from pfun.either import Either, Left
+from pfun import Effect, files
+from pfun import Either, Left
 
 
 # files.read can fail with OSError
@@ -406,11 +408,11 @@ as_either: Effect[files.HasFiles, NoReturn, Either[OSError, str]] = may_have_fai
 cant_fail: Effect[files.HasFiles, NoReturn, str] = as_either.map(lambda either: 'backup content' if isinstance(either, Left) else either.get)
 ```
 
-Once you've handled whatever errors you want, you can push the error back into error type of the effect using `pfun.effect.absolve`:
+Once you've handled whatever errors you want, you can push the error back into error type of the effect using `pfun.absolve`:
 ```python
 from typing import Any, NoReturn, List
-from pfun.effect import Effect, absolve, files
-from pfun.either import Either
+from pfun import Effect, absolve, files
+from pfun import Either
 
 
 # function to handle error
@@ -428,7 +430,7 @@ e2: Effect[object, OSError, str] = absolve(without_os_error)
 At a slightly higher level, you can use `Effect.recover`, which takes a function that can inspect the error and handle it.
 ```python
 from typing import Any, Union
-from pfun.effect import success, failure, Effect
+from pfun import success, failure, Effect
 
 
 def handle_errors(error: Union[OSError, ZeroDivisionError]) -> Effect[object, ZeroDivisionError, str]:
@@ -501,14 +503,22 @@ async def sleep_and_add_1(a: int) -> int:
 assert success(1).map(sleep_and_add_1)(None) == 2
 ```
 
+When using `pfun` with async frameworks such as [ASGI web servers](https://asgi.readthedocs.io/en/latest/), you can await the the result of effects using `Effect._call__` (which is really what `Effect.run` calls using the supplied event-loop):
+
+```python
+async def f() -> str:
+    e: Effect[object, NoReturn, str] = ...
+    return await e(None)
+```
+
 #### Purely Functional State
-Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. `pfun.effect.ref` provides exactly this. `pfun.effect.ref` works by mutating state only by calling `Effect` instances.
+Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. `pfun.ref` provides exactly this. `pfun.ref` works by mutating state only by calling `Effect` instances.
 
 ```python
 from typing import Tuple, Any, NoReturn
 
-from pfun.effect.ref import Ref
-from pfun.effect import Effect
+from pfun.ref import Ref
+from pfun import Effect
 
 
 ref: Ref[Tuple[int, ...]] = Ref(())
@@ -519,13 +529,13 @@ assert ref.value == ()
 add_1(None)
 assert ref.value == (1,)
 ```
-`pfun.effect.ref.Ref` protects access to the state using an `asyncio.Lock`, meaning that updating the state can be done atomically with the following methods:
+`pfun.ref.Ref` protects access to the state using an `asyncio.Lock`, meaning that updating the state can be done atomically with the following methods:
 - `Ref.get()` read the current value of the state
 - `Ref.set(new_state)` update the state to `new_value` atomically, meaning no other effect can read the value of the state while the update is in progress. Note that if you first read the state using `Ref.get` and then set it with `Ref.set`, other effects may read the value in between which may lead to lost updates. _For this use case you should use `modify` or `try_modify`_
 - `Ref.modify(update_function)` read and update the state with `update_function` atomically, meaning no other effect can read or write the state before the effect produced by `modify` returns
 - `Ref.try_modify(update_function)` read and update the state with `update_function` atomically, if `update_funciton` succeeds. Success is signaled by the `update_function` by returning a `pfun.either.Right` instance, and error by returning a `pfun.either.Left` instance.
 
-`pfun.effect.ref` can of course be combined with the module pattern:
+`pfun.ref` can of course be combined with the module pattern:
 ```python
 from typing import Tuple, Any, NoReturn, Protocol
 
@@ -551,13 +561,13 @@ R = TypeVar('R')
 E = TypeVar('E')
 A = TypeVar('A')
 
-# IO is for effects that can't fail and doesn't take an environment
+# IO is for effects that can't fail and doesn't require an environment
 IO = Effect[object, NoReturn, A]
 
-# TryIO is for effects that can fail but doesn't take an environment
+# TryIO is for effects that can fail but doesn't require an environment
 TryIO = Effect[object, E, A]
 
-# Depends is for effects that can't fail but takes R as environment type
+# Depends is for effects that can't fail but requires R as environment type
 Depends = Effect[R, NoReturn, A]
 ```
 

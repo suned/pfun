@@ -8,8 +8,8 @@ from typing import Any, Callable, Iterable, Mapping, NoReturn, Union
 from typing_extensions import Protocol
 
 from .dict import Dict
-from .effect import (Depends, Effect, Resource, TryIO, error, get_environment,
-                     success)
+from .effect import (Depends, Effect, Resource, TryIO, add_repr, error,
+                     get_environment, success)
 from .either import Right
 from .immutable import Immutable
 from .maybe import Maybe, from_optional
@@ -201,6 +201,7 @@ class HasHTTP(Protocol):
     http: HTTP
 
 
+@add_repr
 def get_session() -> Depends[HasHTTP, aiohttp.ClientSession]:
     """
     Get an effect that produces an :class:`aiohttp.ClientSession`.
@@ -221,6 +222,7 @@ def get_session() -> Depends[HasHTTP, aiohttp.ClientSession]:
     )
 
 
+@add_repr
 def get(
     url: str,
     params: Mapping[str, Any] = None,
@@ -290,6 +292,7 @@ def get(
     )
 
 
+@add_repr
 def put(
     url: str,
     params: Mapping[str, Any] = None,
@@ -359,6 +362,7 @@ def put(
     )
 
 
+@add_repr
 def post(
     url: str,
     params: Mapping[str, Any] = None,
@@ -428,6 +432,7 @@ def post(
     )
 
 
+@add_repr
 def delete(
     url: str,
     params: Mapping[str, Any] = None,
@@ -497,6 +502,7 @@ def delete(
     )
 
 
+@add_repr
 def head(
     url: str,
     params: Mapping[str, Any] = None,
@@ -566,6 +572,7 @@ def head(
     )
 
 
+@add_repr
 def options(
     url: str,
     params: Mapping[str, Any] = None,
@@ -635,6 +642,7 @@ def options(
     )
 
 
+@add_repr
 def patch(
     url: str,
     params: Mapping[str, Any] = None,

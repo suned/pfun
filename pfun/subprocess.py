@@ -5,7 +5,7 @@ from typing import IO, Tuple, Union
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done
-from .effect import Effect, TryIO, get_environment
+from .effect import Effect, TryIO, add_repr, get_environment
 from .either import Left, Right
 from .immutable import Immutable
 
@@ -62,6 +62,7 @@ class HasSubprocess(Protocol):
     subprocess: Subprocess
 
 
+@add_repr
 def run_in_shell(
     cmd: str,
     stdin: Union[IO, int] = PIPE,

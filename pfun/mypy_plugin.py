@@ -10,7 +10,8 @@ from mypy.nodes import ARG_POS, Block, ClassDef, NameExpr, TypeInfo
 from mypy.plugin import ClassDefContext, FunctionContext, MethodContext, Plugin
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.types import (ARG_POS, AnyType, CallableType, Instance, Overloaded,
-                        Type, TypeVarDef, TypeVarId, TypeVarType, UnionType)
+                        Type, TypeVarDef, TypeVarId, TypeVarType, UnionType,
+                        get_proper_type)
 
 _CURRY = 'pfun.curry.curry'
 _COMPOSE = 'pfun.util.compose'
@@ -227,8 +228,9 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     info.is_protocol = True
     info.is_abstract = True
     info.bases = [p1, p2]
-    info.abstract_attributes = (p1.type.abstract_attributes +
-                                p2.type.abstract_attributes)
+    info.abstract_attributes = (
+        p1.type.abstract_attributes + p2.type.abstract_attributes
+    )
     calculate_mro(info)
     return Instance(info, p1.args + p2.args)
 
@@ -238,18 +240,22 @@ def _effect_and_then_hook(context: MethodContext) -> Type:
     return_type_args = return_type.args
     return_type = return_type.copy_modified(args=return_type_args)
     try:
-        e1 = context.type
+        e1 = get_proper_type(context.type)
         r1 = e1.args[0]
-        e2 = context.arg_types[0][0].ret_type
+        e2 = get_proper_type(context.arg_types[0][0].ret_type)
         r2 = e2.args[0]
         if r1 == r2:
             r3 = r1.copy_modified()
             return_type_args[0] = r3
             return return_type.copy_modified(args=return_type_args)
-        elif isinstance(r1, AnyType):
+        elif isinstance(
+            r1, Instance
+        ) and r1.type.fullname == 'builtins.object':
             return_type_args[0] = r2.copy_modified()
             return return_type.copy_modified(args=return_type_args)
-        elif isinstance(r2, AnyType):
+        elif isinstance(
+            r2, Instance
+        ) and r2.type.fullname == 'builtins.object':
             return_type_args[0] = r1.copy_modified()
             return return_type.copy_modified(args=return_type_args)
         elif r1.type.is_protocol and r2.type.is_protocol:
@@ -268,7 +274,9 @@ def _combine_hook(context: FunctionContext):
     env_types = []
     try:
         for effect_type in context.arg_types[0]:
-            env_type, error_type, result_type = effect_type.args
+            env_type, error_type, result_type = get_proper_type(
+                effect_type
+            ).args
             env_types.append(env_type)
             error_types.append(error_type)
             result_types.append(result_type)
@@ -321,9 +329,9 @@ def _effect_recover_hook(context: MethodContext) -> Type:
     return_type_args = return_type.args
     return_type = return_type.copy_modified(args=return_type_args)
     try:
-        e1 = context.type
+        e1 = get_proper_type(context.type)
         r1 = e1.args[0]
-        e2 = context.arg_types[0][0].ret_type
+        e2 = get_proper_type(context.arg_types[0][0].ret_type)
         r2 = e2.args[0]
         if r1 == r2:
             r3 = r1.copy_modified()
@@ -376,12 +384,7 @@ class PFun(Plugin):
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
-        if fullname in (
-            _MAYBE,
-            _RESULT,
-            _EITHER,
-            _EITHER_CATCH
-        ):
+        if fullname in (_MAYBE, _RESULT, _EITHER, _EITHER_CATCH):
             return _variadic_decorator_hook
         if fullname == 'pfun.effect.combine':
             return _combine_hook

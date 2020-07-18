@@ -5,7 +5,7 @@ from typing import Optional, Tuple, Type, Union
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done
-from .effect import IO, Depends, Effect, get_environment
+from .effect import IO, Depends, Effect, add_repr, get_environment
 from .either import Right
 from .immutable import Immutable
 
@@ -372,6 +372,7 @@ class HasLogging(Protocol):
     logging: Logging
 
 
+@add_repr
 def get_logger(name: Optional[str] = None
                ) -> Depends[HasLogging, Logger]:
     """
@@ -393,6 +394,7 @@ def get_logger(name: Optional[str] = None
     return get_environment().map(lambda env: env.logging.get_logger(name))
 
 
+@add_repr
 def debug(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
 ) -> Depends[HasLogging, None]:
@@ -417,6 +419,7 @@ def debug(
     )
 
 
+@add_repr
 def info(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
 ) -> Depends[HasLogging, None]:
@@ -441,6 +444,7 @@ def info(
     )
 
 
+@add_repr
 def warning(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
 ) -> Depends[HasLogging, None]:
@@ -465,6 +469,7 @@ def warning(
     )
 
 
+@add_repr
 def error(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
 ) -> Depends[HasLogging, None]:
@@ -489,6 +494,7 @@ def error(
     )
 
 
+@add_repr
 def critical(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
 ) -> Depends[HasLogging, None]:
@@ -513,6 +519,7 @@ def critical(
     )
 
 
+@add_repr
 def exception(
     msg: str, stack_info: bool = True, exc_info: Union[bool, ExcInfo] = True
 ) -> Depends[HasLogging, None]:

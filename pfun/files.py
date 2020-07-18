@@ -2,7 +2,7 @@ from typing_extensions import Protocol
 
 from .aio_trampoline import Done, Trampoline
 from .curry import curry
-from .effect import Effect, TryIO, get_environment
+from .effect import Effect, TryIO, add_repr, get_environment
 from .either import Either, Left, Right
 from .immutable import Immutable
 
@@ -167,6 +167,7 @@ class HasFiles(Protocol):
     files: Files
 
 
+@add_repr
 def read(path: str) -> Effect[HasFiles, OSError, str]:
     """
     get an :class:`Effect` that reads the content of a file as a str
@@ -184,6 +185,7 @@ def read(path: str) -> Effect[HasFiles, OSError, str]:
 
 
 @curry
+@add_repr
 def write(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     """
     Get an :class:`Effect` that writes to a file
@@ -205,6 +207,7 @@ def write(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     )
 
 
+@add_repr
 def read_bytes(path: str) -> Effect[HasFiles, OSError, bytes]:
     """
     get an :class:`Effect` that reads the content of a file as bytes
@@ -223,6 +226,7 @@ def read_bytes(path: str) -> Effect[HasFiles, OSError, bytes]:
 
 
 @curry
+@add_repr
 def write_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     """
     Get an :class:`Effect` that writes to a file
@@ -245,6 +249,7 @@ def write_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
 
 
 @curry
+@add_repr
 def append(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     """
     Get an :class:`Effect` that appends to a file
@@ -267,6 +272,7 @@ def append(path: str, content: str) -> Effect[HasFiles, OSError, None]:
 
 
 @curry
+@add_repr
 def append_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     """
     Get an :class:`Effect` that appends to a file
