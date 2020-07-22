@@ -2,7 +2,7 @@ from asyncio import Lock
 from typing import Callable, Generic, NoReturn, Optional, TypeVar, cast
 
 from .aio_trampoline import Done, Trampoline
-from .effect import IO, Effect, TryIO, add_method_repr
+from .effect import Effect, Success, Try, add_method_repr
 from .either import Either, Left, Right
 from .immutable import Immutable
 
@@ -12,14 +12,16 @@ E = TypeVar('E')
 
 class Ref(Immutable, Generic[A], init=False):
     """
-    Wraps a value that can be mutated as an :class:`Effect`
-
-    :attribute value: the wrapped value
+    Wraps a value that can be mutated as an `Effect`
     """
     _lock: Optional[Lock]
     value: A
 
     def __init__(self, value: A):
+        """
+        Args:
+            value: The initial state
+        """
         object.__setattr__(self, 'value', value)
         object.__setattr__(self, '_lock', None)
 
@@ -36,16 +38,17 @@ class Ref(Immutable, Generic[A], init=False):
         return cast(Lock, self._lock)
 
     @add_method_repr
-    def get(self) -> IO[A]:
+    def get(self) -> Success[A]:
         """
-        Get an :class:`Effect` that reads the current state of the value
+        Get an `Effect` that reads the current state of the value
 
-        :example:
-        >>> ref = Ref('the state')
-        >>> ref.get().run(None)
-        'the state'
+        Example:
+            >>> ref = Ref('the state')
+            >>> ref.get().run(None)
+            'the state'
 
-        :return: :class:`Effect` that reads the current state
+        Return:
+            `Effect` that reads the current state
         """
         async def run_e(_) -> Trampoline[Either[NoReturn, A]]:
             async with self.__lock:
@@ -57,19 +60,22 @@ class Ref(Immutable, Generic[A], init=False):
         return f'Ref({repr(self.value)})'
 
     @add_method_repr
-    def put(self, value: A) -> IO[None]:
+    def put(self, value: A) -> Success[None]:
         """
-        Get an :class:`Effect` that updates the current state of the value
+        Get an `Effect` that updates the current state of the value
 
-        :example:
-        >>> ref = Ref('initial state')
-        >>> ref.put('new state').run(None)
-        None
-        >>> ref.value
-        'new state'
+        Example:
+            >>> ref = Ref('initial state')
+            >>> ref.put('new state').run(None)
+            None
+            >>> ref.value
+            'new state'
 
-        :param value: new state
-        :return: :class:`Effect` that updates the state
+        Args:
+            value: new state
+
+        Return:
+            `Effect` that updates the state
         """
         async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
             async with self.__lock:
@@ -80,21 +86,23 @@ class Ref(Immutable, Generic[A], init=False):
         return Effect(run_e)
 
     @add_method_repr
-    def modify(self, f: Callable[[A], A]) -> IO[None]:
+    def modify(self, f: Callable[[A], A]) -> Success[None]:
         """
-        Modify the value wrapped by this :class:`Ref` by \
+        Modify the value wrapped by this `Ref` by \
             applying `f` in isolation
 
-        :example:
-        >>> ref = Ref([])
-        >>> ref.modify(lambda l: l + [1]).run(None)
-        None
-        >>> ref.value
-        [1]
+        Example:
+            >>> ref = Ref([])
+            >>> ref.modify(lambda l: l + [1]).run(None)
+            None
+            >>> ref.value
+            [1]
 
-        :param f: function that accepts the current state and returns \
+        Args:
+            f: function that accepts the current state and returns \
             a new state
-        :return: :class:`Effect` that updates the state to the result of `f`
+        Return:
+            `Effect` that updates the state to the result of `f`
         """
         async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
             async with self.__lock:
@@ -106,28 +114,31 @@ class Ref(Immutable, Generic[A], init=False):
 
     @add_method_repr
     def try_modify(self,
-                   f: Callable[[A], Either[E, A]]) -> TryIO[E, None]:
+                   f: Callable[[A], Either[E, A]]) -> Try[E, None]:
         """
         Try to update the current state with the result of `f` if it succeeds.
-        The state is updated if `f` returns a :class:`Right` value, and kept
+        The state is updated if `f` returns a `Right` value, and kept
         as is otherwise
 
-        :example:
-        >>> from pfun.either import Left, Right
-        >>> ref = Ref('initial state')
-        >>> ref.try_modify(lambda _: Left('Whoops!')).either().run(None)
-        Left('Whoops!')
-        >>> ref.value
-        'initial state'
-        >>> ref.try_modify(lambda _: Right('new state')).run(None)
-        None
-        >>> ref.value
-        'new state'
+        Example:
+            >>> from pfun.either import Left, Right
+            >>> ref = Ref('initial state')
+            >>> ref.try_modify(lambda _: Left('Whoops!')).either().run(None)
+            Left('Whoops!')
+            >>> ref.value
+            'initial state'
+            >>> ref.try_modify(lambda _: Right('new state')).run(None)
+            None
+            >>> ref.value
+            'new state'
 
-        :param f: function that accepts the current state and \
-            returns a :class:`Right` wrapping a new state \
-            or a :class:`Left` value wrapping an error
-        :return: an :class:`Effect` that updates the state if `f` succeeds
+        Args:
+            f: function that accepts the current state and \
+            returns a `Right` wrapping a new state \
+            or a `Left` value wrapping an error
+
+        Return:
+            an `Effect` that updates the state if `f` succeeds
         """
         async def run_e(_) -> Trampoline[Either[E, None]]:
             async with self.__lock:

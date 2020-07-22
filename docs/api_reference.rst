@@ -3,87 +3,54 @@ API Reference
 pfun
 ----
 
-.. autoclass:: pfun.Immutable
-    :members:
-
-
-
-.. autoclass:: pfun.Dict
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,clear,__setitem__,__delitem__
-
-.. autoclass:: pfun.List
-    :members:
-    :special-members:
-    :exclude-members: __weakref__,clear,__setitem__,__delitem__
-
-
-.. autofunction:: pfun.curry
-
-
-.. autofunction:: pfun.compose
-
-
-.. autofunction:: pfun.always
-
-
-.. autofunction:: pfun.pipeline
-
-
-.. autofunction:: pfun.identity
-
-
-pfun.effect
------------
-.. automodule:: pfun.effect
+.. automodule:: pfun
     :members:
     :imported-members:
 
-pfun.effect.files
+pfun.files
 -----------------
-.. automodule:: pfun.effect.files
+.. automodule:: pfun.files
     :members:
 
-pfun.effect.console
+pfun.console
 -------------------
-.. automodule:: pfun.effect.console
+.. automodule:: pfun.console
     :members:
 
-pfun.effect.subprocess
+pfun.subprocess
 ----------------------
-.. automodule:: pfun.effect.subprocess
+.. automodule:: pfun.subprocess
     :members:
 
-pfun.effect.logging
+pfun.logging
 -------------------
-.. automodule:: pfun.effect.logging
+.. automodule:: pfun.logging
     :members:
 
-pfun.effect.ref
+pfun.ref
 ---------------
-.. automodule:: pfun.effect.ref
+.. automodule:: pfun.ref
     :members:
 
-pfun.effect.http
+pfun.http
 ----------------
 .. note::
     This module requires optional dependencies. You can install them together
     with ``pfun`` using ``pip install pfun[http]``.
 
-.. automodule:: pfun.effect.http
+.. automodule:: pfun.http
     :members:
 
-pfun.effect.sql
+pfun.sql
 ----------------
 .. note::
     This module requires optional dependencies. You can install them together
     with ``pfun`` using ``pip install pfun[sql]``.
 
 .. note::
-    ``pfun.effect.sql`` currently only supports Postgres databases
+    ``pfun.sql`` currently only supports Postgres databases
 
-.. automodule:: pfun.effect.sql
+.. automodule:: pfun.sql
     :members:
 
 pfun.maybe

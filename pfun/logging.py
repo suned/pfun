@@ -5,7 +5,7 @@ from typing import Optional, Tuple, Type, Union
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done
-from .effect import IO, Depends, Effect, add_repr, get_environment
+from .effect import Depends, Effect, Success, add_repr, get_environment
 from .either import Right
 from .immutable import Immutable
 
@@ -24,21 +24,23 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.debug`
 
-        :example:
-        >>> import logging
-        >>> Logger(logging.getLogger('foo')).debug('hello!').run(None)
-        DEBUG:foo:hello!
+        Example:
+            >>> import logging
+            >>> Logger(logging.getLogger('foo')).debug('hello!').run(None)
+            DEBUG:foo:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.debug` with `msg`
+        Return:
+            `Effect` that calls `logging.debug` with `msg`
         """
         async def run_e(_):
             self.logger.debug(msg, stack_info=stack_info, exc_info=exc_info)
@@ -51,21 +53,23 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.info`
 
-        :example:
-        >>> import logging
-        >>> Logger(logging.getLogger('foo')).info('hello!').run(None)
-        INFO:foo:hello!
+        Example:
+            >>> import logging
+            >>> Logger(logging.getLogger('foo')).info('hello!').run(None)
+            INFO:foo:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.info` with `msg`
+        Return:
+            `Effect` that calls `logging.info` with `msg`
         """
         async def run_e(_):
             self.logger.info(msg, stack_info=stack_info, exc_info=exc_info)
@@ -78,21 +82,23 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.warning`
 
-        :example:
-        >>> import logging
-        >>> Logger(logging.getLogger('foo')).warning('hello!').run(None)
-        WARNING:foo:hello!
+        Example:
+            >>> import logging
+            >>> Logger(logging.getLogger('foo')).warning('hello!').run(None)
+            WARNING:foo:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.warning` with `msg`
+        Return:
+            `Effect` that calls `logging.warning` with `msg`
         """
         async def run_e(_):
             self.logger.warning(msg, stack_info=stack_info, exc_info=exc_info)
@@ -105,21 +111,23 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.error`
 
-        :example:
-        >>> import logging
-        >>> Logger(logging.getLogger('foo')).error('hello!').run(None)
-        ERROR:foo:hello!
+        Example:
+            >>> import logging
+            >>> Logger(logging.getLogger('foo')).error('hello!').run(None)
+            ERROR:foo:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.error` with `msg`
+        Return:
+            `Effect` that calls `logging.error` with `msg`
         """
         async def run_e(_):
             self.logger.error(msg, stack_info=stack_info, exc_info=exc_info)
@@ -132,21 +140,23 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.critical`
 
-        :example:
-        >>> import logging
-        >>> Logger(logging.getLogger('foo')).critical('hello!').run(None)
-        CRITICAL:foo:hello!
+        Example:
+            >>> import logging
+            >>> Logger(logging.getLogger('foo')).critical('hello!').run(None)
+            CRITICAL:foo:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.critical` with `msg`
+        Return:
+        `Effect` that calls `logging.critical` with `msg`
         """
         async def run_e(_):
             self.logger.critical(msg, stack_info=stack_info, exc_info=exc_info)
@@ -159,21 +169,23 @@ class Logger(Immutable):
         msg: str,
         stack_info: bool = True,
         exc_info: Union[bool, ExcInfo] = True
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.exception`
 
-        :example:
-        >>> import logging
-        >>> Logger(logging.getLogger('foo')).exception('hello!').run(None)
-        EXCEPTION:foo:hello!
+        Example:
+            >>> import logging
+            >>> Logger(logging.getLogger('foo')).exception('hello!').run(None)
+            EXCEPTION:foo:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.exception` with `msg`
+        Return:
+            `Effect` that calls `logging.exception` with `msg`
         """
         async def run_e(_):
             self.logger.exception(
@@ -190,17 +202,19 @@ class Logging:
     """
     def get_logger(self, name: Optional[str] = None) -> Logger:
         """
-        Create an effect that produces a :class:`Logger` by calling built-in
+        Create an effect that produces a `Logger` by calling built-in
         logging.getLogger
 
-        :example:
-        >>> Logging().get_logger('foo').and_then(
-        ...     lambda logger: logger.info('hello!')
-        ... ).run(None)
-        INFO:foo:hello!
+        Example:
+            >>> Logging().get_logger('foo').and_then(
+            ...     lambda logger: logger.info('hello!')
+            ... ).run(None)
+            INFO:foo:hello!
 
-        :param name: name of logger
-        :return: :class:`Effect` that produces a :class:`Logger`
+        Args:
+            name: name of logger
+        Return:
+            `Effect` that produces a `Logger`
 
         """
         return Logger(logging.getLogger(name))
@@ -210,20 +224,22 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.debug`
 
-        :example:
-        >>> Logging().debug('hello!').run(None)
-        DEBUG:root:hello!
+        Example:
+            >>> Logging().debug('hello!').run(None)
+            DEBUG:root:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.debug` with `msg`
+        Return:
+            `Effect` that calls `logging.debug` with `msg`
         """
         async def run_e(_):
             logging.debug(msg, stack_info=stack_info, exc_info=exc_info)
@@ -236,20 +252,22 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.info`
 
-        :example:
-        >>> Logging().info('hello!').run(None)
-        INFO:root:hello!
+        Example:
+            >>> Logging().info('hello!').run(None)
+            INFO:root:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.info` with `msg`
+        Return:
+            `Effect` that calls `logging.info` with `msg`
         """
         async def run_e(_):
             logging.info(msg, stack_info=stack_info, exc_info=exc_info)
@@ -262,20 +280,22 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.warning`
 
-        :example:
-        >>> Logging().warning('hello!').run(None)
-        WARNING:root:hello!
+        Example:
+            >>> Logging().warning('hello!').run(None)
+            WARNING:root:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.warning` with `msg`
+        Return:
+            `Effect` that calls `logging.warning` with `msg`
         """
         async def run_e(_):
             logging.warning(msg, stack_info=stack_info, exc_info=exc_info)
@@ -288,20 +308,22 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.error`
 
-        :example:
-        >>> Logging().error('hello!').run(None)
-        ERROR:root:hello!
+        Example:
+            >>> Logging().error('hello!').run(None)
+            ERROR:root:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.error` with `msg`
+        Return:
+            `Effect` that calls `logging.error` with `msg`
         """
         async def run_e(_):
             logging.error(msg, stack_info=stack_info, exc_info=exc_info)
@@ -314,20 +336,22 @@ class Logging:
         msg: str,
         stack_info: bool = False,
         exc_info: Union[bool, ExcInfo] = False
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.info`
 
-        :example:
-        >>> Logging().critical('hello!').run(None)
-        CRITICAL:root:hello!
+        Example:
+            >>> Logging().critical('hello!').run(None)
+            CRITICAL:root:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.critical` with `msg`
+        Return:
+            `Effect` that calls `logging.critical` with `msg`
         """
         async def run_e(_):
             logging.critical(msg, stack_info=stack_info, exc_info=exc_info)
@@ -340,20 +364,22 @@ class Logging:
         msg: str,
         stack_info: bool = True,
         exc_info: Union[bool, ExcInfo] = True
-    ) -> IO[None]:
+    ) -> Success[None]:
         """
         Create an effect that calls built-in `logging.exception`
 
-        :example:
-        >>> Logging().exception('hello!').run(None)
-        ERROR:root:hello!
+        Example:
+            >>> Logging().exception('hello!').run(None)
+            ERROR:root:hello!
 
-        :param msg: the log message
-        :param stack_info: whether to include stack information in the \
-            log message
-        :param exc_info: whether to include exception info in the log message
+        Args:
+            msg: the log message
+            stack_info: whether to include stack information in the \
+                log message
+            exc_info: whether to include exception info in the log message
 
-        :return: :class:`Effect` that calls `logging.exception` with `msg`
+        Return:
+            `Effect` that calls `logging.exception` with `msg`
         """
         async def run_e(_):
             logging.exception(msg, stack_info=stack_info, exc_info=exc_info)
@@ -376,19 +402,21 @@ class HasLogging(Protocol):
 def get_logger(name: Optional[str] = None
                ) -> Depends[HasLogging, Logger]:
     """
-    Create an effect that produces a :class:`Logger` by calling built-in
+    Create an effect that produces a `Logger` by calling built-in
     logging.getLogger
 
-    :example:
-    >>> class Env:
-    ...     logging = Logging()
-    >>> get_logger('foo').and_then(
-    ...     lambda logger: logger.info('hello!')
-    ... ).run(None)
-    INFO:foo:hello!
+    Example:
+        >>> class Env:
+        ...     logging = Logging()
+        >>> get_logger('foo').and_then(
+        ...     lambda logger: logger.info('hello!')
+        ... ).run(None)
+        INFO:foo:hello!
 
-    :param name: name of logger
-    :return: :class:`Effect` that produces a :class:`Logger`
+    Args:
+        name: name of logger
+    Return:
+        `Effect` that produces a `Logger`
 
     """
     return get_environment().map(lambda env: env.logging.get_logger(name))
@@ -401,17 +429,19 @@ def debug(
     """
     Create an effect that calls built-in `logging.debug`
 
-    :example:
-    >>> class Env:
-    ...     logging = Logging()
-    >>> debug('hello!').run(Env())
-    DEBUG:root:hello!
+    Example:
+        >>> class Env:
+        ...     logging = Logging()
+        >>> debug('hello!').run(Env())
+        DEBUG:root:hello!
 
-    :param msg: the log message
-    :param stack_info: whether to include stack information in the log message
-    :param exc_info: whether to include exception info in the log message
+    Args:
+        msg: the log message
+        stack_info: whether to include stack information in the log message
+        exc_info: whether to include exception info in the log message
 
-    :return: :class:`Effect` that calls `logging.debug` with `msg`
+    Return:
+        `Effect` that calls `logging.debug` with `msg`
     """
     return get_environment().and_then(
         lambda env: env.logging.
@@ -426,17 +456,19 @@ def info(
     """
     Create an effect that calls built-in `logging.info`
 
-    :example:
-    >>> class Env:
-    ...     logging = Logging()
-    >>> info('hello!').run(Env())
-    INFO:root:hello!
+    Example:
+        >>> class Env:
+        ...     logging = Logging()
+        >>> info('hello!').run(Env())
+        INFO:root:hello!
 
-    :param msg: the log message
-    :param stack_info: whether to include stack information in the log message
-    :param exc_info: whether to include exception info in the log message
+    Args:
+        msg: the log message
+        stack_info: whether to include stack information in the log message
+        exc_info: whether to include exception info in the log message
 
-    :return: :class:`Effect` that calls `logging.info` with `msg`
+    Return:
+        `Effect` that calls `logging.info` with `msg`
     """
     return get_environment().and_then(
         lambda env: env.logging.
@@ -451,17 +483,19 @@ def warning(
     """
     Create an effect that calls built-in `logging.warning`
 
-    :example:
-    >>> class Env:
-    ...     logging = Logging()
-    >>> warning('hello!').run(Env())
-    WARNING:root:hello!
+    Example:
+        >>> class Env:
+        ...     logging = Logging()
+        >>> warning('hello!').run(Env())
+        WARNING:root:hello!
 
-    :param msg: the log message
-    :param stack_info: whether to include stack information in the log message
-    :param exc_info: whether to include exception info in the log message
+    Args:
+        msg: the log message
+        stack_info: whether to include stack information in the log message
+        exc_info: whether to include exception info in the log message
 
-    :return: :class:`Effect` that calls `logging.warning` with `msg`
+    Return:
+        `Effect` that calls `logging.warning` with `msg`
     """
     return get_environment().and_then(
         lambda env: env.logging.
@@ -476,17 +510,19 @@ def error(
     """
     Create an effect that calls built-in `logging.error`
 
-    :example:
-    >>> class Env:
-    ...     logging = Logging()
-    >>> error('hello!').run(Env())
-    ERROR:root:hello!
+    Example:
+        >>> class Env:
+        ...     logging = Logging()
+        >>> error('hello!').run(Env())
+        ERROR:root:hello!
 
-    :param msg: the log message
-    :param stack_info: whether to include stack information in the log message
-    :param exc_info: whether to include exception info in the log message
+    Args:
+        msg: the log message
+        stack_info: whether to include stack information in the log message
+        exc_info: whether to include exception info in the log message
 
-    :return: :class:`Effect` that calls `logging.error` with `msg`
+    Return:
+        `Effect` that calls `logging.error` with `msg`
     """
     return get_environment().and_then(
         lambda env: env.logging.
@@ -501,17 +537,19 @@ def critical(
     """
     Create an effect that calls built-in `logging.critical`
 
-    :example:
-    >>> class Env:
-    ...     logging = Logging()
-    >>> critical('hello!').run(Env())
-    CRITICAL:root:hello!
+    Example:
+        >>> class Env:
+        ...     logging = Logging()
+        >>> critical('hello!').run(Env())
+        CRITICAL:root:hello!
 
-    :param msg: the log message
-    :param stack_info: whether to include stack information in the log message
-    :param exc_info: whether to include exception info in the log message
+    Args:
+        msg: the log message
+        stack_info: whether to include stack information in the log message
+        exc_info: whether to include exception info in the log message
 
-    :return: :class:`Effect` that calls `logging.critical` with `msg`
+    Return:
+        `Effect` that calls `logging.critical` with `msg`
     """
     return get_environment().and_then(
         lambda env: env.logging.
@@ -526,17 +564,19 @@ def exception(
     """
     Create an effect that calls built-in `logging.exception`
 
-    :example:
-    >>> class Env:
-    ...     logging = Logging()
-    >>> exception('hello!').run(Env())
-    ERROR:root:hello!
+    Example:
+        >>> class Env:
+        ...     logging = Logging()
+        >>> exception('hello!').run(Env())
+        ERROR:root:hello!
 
-    :param msg: the log message
-    :param stack_info: whether to include stack information in the log message
-    :param exc_info: whether to include exception info in the log message
+    Args:
+        msg: the log message
+        stack_info: whether to include stack information in the log message
+        exc_info: whether to include exception info in the log message
 
-    :return: :class:`Effect` that calls `logging.exception` with `msg`
+    Return:
+        `Effect` that calls `logging.exception` with `msg`
     """
     return get_environment().and_then(
         lambda env: env.logging.

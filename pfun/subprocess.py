@@ -5,7 +5,7 @@ from typing import IO, Tuple, Union
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done
-from .effect import Effect, TryIO, add_repr, get_environment
+from .effect import Effect, Try, add_repr, get_environment
 from .either import Left, Right
 from .immutable import Immutable
 
@@ -20,19 +20,21 @@ class Subprocess(Immutable):
         stdin: Union[IO, int] = PIPE,
         stdout: Union[IO, int] = PIPE,
         stderr: Union[IO, int] = PIPE
-    ) -> TryIO[CalledProcessError, Tuple[bytes, bytes]]:
+    ) -> Try[CalledProcessError, Tuple[bytes, bytes]]:
         """
-        Get an :class:`Effect` that runs `cmd` in the shell
+        Get an `Effect` that runs `cmd` in the shell
 
-        :example:
-        >>> Subprocess().run_in_shell('cat foo.txt').run(None)
-        (b'contents of foo.txt', b'')
+        Example:
+            >>> Subprocess().run_in_shell('cat foo.txt').run(None)
+            (b'contents of foo.txt', b'')
 
-        :param cmd: the command to run
-        :param stdin: input pipe for the subprocess
-        :param stdout: output pipe for the subprocess
-        :param stderr: error pipe for the subprocess
-        :return: :class:`Effect` that runs `cmd` in the shell and produces \
+        Args:
+            cmd: the command to run
+            stdin: input pipe for the subprocess
+            stdout: output pipe for the subprocess
+            stderr: error pipe for the subprocess
+        Return:
+            `Effect` that runs `cmd` in the shell and produces \
         a tuple of `(stdout, stderr)`
         """
         async def run_e(self):
@@ -56,10 +58,11 @@ class Subprocess(Immutable):
 class HasSubprocess(Protocol):
     """
     Module provider providing the subprocess module
-
-    :attribute subprocess: the :class:`Subprocess` instance
     """
     subprocess: Subprocess
+    """
+    The provided `Subprocess` module
+    """
 
 
 @add_repr
@@ -70,19 +73,21 @@ def run_in_shell(
     stderr: Union[IO, int] = PIPE
 ) -> Effect[HasSubprocess, CalledProcessError, Tuple[bytes, bytes]]:
     """
-    Get an :class:`Effect` that runs `cmd` in the shell
+    Get an `Effect` that runs `cmd` in the shell
 
-    :example:
-    >>> class Env:
-    ...     subprocess = Subprocess()
-    >>> run_in_shell('cat foo.txt').run(Env())
-    (b'contents of foo.txt', b'')
+    Example:
+        >>> class Env:
+        ...     subprocess = Subprocess()
+        >>> run_in_shell('cat foo.txt').run(Env())
+        (b'contents of foo.txt', b'')
 
-    :param cmd: the command to run
-    :param stdin: input pipe for the subprocess
-    :param stdout: output pipe for the subprocess
-    :param stderr: error pipe for the subprocess
-    :return: :class:`Effect` that runs `cmd` in the shell and produces \
+    Args:
+        cmd: the command to run
+        stdin: input pipe for the subprocess
+        stdout: output pipe for the subprocess
+        stderr: error pipe for the subprocess
+    Return:
+        `Effect` that runs `cmd` in the shell and produces \
         a tuple of `(stdout, stderr)`
     """
     return get_environment(HasSubprocess).and_then(

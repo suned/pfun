@@ -3,11 +3,11 @@ from typing import Any, Iterable, Type, TypeVar
 
 from typing_extensions import Protocol
 
-from .curry import curry
 from .dict import Dict
-from .effect import (Effect, Resource, TryIO, add_repr, error, get_environment,
+from .effect import (Effect, Resource, Try, add_repr, error, get_environment,
                      success)
 from .either import Either, Left, Right
+from .functions import curry
 from .immutable import Immutable
 from .list import List
 
@@ -22,8 +22,8 @@ except ImportError:
 
 class PostgresConnection(Immutable):
     """
-    Wrapper for :class:`asyncpg.Connection` to make it useable with
-    :class:`Resource`
+    Wrapper for `asyncpg.Connection` to make it useable with
+    `Resource`
     """
     connection: asyncpg.Connection
 
@@ -35,29 +35,33 @@ class PostgresConnection(Immutable):
 
 
 Results = List[Dict[str, Any]]
+"""
+Type-alias for `pfun.list.List[pfun.dict.Dict[str, typing.Any]]
+"""
 
 T = TypeVar('T')
 
 
 @curry
-def as_type(type_: Type[T], results: Results) -> TryIO[TypeError, List[T]]:
+def as_type(type_: Type[T], results: Results) -> Try[TypeError, List[T]]:
     """
     Convert database results to `type_`
 
-    :example:
-    >>> results = pfun.effect.success(
-    ...     pfun.List([pfun.Dict(dict(name='bob', age=32))])
-    ... )
-    >>> class User(pfun.Immutable):
-    ...     name: str
-    ...     age: int
-    >>> results.and_then(as_type(User))(None)
-    List((User(name='bob', age=32),))
+    Example:
+        >>> results = pfun.effect.success(
+        ...     pfun.List([pfun.Dict(dict(name='bob', age=32))])
+        ... )
+        >>> class User(pfun.Immutable):
+        ...     name: str
+        ...     age: int
+        >>> results.and_then(as_type(User))(None)
+        List((User(name='bob', age=32),))
 
-    :param type_: type to convert database results to
-    :param results: database results to convert
+    Args:
+        type_: type to convert database results to
+        results: database results to convert
 
-    :return: :class:``List`` of database results converted to `type_`
+    :return: ``List`` of database results converted to `type_`
     """
 
     try:
@@ -68,7 +72,9 @@ def as_type(type_: Type[T], results: Results) -> TryIO[TypeError, List[T]]:
 
 
 class MalformedConnectionStr(Exception):
-    pass
+    """
+    Error returned when a malformed connection str is passed to `SQL`
+    """
 
 
 class SQL(Immutable, init=False):
@@ -81,8 +87,9 @@ class SQL(Immutable, init=False):
         """
         Create an SQL module
 
-        :param connection_str: connection string of the format \
-            'postgres://<user>:<password>@<host>/<database>'
+        Args:
+            connection_str: connection string of the format \
+            `postgres://<user>:<password>@<host>/<database>`
         """
         url = urllib.parse.urlparse(connection_str)
         if url.scheme not in {'postgresql', 'postgres'}:
@@ -100,40 +107,45 @@ class SQL(Immutable, init=False):
         object.__setattr__(self, 'connection', Resource(connection_factory))
 
     def get_connection(self
-                       ) -> TryIO[asyncpg.PostgresError, asyncpg.Connection]:
+                       ) -> Try[asyncpg.PostgresError, asyncpg.Connection]:
         """
-        Get an :class:`Effect` that produces a
-        :class:`asyncpg.Connection`. Used to work with `asyncpg` directly.
+        Get an `Effect` that produces a
+        `asyncpg.Connection`. Used to work with `asyncpg` directly.
 
-        :example:
-        >>> sql = SQL('postgres://user@host/database')
-        >>> sql.get_connection()(None)
-        <asyncpg.connection.Connection at ...>
+        Example:
+            >>> sql = SQL('postgres://user@host/database')
+            >>> sql.get_connection()(None)
+            <asyncpg.connection.Connection at ...>
 
-        :return: :class:`Effect` that produces :class:`asyncpg.Connection`
+        Return:
+            `Effect` that produces `asyncpg.Connection`
         """
         return self.connection.get().map(lambda c: c.connection)
 
     def execute(self, query: str, *args: Any,
-                timeout: float = None) -> TryIO[asyncpg.PostgresError, str]:
+                timeout: float = None) -> Try[asyncpg.PostgresError, str]:
         """
-        Get an :class:`Effect` that executes `query`
+        Get an `Effect` that executes `query`
 
-        :example:
-        >>> sql = SQL('postgres://user@host/database')
-        >>> sql.execute(
-        ...     'INSERT INTO users(name, age) VALUES($1, $2)',
-        ...     'bob',
-        ...     32
-        ... )(None)
-        'INSERT 1'
+        Example:
+            >>> sql = SQL('postgres://user@host/database')
+            >>> sql.execute(
+            ...     'INSERT INTO users(name, age) VALUES($1, $2)',
+            ...     'bob',
+            ...     32
+            ... )(None)
+            'INSERT 1'
 
-        :param query: query to execute
-        :param args: arguments for query
-        :param timetout: query timeout
+        Args:
+            query: query to execute
+            args: arguments for query
+            timeout: query timeout
+
+        Return:
+            `Effect` that executes `query` and produces the database response
         """
         async def _execute(connection: asyncpg.Connection
-                           ) -> TryIO[asyncpg.PostgresError, str]:
+                           ) -> Try[asyncpg.PostgresError, str]:
             try:
                 result = await connection.execute(
                     query, *args, timeout=timeout
@@ -146,25 +158,30 @@ class SQL(Immutable, init=False):
 
     def execute_many(
         self, query: str, args: Iterable[Any], timeout: float = None
-    ) -> TryIO[asyncpg.PostgresError, Iterable[str]]:
+    ) -> Try[asyncpg.PostgresError, Iterable[str]]:
         """
-        Get an :class:`Effect` that executes `query` for each argument \
+        Get an `Effect` that executes `query` for each argument \
         in `args`
 
-        :example:
-        >>> sql = SQL('postgres://user@host/database')
-        >>> sql.execute_many(
-        ...     'INSERT INTO users(name, age) VALUES($1, $2)',
-        ...     [('bob', 32), ('alice', 20)]
-        ... )(None)
-        'INSERT 2'
+        Example:
+            >>> sql = SQL('postgres://user@host/database')
+            >>> sql.execute_many(
+            ...     'INSERT INTO users(name, age) VALUES($1, $2)',
+            ...     [('bob', 32), ('alice', 20)]
+            ... )(None)
+            'INSERT 2'
 
-        :param query: query to execute
-        :param args: arguments for query
-        :param timetout: query timeout
+        Args:
+            query: query to execute
+            args: arguments for query
+            timeout: query timeout
+
+        Return:
+            `Effect` that executes `query` with all args in `args` and \
+            produces a database response for each query
         """
         async def _execute_many(connection: asyncpg.Connection
-                                ) -> TryIO[asyncpg.PostgresError, str]:
+                                ) -> Try[asyncpg.PostgresError, str]:
             try:
                 result = await connection.executemany(
                     query, *args, timeout=timeout
@@ -176,22 +193,26 @@ class SQL(Immutable, init=False):
         return self.get_connection().and_then(_execute_many)
 
     def fetch(self, query: str, *args: Any,
-              timeout: float = None) -> TryIO[asyncpg.PostgresError, Results]:
+              timeout: float = None) -> Try[asyncpg.PostgresError, Results]:
         """
-        Get an :class:`Effect` that executes `query` and returns the results
-        as a :class:`List` of :class:`Dict`
+        Get an `Effect` that executes `query` and returns the results
+        as a `List` of `Dict`
 
-        :example:
-        >>> sql = SQL('postgres://user@host/database')
-        >>> sql.fetch('select * from users')(None)
-        List((Dict({'name': 'bob', 'age': 32}),))
+        Example:
+            >>> sql = SQL('postgres://user@host/database')
+            >>> sql.fetch('select * from users')(None)
+            List((Dict({'name': 'bob', 'age': 32}),))
 
-        :param query: query to execute
-        :param args: arguments for query
-        :param timetout: query timeout
+        Args:
+            query: query to execute
+            args: arguments for query
+            timeout: query timeout
+
+        Return:
+            `Effect` that retrieves rows returned by `query` as `Results`
         """
         async def _fetch(connection: asyncpg.Connection
-                         ) -> TryIO[asyncpg.PostgresError, Results]:
+                         ) -> Try[asyncpg.PostgresError, Results]:
             try:
                 result = await connection.fetch(query, *args, timeout=timeout)
                 result = List(Dict(record) for record in result)
@@ -202,22 +223,27 @@ class SQL(Immutable, init=False):
         return self.get_connection().and_then(_fetch)
 
     def fetch_one(self, query: str, *args: Any, timeout: float = None
-                  ) -> TryIO[asyncpg.PostgresError, Dict[str, Any]]:
+                  ) -> Try[asyncpg.PostgresError, Dict[str, Any]]:
         """
-        Get an :class:`Effect` that executes `query` and returns the first \
-        result as a :class:`Dict`
+        Get an `Effect` that executes `query` and returns the first \
+        result as a `Dict`
 
-        :example:
-        >>> sql = SQL('postgres://user@host/database')
-        >>> sql.fetch_one('select * from users')(None)
-        Dict({'name': 'bob', 'age': 32})
+        Example:
+            >>> sql = SQL('postgres://user@host/database')
+            >>> sql.fetch_one('select * from users')(None)
+            Dict({'name': 'bob', 'age': 32})
 
-        :param query: query to execute
-        :param args: arguments for query
-        :param timetout: query timeout
+        Args:
+            query: query to execute
+            args: arguments for query
+            timeout: query timeout
+
+        Return:
+            `Effect` that retrieves the first row returned by `query` as \
+            `pfun.dict.Dict[str, Any]`
         """
         async def _fetch_row(connection: asyncpg.Connection
-                             ) -> TryIO[asyncpg.PostgresError, Dict[str, Any]]:
+                             ) -> Try[asyncpg.PostgresError, Dict[str, Any]]:
             try:
                 result = await connection.fetch_row(
                     query, *args, timeout=timeout
@@ -240,16 +266,19 @@ class HasSQL(Protocol):
 def get_connection(
 ) -> Effect[HasSQL, asyncpg.PostgresError, asyncpg.Connection]:
     """
-    Get an :class:`Effect` that produces a
-    :class:`asyncpg.Connection`. Used to work with `asyncpg` directly.
+    Get an `Effect` that produces a
+    `asyncpg.Connection`. Used to work with `asyncpg` directly.
 
-    :example:
-    >>> class Env:
-    ...     sql = SQL('postgres://user@host/database')
-    >>> get_connection()(Env())
-    <asyncpg.connection.Connection at ...>
+    Example:
+        >>> class Env:
+        ...     sql = SQL('postgres://user@host/database')
+        >>> get_connection()(Env())
+        <asyncpg.connection.Connection at ...>
 
-    :return: :class:`Effect` that produces :class:`asyncpg.Connection`
+    Return:
+        `Effect` that produces `asyncpg.Connection`
+    Return:
+        `Effect` that produces `asyncpg.Connection`
     """
     return get_environment(HasSQL
                            ).and_then(lambda env: env.sql.get_connection())
@@ -259,21 +288,24 @@ def get_connection(
 def execute(query: str, *args: Any, timeout: float = None
             ) -> Effect[HasSQL, asyncpg.PostgresError, str]:
     """
-    Get an :class:`Effect` that executes `query`
+    Get an `Effect` that executes `query`
 
-    :example:
-    >>> class Env:
-    ...     sql = SQL('postgres://user@host/database')
-    >>> execute(
-    ...     'INSERT INTO users(name, age) VALUES($1, $2)',
-    ...     'bob',
-    ...     32
-    ... )(Env())
-    'INSERT 1'
+    Example:
+        >>> class Env:
+        ...     sql = SQL('postgres://user@host/database')
+        >>> execute(
+        ...     'INSERT INTO users(name, age) VALUES($1, $2)',
+        ...     'bob',
+        ...     32
+        ... )(Env())
+        'INSERT 1'
 
-    :param query: query to execute
-    :param args: arguments for query
-    :param timetout: query timeout
+    Args:
+        query: query to execute
+        args: arguments for query
+        timeout: query timeout
+    Return:
+        `Effect` that executes `query` and produces the database response
     """
     return get_environment(HasSQL).and_then(
         lambda env: env.sql.execute(query, *args, timeout=timeout)
@@ -284,21 +316,25 @@ def execute(query: str, *args: Any, timeout: float = None
 def execute_many(query: str, args: Iterable[Any], timeout: float = None
                  ) -> Effect[HasSQL, asyncpg.PostgresError, Iterable[str]]:
     """
-    Get an :class:`Effect` that executes `query` for each argument \
+    Get an `Effect` that executes `query` for each argument \
     in `args`
 
-    :example:
-    >>> class Env:
-    ...     sql = SQL('postgres://user@host/database')
-    >>> execute_many(
-    ...     'INSERT INTO users(name, age) VALUES($1, $2)',
-    ...     [('bob', 32), ('alice', 20)]
-    ... )(Env())
-    'INSERT 2'
+    Example:
+        >>> class Env:
+        ...     sql = SQL('postgres://user@host/database')
+        >>> execute_many(
+        ...     'INSERT INTO users(name, age) VALUES($1, $2)',
+        ...     [('bob', 32), ('alice', 20)]
+        ... )(Env())
+        'INSERT 2'
 
-    :param query: query to execute
-    :param args: arguments for query
-    :param timetout: query timeout
+    Args:
+        query: query to execute
+        args: arguments for query
+        timeout: query timeout
+    Return:
+        `Effect` that executes `query` with all args in `args` and \
+        produces a database response for each query
     """
     return get_environment(HasSQL).and_then(
         lambda env: env.sql.execute_many(query, args, timeout=timeout)
@@ -309,18 +345,20 @@ def execute_many(query: str, args: Iterable[Any], timeout: float = None
 def fetch(query: str, *args: Any, timeout: float = None
           ) -> Effect[HasSQL, asyncpg.PostgresError, Results]:
     """
-    Get an :class:`Effect` that executes `query` and returns the results
-    as a :class:`List` of :class:`Dict`
+    Get an `Effect` that executes `query` and returns the results
+    as a `List` of `Dict`
 
-    :example:
-    >>> class Env:
-    ...     sql = SQL('postgres://user@host/database')
-    >>> fetch('select * from users')(Env())
-    List((Dict({'name': 'bob', 'age': 32}),))
-
-    :param query: query to execute
-    :param args: arguments for query
-    :param timetout: query timeout
+    Example:
+        >>> class Env:
+        ...     sql = SQL('postgres://user@host/database')
+        >>> fetch('select * from users')(Env())
+        List((Dict({'name': 'bob', 'age': 32}),))
+    Args:
+        query: query to execute
+        args: arguments for query
+        timeout: query timeout
+    Return:
+        `Effect` that retrieves rows returned by `query` as `Results`
     """
     return get_environment(HasSQL).and_then(
         lambda env: env.sql.fetch(query, *args, timeout=timeout)
@@ -331,18 +369,23 @@ def fetch(query: str, *args: Any, timeout: float = None
 def fetch_one(query: str, *args: Any, timeout: float = None
               ) -> Effect[HasSQL, asyncpg.PostgresError, Dict[str, Any]]:
     """
-    Get an :class:`Effect` that executes `query` and returns the first \
-    result as a :class:`Dict`
+    Get an `Effect` that executes `query` and returns the first \
+    result as a `Dict`
 
-    :example:
-    >>> class Env:
-    ...     sql = SQL('postgres://user@host/database')
-    >>> fetch_one('select * from users')(None)
-    Dict({'name': 'bob', 'age': 32})
+    Example:
+        >>> class Env:
+        ...     sql = SQL('postgres://user@host/database')
+        >>> fetch_one('select * from users')(None)
+        Dict({'name': 'bob', 'age': 32})
 
-    :param query: query to execute
-    :param args: arguments for query
-    :param timetout: query timeout
+    Args:
+        query: query to execute
+        args: arguments for query
+        timeout: query timeout
+
+    Return:
+        `Effect` that retrieves the first row returned by `query` as \
+        `pfun.dict.Dict[str, Any]`
     """
     return get_environment(HasSQL).and_then(
         lambda env: env.sql.fetch_one(query, *args, timeout=timeout)

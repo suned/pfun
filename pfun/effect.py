@@ -9,9 +9,9 @@ from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
 
 from .aio_trampoline import Call, Done, Trampoline
 from .aio_trampoline import sequence as sequence_trampolines
-from .curry import curry
 from .either import Either, Left, Right
 from .either import sequence as sequence_eithers
+from .functions import curry
 from .immutable import Immutable
 
 R = TypeVar('R', contravariant=True)
@@ -166,7 +166,9 @@ class RuntimeEnv(Immutable, Generic[A]):
 
 class Effect(Generic[R, E, A], Immutable):
     """
-    Wrapper for functions that are allowed to perform side-effects
+    Wrapper for functions of type \
+    `Callable[[R], Awaitable[pfun.Either[E, A]]]` that are allowed to \
+    perform side-effects
     """
     run_e: Callable[[RuntimeEnv[R]], Awaitable[Trampoline[Either[E, A]]]]
     _repr: str = ''
@@ -361,6 +363,24 @@ class Effect(Generic[R, E, A], Immutable):
         )
 
     async def __call__(self, r: R) -> A:  # type: ignore
+        """
+        Run the function wrapped by this `Effect` asynchronously, \
+        including potential side-effects. If the function fails the \
+        resulting error will be raised as an exception.
+
+        Args:
+            r: The environment with which to run this `Effect` \
+            asyncio_run: Function to run the coroutine returned by the \
+            wrapped function
+        Return:
+            The succesful result of the wrapped function if it succeeds
+
+        Raises:
+            E: If the Effect fails and `E` is a subclass of `Exception`
+            RuntimeError: if the effect fails and `E` is not a subclass of \
+                          Exception
+
+        """
         async with AsyncExitStack() as stack:
             env = RuntimeEnv(r, stack)
             trampoline = await self.run_e(env)  # type: ignore
@@ -388,6 +408,10 @@ class Effect(Generic[R, E, A], Immutable):
             wrapped function
         Return:
             The succesful result of the wrapped function if it succeeds
+        Raises:
+            E: If the Effect fails and `E` is a subclass of `Exception`
+            RuntimeError: if the effect fails and `E` is not a subclass of \
+                          Exception
         """
 
         return asyncio_run(self(r))
@@ -436,12 +460,14 @@ def success(value: A1) -> Effect[object, NoReturn, A1]:
     """
     Wrap a function in `Effect` that does nothing but return ``value``
 
-    :example:
-    >>> success('Yay!').run(None)
-    'Yay!'
+    Example:
+        >>> success('Yay!').run(None)
+        'Yay!'
 
-    :param value: The value to return when the `Effect` is executed
-    :return: `Effect` that wraps a function returning ``value``
+    Args:
+        value: The value to return when the `Effect` is executed
+    Return:
+        `Effect` that wraps a function returning ``value``
     """
     async def run_e(_):
         return Done(Right(value))
@@ -459,20 +485,22 @@ def get_environment(r_type: Type[R1] = None) -> Depends[R1, R1]:
     pass
 
 
-def get_environment(r_type=None):
+def get_environment(r_type: Optional[Type[R1]] = None) -> Depends[R1, R1]:
     """
     Get an `Effect` that produces the environment passed to `run` \
     when executed
 
-    :example:
-    >>> get_environment(str).run('environment')
-    'environment'
+    Example:
+        >>> get_environment(str).run('environment')
+        'environment'
 
-    :param r_type: The expected environment type of the resulting effect. \
+    Args:
+        r_type: The expected environment type of the resulting effect. \
         Used ONLY for type-checking and doesn't impact runtime behaviour in \
         any way
 
-    :return: `Effect` that produces the enviroment passed to `run`
+    Return:
+        `Effect` that produces the enviroment passed to `run`
     """
     async def run_e(env):
         return Done(Right(env.r))
@@ -488,14 +516,16 @@ def from_awaitable(awaitable: Awaitable[A1]) -> Effect[object, NoReturn, A1]:
     """
     Create an `Effect` that produces the result of awaiting `awaitable`
 
-    :example:
-    >>> async def f() -> str:
-    ...     return 'Yay!'
-    >>> from_awaitable(f()).run(None)
-    'Yay'
+    Example:
+        >>> async def f() -> str:
+        ...     return 'Yay!'
+        >>> from_awaitable(f()).run(None)
+        'Yay'
 
-    :param awaitable: Awaitable to await in the resulting `Effect`
-    :return: `Effect` that produces the result of awaiting `awaitable`
+    Args:
+        awaitable: Awaitable to await in the resulting `Effect`
+    Return:
+        `Effect` that produces the result of awaiting `awaitable`
     """
     async def run_e(_):
         return Done(Right(await awaitable))
@@ -510,12 +540,15 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
     Evaluate each `Effect` in `iterable` asynchronously
     and collect the results
 
-    :example:
-    >>> sequence_async([success(v) for v in range(3)]).run(None)
-    (0, 1, 2)
+    Example:
+        >>> sequence_async([success(v) for v in range(3)]).run(None)
+        (0, 1, 2)
 
-    :param iterable: The iterable to collect results from
-    :returns: ``Effect`` that produces collected results
+    Args:
+        iterable: The iterable to collect results from
+
+    Return:
+        `Effect` that produces collected results
     """
     async def run_e(r: RuntimeEnv[R1]):
         awaitables = [e.run_e(r) for e in iterable]  # type: ignore
@@ -538,13 +571,15 @@ def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
     combine the elements by ``and_then``
     from left to right and collect the results
 
-    :example:
-    >>> map_m(success, range(3)).run(None)
-    (0, 1, 2)
+    Example:
+        >>> map_m(success, range(3)).run(None)
+        (0, 1, 2)
 
-    :param f: Function to map over ``iterable``
-    :param iterable: Iterable to map ``f`` over
-    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    Args:
+        f: Function to map over ``iterable``
+        iterable: Iterable to map ``f`` over
+    Return:
+        `f` mapped over `iterable` and combined from left to right.
     """
     effects = (f(x) for x in iterable)
     return sequence_async(effects)
@@ -559,13 +594,16 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
     filter the results by the value returned by ``f``
     and combine from left to right.
 
-    :example:
-    >>> filter_m(lambda v: success(v % 2 == 0), range(3)).run(None)
-    (0, 2)
+    Example:
+        >>> filter_m(lambda v: success(v % 2 == 0), range(3)).run(None)
+        (0, 2)
 
-    :param f: Function to map ``iterable`` by
-    :param iterable: Iterable to map by ``f``
-    :return: `iterable` mapped and filtered by `f`
+    Args:
+        f: Function to map ``iterable`` by
+        iterable: Iterable to map by ``f``
+
+    Return:
+        `iterable` mapped and filtered by `f`
     """
     async def run_e(r: RuntimeEnv[R1]):
         async def thunk():
@@ -589,15 +627,19 @@ def absolve(effect: Effect[R1, NoReturn, Either[E1, A1]]
     Move the error type from an `Effect` producing an `Either` \
     into the error channel of the `Effect`
 
-    :example:
-    >>> effect = error('Whoops').either().map(
-    ...     lambda either: either.get if isinstance(either, Right) else 'Phew!'
-    ... )
-    >>> absolve(effect).run(None)
-    'Phew!'
+    Example:
+        >>> effect = error('Whoops').either().map(
+        ...     lambda either: either.get if isinstance(either, Right)
+        ...                    else 'Phew!'
+        ... )
+        >>> absolve(effect).run(None)
+        'Phew!'
 
-    :param effect: an `Effect` producing an `Either`
-    :return: an `Effect` failing with `E1` or succeeding with `A1`
+    Args:
+        effect: an `Effect` producing an `Either`
+
+    Return:
+        an `Effect` failing with `E1` or succeeding with `A1`
     """
     async def run_e(r) -> Trampoline[Either[E1, A1]]:
         async def thunk():
@@ -614,12 +656,15 @@ def error(reason: E1) -> Effect[object, E1, NoReturn]:
     """
     Create an `Effect` that does nothing but fail with `reason`
 
-    :example:
-    >>> error('Whoops!').run(None)
-    RuntimeError: 'Whoops!'
+    Example:
+        >>> error('Whoops!').run(None)
+        RuntimeError: 'Whoops!'
 
-    :param reason: Value to fail with
-    :return: `Effect` that fails with `reason`
+    Args:
+        reason: Value to fail with
+
+    Return:
+        `Effect` that fails with `reason`
     """
     async def run_e(r):
         return Done(Left(reason))
@@ -636,14 +681,16 @@ def combine(*effects: Effect[R1, E1, A2]
     Create an effect that produces the result of calling the passed function \
     with the results of effects in `effects`
 
-    :example:
-    >>> combine(success(2), success(2))(lambda a, b: a + b).run(None)
-    4
+    Example:
+        >>> combine(success(2), success(2))(lambda a, b: a + b).run(None)
+        4
 
-    :param effects: Effects the results of which to pass to the combiner \
+    Args:
+        effects: Effects the results of which to pass to the combiner \
         function
 
-    :return: function that takes a combiner function and returns an \
+    Return:
+        function that takes a combiner function and returns an \
         `Effect` that applies the function to the results of `effects`
     """
     def _(f: Callable[..., A1]):
@@ -665,13 +712,16 @@ def catch(error_type: Type[EX],
     Catch exceptions raised by a function and push them into the error type \
     of an `Effect`
 
-    :example:
-    >>> catch(ZeroDivisionError)(lambda: 1 / 0).either().run(None)
-    Left(ZeroDivisionError('division by zero'))
+    Example:
+        >>> catch(ZeroDivisionError)(lambda: 1 / 0).either().run(None)
+        Left(ZeroDivisionError('division by zero'))
 
-    :param error_type: Exception type to catch. All other exceptions will \
+    Args:
+        error_type: Exception type to catch. All other exceptions will \
         not be handled
-    :return: `Effect` that can fail with exceptions raised by the \
+
+    Return:
+        `Effect` that can fail with exceptions raised by the \
         passed function
     """
     def _(f):
@@ -689,13 +739,16 @@ def catch_all(f: Callable[[], A1]) -> Effect[object, Exception, A1]:
     """
     Return an `Effect` that can fail with any exceptions raised by `f`
 
-    :example:
-    >>> catch_all(lambda: 1 / 0).either().run(None)
-    Left(ZeroDivisionError('division by zero'))
+    Example:
+        >>> catch_all(lambda: 1 / 0).either().run(None)
+        Left(ZeroDivisionError('division by zero'))
 
-    :param f: All exceptions raised by this functions will be pushed to the \
+    Args:
+        f: All exceptions raised by this functions will be pushed to the \
         error channel of the resulting `Effect`
-    :return: `Effect` that cain fail with exceptions raised by `f` \
+
+    Return:
+        `Effect` that cain fail with exceptions raised by `f` \
         or succeed with the result of `f`
     """
     async def run_e(_: Any) -> Trampoline[Either[Exception, A1]]:
@@ -707,14 +760,23 @@ def catch_all(f: Callable[[], A1]) -> Effect[object, Exception, A1]:
     return Effect(run_e)
 
 
-IO = Effect[object, NoReturn, A1]
-TryIO = Effect[object, E1, A1]
+Success = Effect[object, NoReturn, A1]
+"""
+Type-alias for `Effect[object, NoReturn, TypeVar('A')]`.
+"""
+Try = Effect[object, E1, A1]
+"""
+Type-alias for `Effect[object, TypeVar('E'), TypeVar('A')]`.
+"""
 Depends = Effect[R1, NoReturn, A1]
+"""
+Type-alias for `Effect[TypeVar('R'), NoReturn, TypeVar('A')]`.
+"""
 
 __all__ = [
     'Effect',
-    'IO',
-    'TryIO',
+    'Success',
+    'Try',
     'Depends',
     'success',
     'get_environment',

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Generator, Generic, Iterable, TypeVar, cast
+from typing import Callable, Generic, Iterable, TypeVar, cast
 
-from .curry import curry
+from .functions import curry
 from .immutable import Immutable
 from .monad import Monad, filter_m_, map_m_, sequence_
 
@@ -33,8 +33,10 @@ class Trampoline(Immutable, Generic[A], Monad, ABC):
         """
         Apply ``f`` to the value wrapped by this trampoline.
 
-        :param f: function to apply the value in this trampoline
-        :return: Result of applying ``f`` to the value wrapped by \
+        Args:
+            f: function to apply the value in this trampoline
+        Return:
+            Result of applying ``f`` to the value wrapped by \
             this trampoline
         """
         return AndThen(self, f)
@@ -43,8 +45,10 @@ class Trampoline(Immutable, Generic[A], Monad, ABC):
         """
         Map ``f`` over the value wrapped by this trampoline.
 
-        :param f: function to wrap over this trampoline
-        :return: new trampoline wrapping the result of ``f``
+        Args:
+            f: function to wrap over this trampoline
+        Return:
+            new trampoline wrapping the result of ``f``
         """
         return self.and_then(lambda a: Done(f(a)))
 
@@ -52,7 +56,8 @@ class Trampoline(Immutable, Generic[A], Monad, ABC):
         """
         Interpret a structure of trampolines to produce a result
 
-        :return: result of intepreting this structure of \
+        Return:
+            result of intepreting this structure of \
             trampolines
         """
         trampoline = self
@@ -119,32 +124,36 @@ def map_m(f: Callable[[A], Trampoline[B]],
           iterable: Iterable[A]) -> Trampoline[Iterable[B]]:
     """
     Map each in element in ``iterable`` to
-    an :class:`Trampoline` by applying ``f``,
+    an `Trampoline` by applying ``f``,
     combine the elements by ``and_then``
     from left to right and collect the results
 
-    :example:
-    >>> map_m(Just, range(3))
-    Just((0, 1, 2))
+    Example:
+        >>> map_m(Done, range(3)).run()
+        (0, 1, 2)
 
-    :param f: Function to map over ``iterable``
-    :param iterable: Iterable to map ``f`` over
-    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    Args:
+        f: Function to map over ``iterable``
+        iterable: Iterable to map ``f`` over
+    Return:
+        ``f`` mapped over ``iterable`` and combined from left to right.
     """
     return cast(Trampoline[Iterable[B]], map_m_(Done, f, iterable))
 
 
 def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
     """
-    Evaluate each :class:`Trampoline` in `iterable` from left to right
+    Evaluate each `Trampoline` in `iterable` from left to right
     and collect the results
 
-    :example:
-    >>> sequence([Just(v) for v in range(3)])
-    Just((0, 1, 2))
+    Example:
+        >>> sequence([Done(v) for v in range(3)]).run()
+        (0, 1, 2)
 
-    :param iterable: The iterable to collect results from
-    :returns: ``Trampoline`` of collected results
+    Args:
+        iterable: The iterable to collect results from
+    Return:
+        ``Trampoline`` of collected results
     """
     return cast(Trampoline[Iterable[A]], sequence_(Done, iterable))
 
@@ -157,18 +166,18 @@ def filter_m(f: Callable[[A], Trampoline[bool]],
     filter the results by the value returned by ``f``
     and combine from left to right.
 
-    :example:
-    >>> filter_m(lambda v: Just(v % 2 == 0), range(3))
-    Just((0, 2))
+    Example:
+        >>> filter_m(lambda v: Done(v % 2 == 0), range(3)).run()
+        (0, 2)
 
-    :param f: Function to map ``iterable`` by
-    :param iterable: Iterable to map by ``f``
-    :return: `iterable` mapped and filtered by `f`
+    Args:
+        f: Function to map ``iterable`` by
+        iterable: Iterable to map by ``f``
+    Return:
+        `iterable` mapped and filtered by `f`
     """
     return cast(Trampoline[Iterable[A]], filter_m_(Done, f, iterable))
 
-
-Trampolines = Generator[Trampoline[A], A, B]
 
 __all__ = [
     'Trampoline',
@@ -178,5 +187,4 @@ __all__ = [
     'map_m',
     'sequence',
     'filter_m',
-    'Trampolines'
 ]

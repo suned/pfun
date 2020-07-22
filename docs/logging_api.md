@@ -1,0 +1,9 @@
+::: pfun.logging.Logging
+::: pfun.logging.HasLogging
+::: pfun.logging.get_logger
+::: pfun.logging.debug
+::: pfun.logging.info
+::: pfun.logging.warning
+::: pfun.logging.error
+::: pfun.logging.exception
+::: pfun.logging.critical

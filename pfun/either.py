@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import (Any, Callable, Generator, Generic, Iterable, TypeVar,
-                    Union, cast)
+from typing import Any, Callable, Generic, Iterable, TypeVar, Union, cast
 
-from .curry import curry
+from .functions import curry
 from .immutable import Immutable
 from .monad import Monad, filter_m_, map_m_, sequence_
 
@@ -20,7 +19,7 @@ class Either_(Immutable, Monad, ABC):
     Abstract class representing a computation with either
     ``A`` or ``B`` as its result.
     Should not be instantiated directly,
-    use :class:`Left` or :class:`Right` instead
+    use `Left` or `Right` instead
     """
     @abstractmethod
     def and_then(self, f):
@@ -28,32 +27,36 @@ class Either_(Immutable, Monad, ABC):
         Chain together functions of either computations, keeping
         track of whether or not any of them have failed
 
-        :example:
-        >>> f = lambda i: Right(1 / i) if i != 0 else Left('i was 0')
-        >>> Right(1).and_then(f)
-        Right(1.0)
-        >>> Right(0).and_then(f)
-        Left('i was 0')
+        Example:
+            >>> f = lambda i: Right(1 / i) if i != 0 else Left('i was 0')
+            >>> Right(1).and_then(f)
+            Right(1.0)
+            >>> Right(0).and_then(f)
+            Left('i was 0')
 
-        :param f: The function to call
-        :return: :class:`Right` of type A if \
-        the computation was successful, :class:`Left` of type B otherwise.
+        Args:
+            f: The function to call
+        Return:
+            `Right` of type A if \
+            the computation was successful, `Left` of type B otherwise.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """
         Convert this result to a boolean value
 
-        :example:
-        >>> "Right" if Right(1) else "Left"
-        "Right"
-        >>> "Right" if Left("an error") else "Left"
-        "Left"
+        Example:
+            >>> "Right" if Right(1) else "Left"
+            "Right"
+            >>> "Right" if Left("an error") else "Left"
+            "Left"
 
-        :return: True if this as an :class:`Right`,
-                 False if this is an :class:`Left`
+
+        Return:
+            True if this as an `Right`,
+            False if this is an `Left`
         """
         raise NotImplementedError()
 
@@ -63,15 +66,17 @@ class Either_(Immutable, Monad, ABC):
         Try to get the result of this either computation, return default
         if this is a ``Left`` value
 
-        :example:
-        >>> Right(1).or_else(2)
-        1
-        >>> Left(1).or_else(2)
-        2
+        Example:
+            >>> Right(1).or_else(2)
+            1
+            >>> Left(1).or_else(2)
+            2
 
-        :param default: Value to return if this is a ``Left`` value
-        :return: Result of computation if this is a ``Right`` value, \
-                 default otherwise
+        Args:
+            default: Value to return if this is a ``Left`` value
+        Return:
+            Result of computation if this is a ``Right`` value, \
+            default otherwise
         """
         raise NotImplementedError()
 
@@ -80,17 +85,20 @@ class Either_(Immutable, Monad, ABC):
         """
         Map the result of this either computation
 
-        :example:
-        >>> f = lambda i: Right(1 / i) if i != 0 else Left('i was 0').map(str)
-        >>> Right(1).and_then(f).map(str)
-        Right('0.5')
-        >>> Ok(0).and_then(f).map(str)
-        Left('i was 0')
+        Example:
+            >>> f = (lambda i: Right(1 / i)
+            ...                if i != 0 else Left('i was 0').map(str))
+            >>> Right(1).and_then(f).map(str)
+            Right('0.5')
+            >>> Ok(0).and_then(f).map(str)
+            Left('i was 0')
 
-        :param f: Function to apply to the result
-        :return: :class:`Right` wrapping result of type C  \
-                 if the computation was if this is a ``Right`` value, \
-                 :class:`Left` of type B otherwise
+        Args:
+            f: Function to apply to the result
+        Return:
+            `Right` wrapping result of type C  \
+            if the computation was if this is a ``Right`` value, \
+            `Left` of type B otherwise
 
     """
         raise NotImplementedError()
@@ -101,6 +109,9 @@ class Right(Either_, Generic[A]):
     Represents the ``Right`` case of ``Either``
     """
     get: A
+    """
+    The right result
+    """
 
     def or_else(self, default: C) -> A:
         return self.get
@@ -113,19 +124,20 @@ class Right(Either_, Generic[A]):
 
     def __eq__(self, other: Any) -> bool:
         """
-        Test if ``other`` is a :class:`Right` wrapping the same value as
+        Test if ``other`` is a `Right` wrapping the same value as
         this instance
 
-        :example:
-        >>> Right('value') == Right('value')
-        True
-        >>> Right('another value') == Right('value')
-        False
+        Example:
+            >>> Right('value') == Right('value')
+            True
+            >>> Right('another value') == Right('value')
+            False
 
-        :param other: object to compare with
-        :return: True if other is a :class:`Right`
-                 instance and wraps the same \
-        value as this instance, False otherwise
+        Args:
+            other: object to compare with
+        Return:
+            True if other is a `Right` instance and wraps the same \
+            value as this instance, False otherwise
         """
         return isinstance(other, Right) and self.get == other.get
 
@@ -141,6 +153,9 @@ class Left(Either_, Generic[B]):
     Represents the ``Left`` case of ``Either``
     """
     get: B
+    """
+    The left result
+    """
 
     def or_else(self, default: C) -> C:
         return default
@@ -150,18 +165,20 @@ class Left(Either_, Generic[B]):
 
     def __eq__(self, other: object) -> bool:
         """
-        Test if ``other`` is an :class:`Left` wrapping the same value as
+        Test if ``other`` is an `Left` wrapping the same value as
         this instance
 
-        :example:
-        >>> Left('error message') == Left('error message')
-        True
-        >>> Left('error message') == Left('another message')
-        False
+        Example:
+            >>> Left('error message') == Left('error message')
+            True
+            >>> Left('error message') == Left('another message')
+            False
 
-        :param other: object to compare with
-        :return: True if other is an :class:`Left` instance and wraps the same
-        value as this instance, False otherwise
+        Args:
+            other: object to compare with
+        Return:
+            True if other is an `Left` instance and wraps the same \
+            value as this instance, False otherwise
         """
         return isinstance(other, Left) and other.get == self.get
 
@@ -176,19 +193,25 @@ class Left(Either_, Generic[B]):
 
 
 Either = Union[Left[B], Right[A]]
+"""
+Type-alias for `Union[Left[TypeVar('L')], Right[TypeVar('R')]]`
+"""
+Either.__module__ = __name__
 
 
 def either(f: Callable[..., A]) -> Callable[..., Either[A, B]]:
     """
     Turn ``f`` into a monadic function in the ``Either`` monad by wrapping
-    in it a :class:`Right`
+    in it a `Right`
 
-    :example:
-    >>> either(lambda v: v)(1)
-    Right(1)
+    Example:
+        >>> either(lambda v: v)(1)
+        Right(1)
 
-    :param f: function to wrap
-    :return: ``f`` wrapped with a ``Right``
+    Args:
+        f: function to wrap
+    Return:
+        ``f`` wrapped with a ``Right``
     """
     @wraps(f)
     def decorator(*args, **kwargs):
@@ -202,12 +225,14 @@ def sequence(iterable: Iterable[Either[A, B]]) -> Either[Iterable[A], B]:
     Evaluate each ``Either`` in `iterable` from left to right
     and collect the results
 
-    :example:
-    >>> sequence([Right(v) for v in range(3)])
-    Right((0, 1, 2))
+    Example:
+        >>> sequence([Right(v) for v in range(3)])
+        Right((0, 1, 2))
 
-    :param iterable: The iterable to collect results from
-    :returns: ``Either`` of collected results
+    Args:
+        iterable: The iterable to collect results from
+    Return:
+        ``Either`` of collected results
     """
     return cast(Either[Iterable[A], B], sequence_(Right, iterable))
 
@@ -217,17 +242,19 @@ def map_m(f: Callable[[A], Either[B, C]],
           iterable: Iterable[A]) -> Either[Iterable[B], C]:
     """
     Map each in element in ``iterable`` to
-    an :class:`Either` by applying ``f``,
+    an `Either` by applying ``f``,
     combine the elements by ``and_then``
     from left to right and collect the results
 
-    :example:
-    >>> map_m(Right, range(3))
-    Right((0, 1, 2))
+    Example:
+        >>> map_m(Right, range(3))
+        Right((0, 1, 2))
 
-    :param f: Function to map over ``iterable``
-    :param iterable: Iterable to map ``f`` over
-    :return: ``f`` mapped over ``iterable`` and combined from left to right.
+    Args:
+        f: Function to map over ``iterable``
+        iterable: Iterable to map ``f`` over
+    Return:
+         ``f`` mapped over ``iterable`` and combined from left to right.
     """
     return cast(Either[Iterable[B], C], map_m_(Right, f, iterable))
 
@@ -240,13 +267,15 @@ def filter_m(f: Callable[[A], Either[bool, B]],
     filter the results by the value returned by ``f``
     and combine from left to right.
 
-    :example:
-    >>> filter_m(lambda v: Right(v % 2 == 0), range(3))
-    Right((0, 2))
+    Example:
+        >>> filter_m(lambda v: Right(v % 2 == 0), range(3))
+        Right((0, 2))
 
-    :param f: Function to map ``iterable`` by
-    :param iterable: Iterable to map by ``f``
-    :return: `iterable` mapped and filtered by `f`
+    Args:
+        f: Function to map ``iterable`` by
+        iterable: Iterable to map by ``f``
+    Return:
+        `iterable` mapped and filtered by `f`
     """
     return cast(Either[Iterable[A], B], filter_m_(Right, f, iterable))
 
@@ -254,20 +283,22 @@ def filter_m(f: Callable[[A], Either[bool, B]],
 def tail_rec(f: Callable[[D], Either[C, Either[D, B]]], a: D) -> Either[C, B]:
     """
     Run a stack safe recursive monadic function `f`
-    by calling `f` with :class:`Left` values
-    until a :class:`Right` value is produced
+    by calling `f` with `Left` values
+    until a `Right` value is produced
 
-    :example:
-    >>> def f(i: str) -> Either[Either[int, str]]:
-    ...     if i == 0:
-    ...         return Right(Right('Done'))
-    ...     return Right(Left(i - 1))
-    >>> tail_rec(f, 5000)
-    Right('Done')
+    Example:
+        >>> def f(i: str) -> Either[Either[int, str]]:
+        ...     if i == 0:
+        ...         return Right(Right('Done'))
+        ...     return Right(Left(i - 1))
+        >>> tail_rec(f, 5000)
+        Right('Done')
 
-    :param f: function to run "recursively"
-    :param a: initial argument to `f`
-    :return: result of `f`
+    Args:
+        f: function to run "recursively"
+        a: initial argument to `f`
+    Return:
+        result of `f`
     """
     outer_either = f(a)
     if isinstance(outer_either, Left):
@@ -281,10 +312,23 @@ def tail_rec(f: Callable[[D], Either[C, Either[D, B]]], a: D) -> Either[C, B]:
     return inner_either
 
 
-Eithers = Generator[Either[A, B], B, C]
-
-
 def catch(f: Callable[..., A]) -> Callable[..., Either[Exception, A]]:
+    """
+    Decorator that wraps return values of decoratod functions with `Right`,
+    and wraps catched exceptions with `Left`
+
+    Example:
+        >>> catch_division = catch(lambda v: 1 / v)
+        >>> catch_division(1)
+        Right(1.0)
+        >>> catch_division(0)
+        Left(ZeroDivisionError('division by zero'))
+
+    Args:
+        f: function to decorate
+    Return:
+        decorated function
+    """
     @wraps(f)
     def decorator(*args, **kwargs) -> Either[Exception, A]:
         try:
@@ -303,6 +347,5 @@ __all__ = [
     'map_m',
     'sequence',
     'filter_m',
-    'Eithers',
     'catch'
 ]
