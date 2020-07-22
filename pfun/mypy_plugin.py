@@ -13,8 +13,8 @@ from mypy.types import (ARG_POS, AnyType, CallableType, Instance, Overloaded,
                         Type, TypeVarDef, TypeVarId, TypeVarType, UnionType,
                         get_proper_type)
 
-_CURRY = 'pfun.curry.curry'
-_COMPOSE = 'pfun.util.compose'
+_CURRY = 'pfun.functions.curry'
+_COMPOSE = 'pfun.functions.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 _MAYBE = 'pfun.maybe.maybe'
 _RESULT = 'pfun.result.result'

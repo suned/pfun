@@ -123,13 +123,13 @@
 - case: effect_and_then_combines_protocols_for_type_aliases
   main: |
     from typing_extensions import Protocol
-    from pfun import Depends, IO
+    from pfun import Depends, Success
 
     class P1(Protocol):
       p1_attr: str
 
     e1: Depends[P1, str]
-    e2: IO[str]
+    e2: Success[str]
 
     reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[main.P1, <nothing>, builtins.str*]'
 - case: effect_and_then_does_not_combine_non_protocols
