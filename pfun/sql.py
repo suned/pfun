@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Any, Iterable, Type, TypeVar
+from typing import Any, Iterable, Type, TypeVar, Union
 
 from typing_extensions import Protocol
 
@@ -18,6 +18,13 @@ except ImportError:
         'Could not import asyncpg. To use pfun.effect.sql, '
         'install pfun with \n\n\tpip install pfun[sql]'
     )
+
+
+class EmptyResultSet(Exception):
+    pass
+
+
+SQLError = Union[asyncpg.PostgresError, EmptyResultSet]
 
 
 class PostgresConnection(Immutable):
@@ -224,7 +231,7 @@ class SQL(Immutable, init=False):
         return self.get_connection().and_then(_fetch)
 
     def fetch_one(self, query: str, *args: Any, timeout: float = None
-                  ) -> Try[asyncpg.PostgresError, Dict[str, Any]]:
+                  ) -> Try[SQLError, Dict[str, Any]]:
         """
         Get an `Effect` that executes `query` and returns the first \
         result as a `Dict`
@@ -246,9 +253,11 @@ class SQL(Immutable, init=False):
         async def _fetch_row(connection: asyncpg.Connection
                              ) -> Try[asyncpg.PostgresError, Dict[str, Any]]:
             try:
-                result = await connection.fetch_row(
+                result = await connection.fetchrow(
                     query, *args, timeout=timeout
                 )
+                if result is None:
+                    return error(EmptyResultSet())
                 return success(Dict(result))
             except asyncpg.PostgresError as e:
                 return error(e)
@@ -368,7 +377,7 @@ def fetch(query: str, *args: Any, timeout: float = None
 
 @add_repr
 def fetch_one(query: str, *args: Any, timeout: float = None
-              ) -> Effect[HasSQL, asyncpg.PostgresError, Dict[str, Any]]:
+              ) -> Effect[HasSQL, SQLError, Dict[str, Any]]:
     """
     Get an `Effect` that executes `query` and returns the first \
     result as a `Dict`

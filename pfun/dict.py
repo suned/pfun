@@ -1,6 +1,6 @@
 from typing import Dict as Dict_
-from typing import (Generic, ItemsView, Iterator, KeysView, Mapping, TypeVar,
-                    Union, ValuesView)
+from typing import (ItemsView, Iterator, KeysView, Mapping, TypeVar, Union,
+                    ValuesView)
 
 from .immutable import Immutable
 from .maybe import Just, Maybe, Nothing
@@ -9,7 +9,7 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-class Dict(Immutable, Generic[K, V], init=False):
+class Dict(Immutable, Mapping[K, V], init=False):
     """
     Immutable dictionary class with functional helper methods
     """
@@ -94,7 +94,7 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         return self._d.items()
 
-    def __contains__(self, key: K) -> bool:
+    def __contains__(self, key: object) -> bool:
         """
         Test if ``key`` is a key in this dictionary
 
@@ -191,7 +191,7 @@ class Dict(Immutable, Generic[K, V], init=False):
             pass
         return Dict(copy)
 
-    def get(self, key: K) -> Maybe[V]:
+    def get(self, key: K) -> Maybe[V]:  # type: ignore
         """
         get the value associated with a key
 
@@ -231,7 +231,7 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         d: Dict_[K, V] = {}
         d.update(self._d)
-        d.update(other)  # type: ignore
+        d.update(other)
         return Dict(d)
 
 
