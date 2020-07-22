@@ -3,7 +3,7 @@ from typing import Union
 
 from main_dec import main
 
-from pfun import Effect, TryIO, curry, error, files, success
+from pfun import Effect, Try, curry, error, files, success
 
 
 class MalformedTomlError(Exception):
@@ -14,7 +14,7 @@ class NoVersionMatchError(Exception):
     pass
 
 
-def get_version(toml: str) -> TryIO[MalformedTomlError, str]:
+def get_version(toml: str) -> Try[MalformedTomlError, str]:
     match = re.search(r'version = \"([0-9]+\.[0-9]+\.[0-9]+)\"', toml)
     if match is None:
         return error(
@@ -26,7 +26,7 @@ def get_version(toml: str) -> TryIO[MalformedTomlError, str]:
 
 @curry
 def compare(expected_version: str,
-            actual_version: str) -> TryIO[NoVersionMatchError, None]:
+            actual_version: str) -> Try[NoVersionMatchError, None]:
     message = (
         f'version "{actual_version}" in pyproject.toml '
         f'did not match "{expected_version}"'
