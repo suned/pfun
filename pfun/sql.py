@@ -36,8 +36,9 @@ class PostgresConnection(Immutable):
 
 Results = List[Dict[str, Any]]
 """
-Type-alias for `pfun.list.List[pfun.dict.Dict[str, typing.Any]]
+Type-alias for `pfun.list.List[pfun.dict.Dict[str, typing.Any]]`
 """
+Results.__module__ = __name__
 
 T = TypeVar('T')
 
