@@ -22,6 +22,6 @@ On [ko-fi](https://ko-fi.com/python_pfun)
 Requires [poetry](https://poetry.eustace.io/)
 
 - Install dependencies with `poetry install`
-- Build documentation with `poetry run sphinx-build -b html docs/source docs/build`
-- Run tests with `poetry run pytest`
+- Build documentation with `poetry run mkdocs serve`
+- Run tests with `poetry run tox`
 - Lint with `poetry run pre-commit --all`

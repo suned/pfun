@@ -17,6 +17,10 @@ class Dict(Immutable, Generic[K, V], init=False):
     _d: Dict_[K, V]
 
     def __init__(self, d: Union[Dict_[K, V], 'Dict[K, V]'] = dict()):
+        """
+        Args:
+            d: `dict` instance to wrap
+        """
         if isinstance(d, Dict):
             d = d._d
         object.__setattr__(self, '_d', dict(d))
@@ -24,7 +28,14 @@ class Dict(Immutable, Generic[K, V], init=False):
     def __repr__(self):
         return f'Dict({repr(self._d)})'
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
+        """
+        Compare `self` with `other`
+
+        Return:
+            `True` if keys and associated values \
+            are equal, `False` otherwise
+        """
         if isinstance(other, dict):
             return other == self._d
         if isinstance(other, Dict):
@@ -35,11 +46,12 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         Get the keys in this dictionary
 
-        :example:
-        >>> Dict({'key': 'value'}).keys()
-        dict_keys(['key'])
+        Example:
+            >>> Dict({'key': 'value'}).keys()
+            dict_keys(['key'])
 
-        :return: Dictionary keys
+        Return:
+            Dictionary keys
         """
         return self._d.keys()
 
@@ -47,11 +59,12 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         Get the values in this dictionary
 
-        :example:
-        >>> Dict({'key': 'value'}).values()
-        dict_values(['value'])
+        Example:
+            >>> Dict({'key': 'value'}).values()
+            dict_values(['value'])
 
-        :return: Dictionary values
+        Return:
+            Dictionary values
         """
         return self._d.values()
 
@@ -59,11 +72,12 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         Get a shallow copy of this dictionary.
 
-        :example:
-        >>> Dict({'key': 'value'}).copy()
-        Dict({'key': 'value'})
+        Example:
+            >>> Dict({'key': 'value'}).copy()
+            Dict({'key': 'value'})
 
-        :return: Copy of this dict
+        Return:
+            Copy of this dict
         """
         return Dict(self._d.copy())
 
@@ -71,11 +85,12 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         Get the keys and values of this dictionary
 
-        :example:
-        >>> Dict({'key': 'value'}).items()
-        dict_items([('key', 'value')])
+        Example:
+            >>> Dict({'key': 'value'}).items()
+            dict_items([('key', 'value')])
 
-        :return: Keys and values of this dictionary
+        Return:
+            Keys and values of this dictionary
         """
         return self._d.items()
 
@@ -83,12 +98,14 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         Test if ``key`` is a key in this dictionary
 
-        :example:
-        >>> 'key' in Dict({'key': 'value'})
-        True
+        Example:
+            >>> 'key' in Dict({'key': 'value'})
+            True
 
-        :param key: The key to test for membership
-        :return: ``True`` if ``key`` is a key in this dictionary,
+        Args:
+            key: The key to test for membership
+        Return:
+            ``True`` if ``key`` is a key in this dictionary,
                  ``False`` otherwise
         """
         return key in self._d
@@ -97,12 +114,13 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         get the value associated with a key
 
-        :example:
-        >>> Dict(key='value')['key']
-        'value'
-
-        :param key: the key to retrieve
-        :return: value associated with key
+        Example:
+            >>> Dict(key='value')['key']
+            'value'
+        Args:
+            key: the key to retrieve
+            Return:
+            value associated with key
         """
         return self._d[key]
 
@@ -110,11 +128,12 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         Get an iterator over the keys in this dictionary
 
-        :example:
-        >>> tuple(Dict({'key': 'value'}))
-        ('key',)
+        Example:
+            >>> tuple(Dict({'key': 'value'}))
+            ('key',)
 
-        :return: Iterator of the keys in this dictionary
+        Return:
+            Iterator of the keys in this dictionary
         """
         return iter(self._d)
 
@@ -122,11 +141,12 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         Get the number of key/value pairs in this dictionary
 
-        :example:
-        >>> len(Dict({'key': 'value'}))
-        1
+        Example:
+            >>> len(Dict({'key': 'value'}))
+            1
 
-        :return: Number of key/value pairs in this dictionary
+        Return:
+            Number of key/value pairs in this dictionary
         """
         return len(self._d)
 
@@ -135,13 +155,15 @@ class Dict(Immutable, Generic[K, V], init=False):
         Combine keys and values from this dictionary
         with a new dictionary that includes key and value
 
-        :example:
-        >>> Dict().set('key', 'value')
-        {'key': 'value'}
+        Example:
+            >>> Dict().set('key', 'value')
+            {'key': 'value'}
 
-        :param key: key to add to the new dictionary
-        :param value: value to associate with key
-        :return: new dictionary with existing keys and values
+        Args:
+            key: key to add to the new dictionary
+            value: value to associate with key
+        Return:
+            new dictionary with existing keys and values
                  in addition to key and value
         """
         copy = self._d.copy()
@@ -153,12 +175,14 @@ class Dict(Immutable, Generic[K, V], init=False):
         Get a copy of this dictionary without
         the mapping associated with ``key``.
 
-        :example:
-        >>> Dict({'key': 'value'}).without('key')
-        Dict({})
+        Example:
+            >>> Dict({'key': 'value'}).without('key')
+            Dict({})
 
-        :param key: The ``key`` to remove
-        :return: Copy of this dictionary without ``key``
+        Args:
+            key: The ``key`` to remove
+        Return:
+            Copy of this dictionary without ``key``
         """
         copy = self._d.copy()
         try:
@@ -171,15 +195,19 @@ class Dict(Immutable, Generic[K, V], init=False):
         """
         get the value associated with a key
 
-        :example:
-        >>> Dict().get('key')
-        Just('default')
+        Example:
+            >>> Dict().get('key')
+            Nothing()
+            >> Dict({'key': 'value'}).get('key')
+            Just('value')
 
-        :param key: the key to retrieve
-        :param default: value to return if the key is not found
-        :return: :class:`Just` if key is found in dictionary
+        Args:
+            key: the key to retrieve
+            default: value to return if the key is not found
+        Return:
+            `Just` if key is found in dictionary
                  or default is given,
-                 :class:`Nothing` otherwise
+                 `Nothing` otherwise
         """
         v = self._d.get(key)
         if v is None:
@@ -193,12 +221,13 @@ class Dict(Immutable, Generic[K, V], init=False):
         Get a copy of this dictionary updated with key/value pairs
         from ``other``
 
-        :example:
-        >>> Dict({'key': 'value'}).update({'new_key': 'new_value'})
-        Dict({'key': 'value', 'new_key': 'new_value'})
-
-        :param other:
-        :return:
+        Example:
+            >>> Dict({'key': 'value'}).update({'new_key': 'new_value'})
+            Dict({'key': 'value', 'new_key': 'new_value'})
+        Args:
+            other: Dict to add to keys/values of this dictionary
+        Return:
+            copy of `self` with keys and values added
         """
         d: Dict_[K, V] = {}
         d.update(self._d)

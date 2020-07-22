@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Any, Callable, Iterable
 
-from .curry import curry
+from .functions import curry
 from .functor import Functor
 
 

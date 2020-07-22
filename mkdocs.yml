@@ -1,0 +1,49 @@
+site_name: pfun
+site_description: Purely functional, Statically Typed Python
+site_url: https://pfun.readthedocs.io
+repo_name: suned/pfun
+repo_url: https://github.com/suned/pfun
+edit_uri: ''
+nav:
+    - 'Guide':
+        - Install: install.md
+        - Immutable Objects And Data Structures: immutable_objects_and_data.md
+        - Useful Functions: useful_functions.md
+        - Effectful (But Side-Effect Free) Programming: effectful_but_side_effect_free.md
+        - Stack-Safety And Recursion: stack_safety.md
+    - Other Resources: other_resources.md
+    - 'API Reference':
+        - 'pfun.functions': functions_api.md
+        - 'pfun.effect': effect_api.md
+        - 'pfun.ref': ref_api.md
+        - 'pfun.console': console_api.md
+        - 'pfun.files': files_api.md
+        - 'pfun.logging': logging_api.md
+        - 'pfun.subprocess': subprocess_api.md
+        - 'pfun.http': http_api.md
+        - 'pfun.sql': sql_api.md
+        - 'pfun.list': list_api.md
+        - 'pfun.dict': dict_api.md
+        - 'pfun.maybe': maybe_api.md
+        - 'pfun.either': either_api.md
+        - 'pfun.immutable': immutable_api.md
+        - 'pfun.trampoline': trampoline_api.md
+theme:
+    name: material
+    palette:
+        primary: blue
+    logo: nav_logo.svg
+markdown_extensions:
+    - codehilite
+    - admonition
+plugins:
+    - search
+    - mkdocstrings:
+        handlers:
+            python:
+              rendering:
+                show_source: false
+                show_root_heading: true
+                heading_level: 1
+        watch:
+            - pfun

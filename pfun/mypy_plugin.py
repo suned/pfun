@@ -13,24 +13,12 @@ from mypy.types import (ARG_POS, AnyType, CallableType, Instance, Overloaded,
                         Type, TypeVarDef, TypeVarId, TypeVarType, UnionType,
                         get_proper_type)
 
-_CURRY = 'pfun.curry.curry'
-_COMPOSE = 'pfun.util.compose'
+_CURRY = 'pfun.functions.curry'
+_COMPOSE = 'pfun.functions.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 _MAYBE = 'pfun.maybe.maybe'
-_MAYBE_WITH_EFFECT = 'pfun.maybe.with_effect'
-_LIST_WITH_EFFECT = 'pfun.liste.with_effect'
-_EITHER_WITH_EFFECT = 'pfun.either.with_effect'
-_READER_WITH_EFFECT = 'pfun.reader.with_effect'
-_WRITER_WITH_EFFECT = 'pfun.writer.with_effect'
-_STATE_WITH_EFFECT = 'pfun.state.with_effect'
-_IO_WITH_EFFECT = 'pfun.io.with_effect'
-_TRAMPOLINE_WITH_EFFECT = 'pfun.trampoline.with_effect'
-_FREE_WITH_EFFECT = 'pfun.free.with_effect'
 _RESULT = 'pfun.result.result'
-_IO = 'pfun.io.io'
-_READER = 'pfun.reader.reader'
 _EITHER = 'pfun.either.either'
-_READER_AND_THEN = 'pfun.reader.Reader.and_then'
 _EFFECT_COMBINE = 'pfun.effect.combine'
 _EITHER_CATCH = 'pfun.either.catch'
 
@@ -208,12 +196,12 @@ def _immutable_hook(context: ClassDefContext):
 
 def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     def base_repr(base):
-        if 'pfun.effect.Intersection' in base.type.fullname:
+        if 'pfun.Intersection' in base.type.fullname:
             return ', '.join([repr(b) for b in base.type.bases])
         return repr(base)
 
     def get_bases(base):
-        if 'pfun.effect.Intersection' in base.type.fullname:
+        if 'pfun.Intersection' in base.type.fullname:
             bases = set()
             for b in base.type.bases:
                 bases |= get_bases(b)
@@ -240,8 +228,9 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     info.is_protocol = True
     info.is_abstract = True
     info.bases = [p1, p2]
-    info.abstract_attributes = (p1.type.abstract_attributes +
-                                p2.type.abstract_attributes)
+    info.abstract_attributes = (
+        p1.type.abstract_attributes + p2.type.abstract_attributes
+    )
     calculate_mro(info)
     return Instance(info, p1.args + p2.args)
 
@@ -251,18 +240,22 @@ def _effect_and_then_hook(context: MethodContext) -> Type:
     return_type_args = return_type.args
     return_type = return_type.copy_modified(args=return_type_args)
     try:
-        e1 = context.type
+        e1 = get_proper_type(context.type)
         r1 = e1.args[0]
-        e2 = context.arg_types[0][0].ret_type
+        e2 = get_proper_type(context.arg_types[0][0].ret_type)
         r2 = e2.args[0]
         if r1 == r2:
             r3 = r1.copy_modified()
             return_type_args[0] = r3
             return return_type.copy_modified(args=return_type_args)
-        elif isinstance(r1, AnyType):
+        elif isinstance(
+            r1, Instance
+        ) and r1.type.fullname == 'builtins.object':
             return_type_args[0] = r2.copy_modified()
             return return_type.copy_modified(args=return_type_args)
-        elif isinstance(r2, AnyType):
+        elif isinstance(
+            r2, Instance
+        ) and r2.type.fullname == 'builtins.object':
             return_type_args[0] = r1.copy_modified()
             return return_type.copy_modified(args=return_type_args)
         elif r1.type.is_protocol and r2.type.is_protocol:
@@ -275,27 +268,15 @@ def _effect_and_then_hook(context: MethodContext) -> Type:
         return return_type
 
 
-def _get_environment_hook(context: FunctionContext):
-    if context.api.return_types == []:
-        return context.default_return_type
-    type_context = context.api.return_types[-1]
-    if type_context.type.fullname == 'pfun.effect.effect.Effect':
-        type_context = get_proper_type(type_context)
-        args = context.default_return_type.args
-        inferred_r = type_context.args[0]
-        args[0] = inferred_r
-        args[-1] = inferred_r
-        return context.default_return_type.copy_modified(args=args)
-    return context.default_return_type
-
-
 def _combine_hook(context: FunctionContext):
     result_types = []
     error_types = []
     env_types = []
     try:
         for effect_type in context.arg_types[0]:
-            env_type, error_type, result_type = effect_type.args
+            env_type, error_type, result_type = get_proper_type(
+                effect_type
+            ).args
             env_types.append(env_type)
             error_types.append(error_type)
             result_types.append(result_type)
@@ -348,9 +329,9 @@ def _effect_recover_hook(context: MethodContext) -> Type:
     return_type_args = return_type.args
     return_type = return_type.copy_modified(args=return_type_args)
     try:
-        e1 = context.type
+        e1 = get_proper_type(context.type)
         r1 = e1.args[0]
-        e2 = context.arg_types[0][0].ret_type
+        e2 = get_proper_type(context.arg_types[0][0].ret_type)
         r2 = e2.args[0]
         if r1 == r2:
             r3 = r1.copy_modified()
@@ -381,8 +362,6 @@ def _lift_hook(context: FunctionContext) -> Type:
 
 
 def _lift_call_hook(context: MethodContext) -> Type:
-    import ipdb
-    ipdb.set_trace()
     arg_types = []
     for arg_type in context.arg_types[0]:
         arg_types.append(arg_type.args[-1])
@@ -405,34 +384,16 @@ class PFun(Plugin):
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
-        if fullname in (
-            _MAYBE,
-            _RESULT,
-            _EITHER,
-            _IO,
-            _READER,
-            _MAYBE_WITH_EFFECT,
-            _EITHER_WITH_EFFECT,
-            _LIST_WITH_EFFECT,
-            _READER_WITH_EFFECT,
-            _WRITER_WITH_EFFECT,
-            _STATE_WITH_EFFECT,
-            _IO_WITH_EFFECT,
-            _TRAMPOLINE_WITH_EFFECT,
-            _FREE_WITH_EFFECT,
-            _EITHER_CATCH
-        ):
+        if fullname in (_MAYBE, _RESULT, _EITHER, _EITHER_CATCH):
             return _variadic_decorator_hook
-        if fullname == 'pfun.effect.effect.get_environment':
-            return _get_environment_hook
-        if fullname == 'pfun.effect.effect.combine':
+        if fullname == 'pfun.effect.combine':
             return _combine_hook
         return None
 
     def get_method_hook(self, fullname: str):
-        if fullname == 'pfun.effect.effect.Effect.and_then':
+        if fullname == 'pfun.effect.Effect.and_then':
             return _effect_and_then_hook
-        if fullname == 'pfun.effect.effect.Effect.recover':
+        if fullname == 'pfun.effect.Effect.recover':
             return _effect_recover_hook
 
     def get_base_class_hook(self, fullname: str):
