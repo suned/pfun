@@ -20,11 +20,11 @@ except ImportError:
     )
 
 
-class EmptyResultSet(Exception):
+class EmptyResultSetError(Exception):
     pass
 
 
-SQLError = Union[asyncpg.PostgresError, EmptyResultSet]
+SQLError = Union[asyncpg.PostgresError, EmptyResultSetError]
 
 
 class PostgresConnection(Immutable):
@@ -234,7 +234,8 @@ class SQL(Immutable, init=False):
                   ) -> Try[SQLError, Dict[str, Any]]:
         """
         Get an `Effect` that executes `query` and returns the first \
-        result as a `Dict`
+        result as a `Dict or fails with `EmptyResultSetError` if the \
+        result set is empty
 
         Example:
             >>> sql = SQL('postgres://user@host/database')
@@ -257,7 +258,12 @@ class SQL(Immutable, init=False):
                     query, *args, timeout=timeout
                 )
                 if result is None:
-                    return error(EmptyResultSet())
+                    return error(
+                        EmptyResultSetError(
+                            f'query "{query}" with args "{args}" '
+                            'returned no results'
+                        )
+                    )
                 return success(Dict(result))
             except asyncpg.PostgresError as e:
                 return error(e)
@@ -380,7 +386,8 @@ def fetch_one(query: str, *args: Any, timeout: float = None
               ) -> Effect[HasSQL, SQLError, Dict[str, Any]]:
     """
     Get an `Effect` that executes `query` and returns the first \
-    result as a `Dict`
+    result as a `Dict` or fails with `EmptyResultSetError` if the \
+    result set is empty
 
     Example:
         >>> class Env:
