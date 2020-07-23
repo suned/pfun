@@ -9,10 +9,10 @@
 
 `pip install pfun`
 
-## Articles
+## Resources
 
 - [Purely Functional Python With Static Types](https://dev.to/suned/purely-functional-python-with-static-types-41mf)
-
+- [Todo Backend](https://github.com/suned/pfun-todo-backend/)
 ## Support
 
 On [ko-fi](https://ko-fi.com/python_pfun)
