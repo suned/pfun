@@ -427,7 +427,7 @@ class TestSQL:
     def test_fetch_one(self):
         with asynctest.patch('pfun.sql.asyncpg.connect') as connect_mock:
             connect_mock.return_value.close = asynctest.CoroutineMock()
-            connect_mock.return_value.fetch_row = asynctest.CoroutineMock(
+            connect_mock.return_value.fetchrow = asynctest.CoroutineMock(
                 return_value={
                     'name': 'bob', 'age': 32
                 }

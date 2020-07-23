@@ -284,8 +284,8 @@ class Effect(Generic[R, E, A], Immutable):
         return Effect(run_e)
 
     @add_method_repr
-    def recover(self,
-                f: Callable[[E], Effect[Any, E2, A]]) -> Effect[Any, E2, A]:
+    def recover(self, f: Callable[[E], Effect[Any, E2, B]]
+                ) -> Effect[Any, E2, Union[A, B]]:
         """
         Create new `Effect` that applies `f` to the error result of \
         running this effect if it fails. If this `Effect` succeeds, \
