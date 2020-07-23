@@ -1,5 +1,8 @@
 # <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:50px ; height:50px "/> <br> Functional, composable, asynchronous, type-safe Python.
 
+<div style="text-align:center"><h2>Functional, composable, asynchronous, type-safe Python.</h2></div>
+
+---
 
 - [Documentation](https://pfun.readthedocs.io/en/latest/)
 - [Known issues](https://github.com/suned/pfun/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
