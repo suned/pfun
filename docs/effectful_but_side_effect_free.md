@@ -433,6 +433,6 @@ def set_state(state: Tuple[int, ...]) -> Effect[HasState, NoReturn, None]:
 ## Type Aliases
 Since the environment type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
 
-- `pfun.effect.Success[A]` is a type-alias for `Effect[object, NoReturn, A]`, which is useful for effects that can't fail and doesn't use the environment
+- `pfun.effect.Success[A]` is a type-alias for `Effect[object, typing.NoReturn, A]`, which is useful for effects that can't fail and doesn't use the environment
 - `pfun.effect.Try[E, A]` is a type-alias for `Effect[object, E, A]`, which is useful for effects that can fail but doesn't use the environment
 - `pfun.effect.Depends[R, A]` is a type-alias for `Effect[R, typing.NoReturn, A]` which is useful for effects that can't fail but uses environment `R`

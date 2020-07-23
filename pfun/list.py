@@ -23,7 +23,7 @@ class List(Monad, Tuple[A, ...]):
         Aggregate elements by ``f``
 
         Example:
-            >>> List(range(3)).reduce(sum)
+            >>> List(range(3)).reduce(lambda a, b: a + b)
             3
 
         Args:
