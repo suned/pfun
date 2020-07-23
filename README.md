@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:50px ; height:50px "/>
+# <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:50px ; height:50px "/> <br> Functional, composable, asynchronous, type-safe Python.
 
 
 - [Documentation](https://pfun.readthedocs.io/en/latest/)
@@ -6,7 +6,14 @@
 
 ## Install
 
-`pip install pfun`
+```console
+$ pip install pfun
+```
+
+Or with optional dependencies:
+```console
+$ pip install pfun[http,sql]
+```
 
 ## Resources
 
