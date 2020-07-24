@@ -362,7 +362,7 @@ async def sleep() -> str:
     return 'success!'
 
 
-e: Effect[object, NoReturn, str] = effect.from_awaitable(sleep())
+e: Effect[object, NoReturn, str] = from_awaitable(sleep())
 assert e.run(None) == 'success!'
 ```
 
