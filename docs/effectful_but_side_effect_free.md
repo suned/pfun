@@ -430,6 +430,53 @@ class HasState(Protocol):
 def set_state(state: Tuple[int, ...]) -> Effect[HasState, NoReturn, None]:
     return get_environment().and_then(lambda env.state.set(state))
 ```
+## Creating Your Own Effects
+`pfun.effect` has a number of decorators and helper functions to help you create
+your own effects.
+
+`pfun.effect.from_function` is the most flexible option. It takes a function
+that takes an environment type and returns a `pfun.either.Either` and turns it into an effect:
+```python
+from pfun.effect import from_function, Effect
+from pfun.either import Either
+
+
+def f(r: str) -> Either[Exception, float]:
+    ...
+
+
+effect: Effect[str, Exception, float] = from_function(f)
+```
+`from_function` may also be used to create effects from async functions:
+```python
+import asyncio
+
+
+async def f(r: str) -> Either[Exception, float]:
+    await asyncio.sleep(1)
+    ...
+
+
+effect: Effect[str, Exception, float] = effect.from_function(f)
+```
+
+`pfun.effect.catch` and `pfun.effect.catch_all` are used to decorate functions
+that may raise exceptions. If the decorated function performs side effects, they
+are not carried out until the effect is run
+```python
+from pfun.effect import catch, Effect
+
+
+@catch(ZeroDivisionError, ValueError)
+def f(v: int) -> int:
+    if v > 5:
+        raise ValueError('v is not allowed to be > 5 for some reason')
+    return 1 / v
+
+
+effect: Effect[object, Union[ZeroDivisionError, ValueError], int] = f(0)
+```
+
 ## Type Aliases
 Since the environment type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
 

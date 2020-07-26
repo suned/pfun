@@ -6,7 +6,7 @@
     def f() -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def () -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int]]'
+    reveal_type(f)  # N: Revealed type is 'def () -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
 - case: variadic_decorators_preserve_unary_signature
   main: |
     from pfun.maybe import maybe
@@ -15,7 +15,7 @@
     def f(a: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int]]'
+    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
 - case: variadic_decorators_preserve_binary_signature
   main: |
     from pfun.maybe import maybe
@@ -24,7 +24,7 @@
     def f(a: int, b: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int]]'
+    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
 - case: variadic_decorators_preserve_trinary_signature
   main: |
     from pfun.maybe import maybe
@@ -33,7 +33,15 @@
     def f(a: int, b: int, c: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int, c: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int]]'
+    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int, c: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
+- case: variadic_decorators_handle_type_aliases
+  main: |
+      from pfun.effect import catch_all
+
+      def f(a: str) -> int:
+        ...
+
+      reveal_type(catch_all(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, builtins.Exception, builtins.int*]'
 - case: curry_nullary_function
   main: |
     from pfun import curry
@@ -119,7 +127,28 @@
 
       e1: Effect[P1, NoReturn, str]
       e2: Effect[P2, NoReturn, int]
-      reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.effect.Intersection[main.P1, main.P2], <nothing>, builtins.int*]'
+      reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]'
+- case: effect_and_then_combines_protocols_variadically
+  main: |
+    from typing import NoReturn
+    from typing_extensions import Protocol
+    from pfun.effect import Effect
+
+    class P1(Protocol):
+      p1_attr: str
+
+    class P2(Protocol):
+      p2_attr: int
+
+    class P3(Protocol):
+      p3_attr: float
+
+    e1: Effect[P1, NoReturn, str]
+    e2: Effect[P2, NoReturn, int]
+    e3: Effect[P3, NoReturn, float]
+    reveal_type(e1.and_then(lambda _: e2).and_then(lambda _: e3))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]'
+    reveal_type(e1.and_then(lambda _: e2.and_then(lambda _: e3)))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]'
+
 - case: effect_and_then_combines_protocols_for_type_aliases
   main: |
     from typing_extensions import Protocol
@@ -156,7 +185,7 @@
 
       e1: Effect[P1, ValueError, str]
       e2: Effect[P2, NoReturn, str]
-      reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.effect.Intersection[main.P1, main.P2], <nothing>, builtins.str]'
+      reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str]'
 - case: effect_recover_does_not_combine_non_protocols
   main: |
     from typing import NoReturn
@@ -194,7 +223,7 @@
     def f(a: str, b: str) -> str:
       pass
 
-    reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.effect.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
+    reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
 - case: effect_combine_unions_errors
   main: |
     from typing import Any
@@ -207,3 +236,13 @@
       pass
 
     reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'
+- case: effect_catch_unions_errors
+  main: |
+    from pfun.effect import catch
+
+
+    def f(a: str) -> int:
+      pass
+
+
+    reveal_type(catch(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'

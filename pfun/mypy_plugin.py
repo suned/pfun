@@ -89,7 +89,7 @@ def _variadic_decorator_hook(context: FunctionContext) -> Type:
     if function is None:
         return context.default_return_type
 
-    ret_type = context.default_return_type.ret_type
+    ret_type = get_proper_type(context.default_return_type.ret_type)
     variables = list(
         set(function.variables + context.default_return_type.variables)
     )
@@ -223,7 +223,7 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
         None,
         list(keywords.items())
     )
-    defn.fullname = f'pfun.effect.{name}'
+    defn.fullname = f'pfun.{name}'
     info = TypeInfo(names, defn, '')
     info.is_protocol = True
     info.is_abstract = True
@@ -377,14 +377,40 @@ def _lift_call_hook(context: MethodContext) -> Type:
     context.api.expr_checker.check_call(callee=function_type, )
 
 
+def _effect_catch_hook(context: FunctionContext) -> Type:
+    error_types = [arg_type[0].ret_type for arg_type in context.arg_types]
+    return context.default_return_type.copy_modified(args=error_types)
+
+
+def _effect_catch_call_hook(context: MethodContext) -> Type:
+    if len(context.type.args) == 1:
+        return context.default_return_type
+    args = context.type.args
+    error_union = UnionType(args)
+    effect_type = get_proper_type(context.default_return_type.ret_type)
+    r, e, a = effect_type.args
+    effect_type = effect_type.copy_modified(args=[r, error_union, a])
+    f_type = _get_callable_type(context.arg_types[0][0], context)
+    return context.default_return_type.copy_modified(
+        ret_type=effect_type,
+        arg_types=f_type.arg_types,
+        arg_kinds=f_type.arg_kinds,
+        arg_names=f_type.arg_names
+    )
+
+
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
+        if fullname == 'pfun.effect.catch':
+            return _effect_catch_hook
         if fullname == _CURRY:
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
-        if fullname in (_MAYBE, _RESULT, _EITHER, _EITHER_CATCH):
+        if fullname in (
+            _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all'
+        ):
             return _variadic_decorator_hook
         if fullname == 'pfun.effect.combine':
             return _combine_hook
@@ -395,6 +421,8 @@ class PFun(Plugin):
             return _effect_and_then_hook
         if fullname == 'pfun.effect.Effect.recover':
             return _effect_recover_hook
+        if fullname == 'pfun.effect.catch.__call__':
+            return _effect_catch_call_hook
 
     def get_base_class_hook(self, fullname: str):
         return _immutable_hook

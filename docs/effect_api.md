@@ -13,3 +13,4 @@
 ::: pfun.catch
 ::: pfun.catch_all
 ::: pfun.from_awaitable
+::: pfun.from_function

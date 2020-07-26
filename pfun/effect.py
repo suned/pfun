@@ -4,7 +4,7 @@ import asyncio
 from contextlib import AsyncExitStack
 from functools import wraps
 from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
-                    Iterable, NoReturn, Optional, Type, TypeVar, Union,
+                    Iterable, NoReturn, Optional, Tuple, Type, TypeVar, Union,
                     overload)
 
 from .aio_trampoline import Call, Done, Trampoline
@@ -25,6 +25,14 @@ C = TypeVar('C', bound=AsyncContextManager)
 F = TypeVar('F', bound=Callable[..., 'Effect'])
 
 
+def _get_sig_repr(args, kwargs):
+    args_repr = ', '.join([repr(arg) for arg in args])
+    kwargs_repr = ', '.join(
+        [f'{name}={repr(value)}' for name, value in kwargs.items()]
+    )
+    return args_repr + ((', ' + kwargs_repr) if kwargs_repr else '')
+
+
 def add_repr(f: F) -> F:
     """
     Decorator for functions that return effects that adds repr strings
@@ -43,11 +51,7 @@ def add_repr(f: F) -> F:
     @wraps(f)
     def decorator(*args, **kwargs):
         effect = f(*args, **kwargs)
-        args_repr = ', '.join([repr(arg) for arg in args])
-        kwargs_repr = ', '.join(
-            [f'{name}={repr(value)}' for name, value in kwargs.items()]
-        )
-        sig_repr = args_repr + ((', ' + kwargs_repr) if kwargs_repr else '')
+        sig_repr = _get_sig_repr(args, kwargs)
         repr_ = f'{f.__name__}({sig_repr})'
         return effect.with_repr(repr_)
 
@@ -75,11 +79,7 @@ def add_method_repr(f: F) -> F:
     def decorator(*args, **kwargs):
         effect = f(*args, **kwargs)
         self, *args = args
-        args_repr = ', '.join([repr(arg) for arg in args])
-        kwargs_repr = ', '.join(
-            [f'{name}={repr(value)}' for name, value in kwargs.items()]
-        )
-        sig_repr = args_repr + ((', ' + kwargs_repr) if kwargs_repr else '')
+        sig_repr = _get_sig_repr(args, kwargs)
         repr_ = f'{repr(self)}.{f.__name__}({sig_repr})'
         return effect.with_repr(repr_)
 
@@ -706,62 +706,117 @@ def combine(*effects: Effect[R1, E1, A2]
     return _
 
 
+@add_repr
+def from_function(
+    f: Callable[[R1], Union[Awaitable[Either[E1, A1]], Either[E1, A1]]]
+) -> Effect[R1, E1, A1]:
+    """
+    Create an `Effect` from a function that takes an environment and returns \
+    an `Either`
+
+    Example:
+        >>> from pfun.either import Either, Left, Right
+        >>> def f(r: str) -> Either[str, str]:
+        ...     if not r:
+        ...         return Left('Empty string')
+        ...     return Right(r * 2)
+        >>> effect = from_function(f)
+        >>> effect.run('')
+        RuntimeError: Empty string
+        >>> effect.run('Hello!')
+        Hello!Hello!
+
+    Args:
+        f: the function to turn into an `Effect`
+
+    Return:
+        `f` as an `Effect`
+    """
+    async def run_e(r: RuntimeEnv[R1]) -> Trampoline[Either[E1, A1]]:
+        either = f(r.r)
+        if asyncio.iscoroutine(either):
+            either = await either  # type: ignore
+        return Done(either)  # type: ignore
+
+    return Effect(run_e)
+
+
 EX = TypeVar('EX', bound=Exception)
 
 
-# @curry
-def catch(error_type: Type[EX],
-          ) -> Callable[[Callable[[], A1]], Effect[object, EX, A1]]:
+class catch(Immutable, Generic[EX], init=False):
     """
-    Catch exceptions raised by a function and push them into the error type \
-    of an `Effect`
+    Decorator that catches errors as an `Effect`. If the decorated
+    function performs additional side-effects, they are not carried out
+    until the effect is run.
 
     Example:
-        >>> catch(ZeroDivisionError)(lambda: 1 / 0).either().run(None)
+        >>> f = catch(ZeroDivisionError)(lambda v: 1 / v)
+        >>> f(1).run(None)
+        1.0
+        >>> f(0).run(None)
+        ZeroDivisionError
+    """
+    errors: Tuple[Type[EX], ...]
+
+    def __init__(self, error: Type[EX], *errors: Type[EX]):
+        """
+        Args:
+            error: The first exception type to catch
+            errors: The remaining exception types to catch
+        """
+        object.__setattr__(self, 'errors', (error,) + errors)
+
+    def __call__(self, f: Callable[..., B]) -> Callable[..., Try[EX, B]]:
+        """
+        Decorate `f` to catch exceptions as an `Effect`
+        """
+        @wraps(f)
+        def decorator(*args, **kwargs) -> Effect[object, EX, B]:
+            async def run_e(r: RuntimeEnv[object]
+                            ) -> Trampoline[Either[EX, B]]:
+                try:
+                    return Done(Right(f(*args, **kwargs)))
+                except Exception as e:
+                    if any(isinstance(e, t) for t in self.errors):
+                        return Done(Left(e))  # type: ignore
+                    raise
+            sig_repr = _get_sig_repr(args, kwargs)
+            error_sig_repr = ', '.join([e.__name__ for e in self.errors])
+            repr_ = f'catch({error_sig_repr})({repr(f)})({sig_repr})'
+            return Effect(run_e).with_repr(repr_)
+
+        return decorator
+
+
+def catch_all(f: Callable[..., A1]) -> Callable[..., Try[Exception, A1]]:
+    """
+    Decorator that catches all exceptions as an `Effect`. If the
+    decorated function performs additional side-effects they are not carried
+    out until the effect is run
+
+    Example:
+        >>> f = catch_all(lambda v: 1 / v)
+        >>> f(0).either().run()
         Left(ZeroDivisionError('division by zero'))
 
     Args:
-        error_type: Exception type to catch. All other exceptions will \
-        not be handled
+        f: Function to be decorated
 
     Return:
-        `Effect` that can fail with exceptions raised by the \
-        passed function
+        `f` decorated as to catch all exceptions as an `Effect`
     """
-    def _(f):
-        repr_ = f'catch({error_type.__name__})({repr(f)})'
-        try:
-            return success(f()).with_repr(repr_)
-        except error_type as e:
-            return error(e).with_repr(repr_)
-
-    return _
-
-
-@add_repr
-def catch_all(f: Callable[[], A1]) -> Effect[object, Exception, A1]:
-    """
-    Return an `Effect` that can fail with any exceptions raised by `f`
-
-    Example:
-        >>> catch_all(lambda: 1 / 0).either().run(None)
-        Left(ZeroDivisionError('division by zero'))
-
-    Args:
-        f: All exceptions raised by this functions will be pushed to the \
-        error channel of the resulting `Effect`
-
-    Return:
-        `Effect` that cain fail with exceptions raised by `f` \
-        or succeed with the result of `f`
-    """
-    async def run_e(_: Any) -> Trampoline[Either[Exception, A1]]:
-        try:
-            return Done(Right(f()))
-        except Exception as e:
-            return Done(Left(e))
-
-    return Effect(run_e)
+    @wraps(f)
+    def decorator(*args, **kwargs) -> Effect[object, Exception, A1]:
+        async def run_e(r) -> Trampoline[Either[Exception, A1]]:
+            try:
+                return Done(Right(f(*args, **kwargs)))
+            except Exception as e:
+                return Done(Left(e))
+        sig_repr = _get_sig_repr(args, kwargs)
+        repr_ = f'catch_all({repr(f)})({sig_repr})'
+        return Effect(run_e).with_repr(repr_)
+    return decorator
 
 
 Success = Effect[object, NoReturn, A1]
@@ -792,5 +847,6 @@ __all__ = [
     'combine',
     'catch',
     'catch_all',
-    'from_awaitable'
+    'from_awaitable',
+    'from_function'
 ]
