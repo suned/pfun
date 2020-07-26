@@ -75,6 +75,11 @@ class TestEffect(MonadTest):
         assert effect.sequence_async([effect.success(v) for v in range(3)]
                                      ).run(None) == (0, 1, 2)
 
+    def test_sequence_generator(self):
+        e = effect.sequence_async(effect.success(v) for v in range(3))
+        assert e.run(None) == (0, 1, 2)
+        assert e.run(None) == (0, 1, 2)
+
     def test_stack_safety(self):
         with recursion_limit(100):
             effect.sequence_async([effect.success(v)
@@ -96,6 +101,12 @@ class TestEffect(MonadTest):
     def test_filter_m(self):
         assert effect.filter_m(lambda v: effect.success(v % 2 == 0),
                                range(5)).run(None) == (0, 2, 4)
+
+    def test_filter_m_generator(self):
+        e = effect.filter_m(lambda v: effect.success(v % 2 == 0),
+                            (v for v in range(5)))
+        assert e.run(None) == (0, 2, 4)
+        assert e.run(None) == (0, 2, 4)
 
     def test_map_m(self):
         assert effect.map_m(effect.success, range(3)).run(None) == (0, 1, 2)

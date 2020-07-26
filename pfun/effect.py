@@ -550,6 +550,8 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
     Return:
         `Effect` that produces collected results
     """
+    iterable = tuple(iterable)
+
     async def run_e(r: RuntimeEnv[R1]):
         awaitables = [e.run_e(r) for e in iterable]  # type: ignore
         trampolines = await asyncio.gather(*awaitables)
@@ -605,6 +607,8 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
     Return:
         `iterable` mapped and filtered by `f`
     """
+    iterable = tuple(iterable)
+
     async def run_e(r: RuntimeEnv[R1]):
         async def thunk():
             awaitables = [f(a).run_e(r) for a in iterable]
