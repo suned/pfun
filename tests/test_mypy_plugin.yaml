@@ -303,7 +303,14 @@
     e1: Effect[P1, ZeroDivisionError, int]
     e2: Effect[P2, KeyError, int]
     reveal_type(lift(f)(e1, e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]'
+- case: effect_catch_one_error
+  main: |
+    from pfun.effect import catch
 
+    def f(a: str) -> int:
+      ...
+
+    reveal_type(catch(Exception)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, builtins.Exception, builtins.int]'
 - case: effect_catch_unions_errors
   main: |
     from pfun.effect import catch

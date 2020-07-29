@@ -361,19 +361,26 @@ def _lift_call_hook(context: MethodContext) -> Type:
 
 
 def _effect_catch_hook(context: FunctionContext) -> Type:
-    error_types = [arg_type[0].ret_type for arg_type in context.arg_types]
+    error_types = [arg_type[0].ret_type
+                   for arg_type in context.arg_types
+                   if arg_type]
     return context.default_return_type.copy_modified(args=error_types)
 
 
 def _effect_catch_call_hook(context: MethodContext) -> Type:
+    f_type = _get_callable_type(context.arg_types[0][0], context)
     if len(context.type.args) == 1:
-        return context.default_return_type
+        return context.default_return_type.copy_modified(
+            arg_types=f_type.arg_types,
+            arg_kinds=f_type.arg_kinds,
+            arg_names=f_type.arg_names
+        )
     args = context.type.args
     error_union = UnionType.make_union(args)
     effect_type = get_proper_type(context.default_return_type.ret_type)
     r, e, a = effect_type.args
     effect_type = effect_type.copy_modified(args=[r, error_union, a])
-    f_type = _get_callable_type(context.arg_types[0][0], context)
+
     return context.default_return_type.copy_modified(
         ret_type=effect_type,
         arg_types=f_type.arg_types,

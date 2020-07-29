@@ -887,17 +887,7 @@ def catch_all(f: Callable[..., A1]) -> Callable[..., Try[Exception, A1]]:
     Return:
         `f` decorated as to catch all exceptions as an `Effect`
     """
-    @wraps(f)
-    def decorator(*args, **kwargs) -> Effect[object, Exception, A1]:
-        async def run_e(r) -> Trampoline[Either[Exception, A1]]:
-            try:
-                return Done(Right(f(*args, **kwargs)))
-            except Exception as e:
-                return Done(Left(e))
-        sig_repr = _get_sig_repr(args, kwargs)
-        repr_ = f'catch_all({repr(f)})({sig_repr})'
-        return Effect(run_e).with_repr(repr_)
-    return decorator
+    return catch(Exception)(f)
 
 
 Success = Effect[object, NoReturn, A1]
