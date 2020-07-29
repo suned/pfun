@@ -25,6 +25,22 @@ C = TypeVar('C', bound=AsyncContextManager)
 F = TypeVar('F', bound=Callable[..., 'Effect'])
 
 
+class MemoizedRunE(Immutable, Generic[R, E, A]):
+    effect: Effect[R, E, A]
+    result: Optional[Either[E, A]] = None
+
+    async def __call__(self, r: RuntimeEnv[R]) -> Trampoline[Either[E, A]]:
+        async def thunk() -> Trampoline[Either[E, A]]:
+            if self.result is None:
+                trampoline = await self.effect.run_e(r)  # type: ignore
+                result = await trampoline.run()
+                object.__setattr__(self, 'result', result)
+                return Done(result)
+            else:
+                return Done(self.result)
+        return Call(thunk)
+
+
 def _get_sig_repr(args, kwargs):
     args_repr = ', '.join([repr(arg) for arg in args])
     kwargs_repr = ', '.join(
@@ -282,6 +298,33 @@ class Effect(Generic[R, E, A], Immutable):
             return Call(thunk)
 
         return Effect(run_e)
+
+    def memoize(self) -> Effect[R, E, A]:
+        """
+        Create an `Effect` that caches its result. When the effect is evaluated
+        for the second time, its side-effects are not performed, it simply
+        succeeds with the cached result. This means you should be careful with
+        memoizing complicated effects. Useful for effects that have expensive
+        results, such as calling a slow HTTP api or reading a large file.
+
+        Example:
+            >>> from pfun.console import Console
+            >>> console = Console()
+            >>> effect = console.print(
+            ...     'Doing something expensive'
+            ... ).discard_and_then(
+            ...     success('result')
+            ... ).memoize()
+            >>> # this would normally cause an effect to be run twice.
+            >>> double_effect = effect.discard_and_then(effect)
+            >>> double_effect.run(None)
+            Doing something expensive
+            'result'
+
+        Return:
+            memoized `Effect`
+        """
+        return Effect(MemoizedRunE(self))
 
     @add_method_repr
     def recover(self, f: Callable[[E], Effect[Any, E2, B]]
@@ -706,8 +749,46 @@ def combine(*effects: Effect[R1, E1, A2]
     return _
 
 
+L = TypeVar('L', covariant=True, bound=Callable)
+
+
+class lift(Generic[L]):
+    """
+    Decorator that enables decorated functions to operate on `Effect`
+    instances.
+
+    Example:
+        >>> def add(a: int, b: int) -> int:
+        ...     return a + b
+        >>> lift(add)(success(2), success(2)).run(None)
+        4
+    """
+    _f: L
+
+    def __init__(self, f: L):
+        """
+        Args:
+            f: The function to decorate
+        """
+        wraps(f)(self)
+        self._f = f
+
+    def __call__(self, *args: Effect) -> Effect:
+        """
+        Args:
+            args: `Effect` instances, the result of which should be passed \
+                  to `f`
+        Return:
+            `f` applied to the success values of `args`
+        """
+        effect = sequence_async(args)
+        args_repr = ", ".join([repr(effect) for effect in args])
+        repr_ = f'lift({repr(self._f)})({args_repr})'
+        return effect.map(lambda seq: self._f(*seq)).with_repr(repr_)
+
+
 @add_repr
-def from_function(
+def from_callable(
     f: Callable[[R1], Union[Awaitable[Either[E1, A1]], Either[E1, A1]]]
 ) -> Effect[R1, E1, A1]:
     """
@@ -720,7 +801,7 @@ def from_function(
         ...     if not r:
         ...         return Left('Empty string')
         ...     return Right(r * 2)
-        >>> effect = from_function(f)
+        >>> effect = from_callable(f)
         >>> effect.run('')
         RuntimeError: Empty string
         >>> effect.run('Hello!')
@@ -845,8 +926,9 @@ __all__ = [
     'absolve',
     'error',
     'combine',
+    'lift',
     'catch',
     'catch_all',
     'from_awaitable',
-    'from_function'
+    'from_callable'
 ]

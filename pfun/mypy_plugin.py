@@ -7,11 +7,12 @@ from mypy import checkmember, infer
 from mypy.checker import TypeChecker
 from mypy.mro import calculate_mro
 from mypy.nodes import ARG_POS, Block, ClassDef, NameExpr, TypeInfo
-from mypy.plugin import ClassDefContext, FunctionContext, MethodContext, Plugin
+from mypy.plugin import (ClassDefContext, FunctionContext, MethodContext,
+                         MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.types import (ARG_POS, AnyType, CallableType, Instance, Overloaded,
-                        Type, TypeVarDef, TypeVarId, TypeVarType, UnionType,
-                        get_proper_type)
+                        Type, TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
+                        UnionType, get_proper_type)
 
 _CURRY = 'pfun.functions.curry'
 _COMPOSE = 'pfun.functions.compose'
@@ -235,6 +236,19 @@ def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
     return Instance(info, p1.args + p2.args)
 
 
+def _combine_environments(r1: Type, r2: Type) -> Type:
+    if r1 == r2:
+        return r1.copy_modified()
+    elif isinstance(r1, Instance) and r1.type.fullname == 'builtins.object':
+        return r2.copy_modified()
+    elif isinstance(r2, Instance) and r2.type.fullname == 'builtins.object':
+        return r1.copy_modified()
+    elif r1.type.is_protocol and r2.type.is_protocol:
+        return _combine_protocols(r1, r2)
+    else:
+        return AnyType(TypeOfAny.special_form)
+
+
 def _effect_and_then_hook(context: MethodContext) -> Type:
     return_type = context.default_return_type
     return_type_args = return_type.args
@@ -244,26 +258,8 @@ def _effect_and_then_hook(context: MethodContext) -> Type:
         r1 = e1.args[0]
         e2 = get_proper_type(context.arg_types[0][0].ret_type)
         r2 = e2.args[0]
-        if r1 == r2:
-            r3 = r1.copy_modified()
-            return_type_args[0] = r3
-            return return_type.copy_modified(args=return_type_args)
-        elif isinstance(
-            r1, Instance
-        ) and r1.type.fullname == 'builtins.object':
-            return_type_args[0] = r2.copy_modified()
-            return return_type.copy_modified(args=return_type_args)
-        elif isinstance(
-            r2, Instance
-        ) and r2.type.fullname == 'builtins.object':
-            return_type_args[0] = r1.copy_modified()
-            return return_type.copy_modified(args=return_type_args)
-        elif r1.type.is_protocol and r2.type.is_protocol:
-            intersection = _combine_protocols(r1, r2)
-            return_type_args[0] = intersection
-            return return_type.copy_modified(args=return_type_args)
-        else:
-            return return_type
+        return_type_args[0] = _combine_environments(r1, r2)
+        return return_type.copy_modified(args=return_type_args)
     except (AttributeError, IndexError):
         return return_type
 
@@ -293,7 +289,9 @@ def _combine_hook(context: FunctionContext):
             fallback=context.api.named_type('builtins.function')
         )
         ret_type = context.default_return_type.ret_type
-        combined_error_type = UnionType(sorted(set(error_types), key=str))
+        combined_error_type = UnionType.make_union(
+            sorted(set(error_types), key=str)
+        )
         ret_type_args = ret_type.args
         ret_type_args[1] = combined_error_type
         ret_type_args[2] = map_return_type
@@ -327,28 +325,13 @@ def _combine_hook(context: FunctionContext):
 def _effect_recover_hook(context: MethodContext) -> Type:
     return_type = context.default_return_type
     return_type_args = return_type.args
-    return_type = return_type.copy_modified(args=return_type_args)
     try:
         e1 = get_proper_type(context.type)
         r1 = e1.args[0]
         e2 = get_proper_type(context.arg_types[0][0].ret_type)
         r2 = e2.args[0]
-        if r1 == r2:
-            r3 = r1.copy_modified()
-            return_type_args[0] = r3
-            return return_type.copy_modified(args=return_type_args)
-        elif isinstance(r1, AnyType):
-            return_type_args[0] = r2.copy_modified()
-            return return_type.copy_modified(args=return_type_args)
-        elif isinstance(r2, AnyType):
-            return_type_args[0] = r1.copy_modified()
-            return return_type.copy_modified(args=return_type_args)
-        elif r1.type.is_protocol and r2.type.is_protocol:
-            intersection = _combine_protocols(r1, r2)
-            return_type_args[0] = intersection
-            return return_type.copy_modified(args=return_type_args)
-        else:
-            return return_type
+        return_type_args[0] = _combine_environments(r1, r2)
+        return return_type.copy_modified(args=return_type_args)
     except AttributeError:
         return return_type
 
@@ -386,7 +369,7 @@ def _effect_catch_call_hook(context: MethodContext) -> Type:
     if len(context.type.args) == 1:
         return context.default_return_type
     args = context.type.args
-    error_union = UnionType(args)
+    error_union = UnionType.make_union(args)
     effect_type = get_proper_type(context.default_return_type.ret_type)
     r, e, a = effect_type.args
     effect_type = effect_type.copy_modified(args=[r, error_union, a])
@@ -397,6 +380,87 @@ def _effect_catch_call_hook(context: MethodContext) -> Type:
         arg_kinds=f_type.arg_kinds,
         arg_names=f_type.arg_names
     )
+
+
+def _effect_discard_and_then_hook(context: MethodContext) -> Type:
+    return_type = context.default_return_type
+    return_type_args = return_type.args
+    return_type = return_type.copy_modified(args=return_type_args)
+    try:
+        e1 = get_proper_type(context.type)
+        r1 = e1.args[0]
+        e2 = get_proper_type(context.arg_types[0][0])
+        r2 = e2.args[0]
+        return_type_args[0] = _combine_environments(r1, r2)
+        return return_type.copy_modified(args=return_type_args)
+    except TypeError:
+        return return_type
+
+
+def _effect_ensure_hook(context: MethodContext) -> Type:
+    return_type = context.default_return_type
+    return_type_args = return_type.args
+    return_type = return_type.copy_modified(args=return_type_args)
+    try:
+        e1 = get_proper_type(context.type)
+        r1 = e1.args[0]
+        e2 = get_proper_type(context.arg_types[0][0])
+        r2 = e2.args[0]
+        return_type_args[0] = _combine_environments(r1, r2)
+        return return_type.copy_modified(args=return_type_args)
+    except TypeError:
+        return return_type
+
+
+def _effect_lift_call_hook(context: MethodContext) -> Type:
+    try:
+        f = context.type.args[0]
+        if isinstance(f, AnyType):
+            return context.default_return_type
+        as_ = []
+        rs = []
+        es = []
+        for effect_type in context.arg_types:
+            r, e, a = effect_type[0].args
+            as_.append(a)
+            rs.append(r)
+            es.append(e)
+        inferred = infer.infer_function_type_arguments(
+            f,
+            as_, [kind for kinds in context.arg_kinds for kind in kinds],
+            [[i, i] for i in range(len(as_))]
+        )
+        a = context.api.expr_checker.apply_inferred_arguments(
+            f, inferred, context.context
+        ).ret_type
+        r = reduce(_combine_environments, rs)
+        e = UnionType.make_union(sorted(set(es), key=str))
+        return context.default_return_type.copy_modified(args=[r, e, a])
+    except AttributeError:
+        return context.default_return_type
+
+
+def _effect_lift_call_signature_hook(context: MethodSigContext):
+    try:
+        f = context.type.args[0]
+        f_arg_types = f.arg_types
+        default_effect = get_proper_type(
+            context.default_signature.arg_types[0]
+        )
+        r, e, a = default_effect.args
+        arg_types = []
+        for arg_type in f_arg_types:
+            arg_types.append(
+                default_effect.copy_modified(args=[r, e, arg_type])
+            )
+        return context.default_signature.copy_modified(
+            arg_types=arg_types,
+            arg_names=f.arg_names,
+            arg_kinds=f.arg_kinds,
+            variables=f.variables
+        )
+    except AttributeError:
+        return context.default_signature
 
 
 class PFun(Plugin):
@@ -419,10 +483,20 @@ class PFun(Plugin):
     def get_method_hook(self, fullname: str):
         if fullname == 'pfun.effect.Effect.and_then':
             return _effect_and_then_hook
+        if fullname == 'pfun.effect.Effect.discard_and_then':
+            return _effect_discard_and_then_hook
+        if fullname == 'pfun.effect.Effect.ensure':
+            return _effect_ensure_hook
         if fullname == 'pfun.effect.Effect.recover':
             return _effect_recover_hook
         if fullname == 'pfun.effect.catch.__call__':
             return _effect_catch_call_hook
+        if fullname == 'pfun.effect.lift.__call__':
+            return _effect_lift_call_hook
+
+    def get_method_signature_hook(self, fullname: str):
+        if fullname == 'pfun.effect.lift.__call__':
+            return _effect_lift_call_signature_hook
 
     def get_base_class_hook(self, fullname: str):
         return _immutable_hook

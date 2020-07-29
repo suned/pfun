@@ -434,10 +434,10 @@ def set_state(state: Tuple[int, ...]) -> Effect[HasState, NoReturn, None]:
 `pfun.effect` has a number of decorators and helper functions to help you create
 your own effects.
 
-`pfun.effect.from_function` is the most flexible option. It takes a function
+`pfun.effect.from_callable` is the most flexible option. It takes a function
 that takes an environment type and returns a `pfun.either.Either` and turns it into an effect:
 ```python
-from pfun.effect import from_function, Effect
+from pfun.effect import from_callable, Effect
 from pfun.either import Either
 
 
@@ -445,9 +445,9 @@ def f(r: str) -> Either[Exception, float]:
     ...
 
 
-effect: Effect[str, Exception, float] = from_function(f)
+effect: Effect[str, Exception, float] = from_callable(f)
 ```
-`from_function` may also be used to create effects from async functions:
+`from_callable` may also be used to create effects from async functions:
 ```python
 import asyncio
 
@@ -457,7 +457,7 @@ async def f(r: str) -> Either[Exception, float]:
     ...
 
 
-effect: Effect[str, Exception, float] = effect.from_function(f)
+effect: Effect[str, Exception, float] = from_callable(f)
 ```
 
 `pfun.effect.catch` and `pfun.effect.catch_all` are used to decorate functions
@@ -483,3 +483,33 @@ Since the environment type of `Effect` is often parameterized with `object`, and
 - `pfun.effect.Success[A]` is a type-alias for `Effect[object, typing.NoReturn, A]`, which is useful for effects that can't fail and doesn't use the environment
 - `pfun.effect.Try[E, A]` is a type-alias for `Effect[object, E, A]`, which is useful for effects that can fail but doesn't use the environment
 - `pfun.effect.Depends[R, A]` is a type-alias for `Effect[R, typing.NoReturn, A]` which is useful for effects that can't fail but uses environment `R`
+
+## Combining effects
+Sometimes you need to keep the the result of two or more effects in scope to work with
+both at the same time. This can lead to code like the following:
+```python
+from pfun.effect import success
+
+
+two = success(2)
+
+four = two.and_then(lambda a: lambda two.map(lambda b: a + b))
+```
+In these cases, consider using `pfun.effect.lift` or `pfun.effect.combine`.
+
+`lift` is a decorator that enables any function to work with effects
+```python
+from pfun.effect import lift
+
+
+def add(a: int, b: int) -> int:
+    return a + b
+
+four = lift(add)(two, two)
+```
+`combine` is like `lift` but with its arguments flipped:
+```python
+from pfun.effect import combine
+
+four = combine(two, two)(add)
+```
