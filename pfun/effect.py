@@ -26,6 +26,9 @@ F = TypeVar('F', bound=Callable[..., 'Effect'])
 
 
 class MemoizedRunE(Immutable, Generic[R, E, A]):
+    """
+    Callable used for memoized effects. See `Effect.memoize`
+    """
     effect: Effect[R, E, A]
     result: Optional[Either[E, A]] = None
 
