@@ -3,7 +3,9 @@ from __future__ import annotations
 import http
 import json
 import ssl
-from typing import Any, Callable, Iterable, Mapping, NoReturn, Union
+from typing import Any, Callable
+from typing import Dict as Dict_
+from typing import Iterable, Mapping, NoReturn, Union
 
 from typing_extensions import Protocol
 
@@ -13,7 +15,6 @@ from .effect import (Depends, Effect, Resource, Try, add_repr, error,
 from .either import Right
 from .immutable import Immutable
 from .maybe import Maybe, from_optional
-from .parse import JSon
 
 try:
     import aiohttp
@@ -23,6 +24,10 @@ except ImportError:
         'Could not import aiohttp. To use pfun.effect.http, '
         'install pfun with \n\n\tpip install pfun[http]'
     )
+
+
+JSonPrim = Union[int, str, float, Dict_[str, Any]]
+JSon = Union[Iterable[JSonPrim], JSonPrim]
 
 
 class Response(Immutable):

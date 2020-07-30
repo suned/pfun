@@ -430,9 +430,86 @@ class HasState(Protocol):
 def set_state(state: Tuple[int, ...]) -> Effect[HasState, NoReturn, None]:
     return get_environment().and_then(lambda env.state.set(state))
 ```
+## Creating Your Own Effects
+`pfun.effect` has a number of decorators and helper functions to help you create
+your own effects.
+
+`pfun.effect.from_callable` is the most flexible option. It takes a function
+that takes an environment type and returns a `pfun.either.Either` and turns it into an effect:
+```python
+from pfun.effect import from_callable, Effect
+from pfun.either import Either
+
+
+def f(r: str) -> Either[Exception, float]:
+    ...
+
+
+effect: Effect[str, Exception, float] = from_callable(f)
+```
+`from_callable` may also be used to create effects from async functions:
+```python
+import asyncio
+
+
+async def f(r: str) -> Either[Exception, float]:
+    await asyncio.sleep(1)
+    ...
+
+
+effect: Effect[str, Exception, float] = from_callable(f)
+```
+
+`pfun.effect.catch` and `pfun.effect.catch_all` are used to decorate functions
+that may raise exceptions. If the decorated function performs side effects, they
+are not carried out until the effect is run
+```python
+from pfun.effect import catch, Effect
+
+
+@catch(ZeroDivisionError, ValueError)
+def f(v: int) -> int:
+    if v > 5:
+        raise ValueError('v is not allowed to be > 5 for some reason')
+    return 1 / v
+
+
+effect: Effect[object, Union[ZeroDivisionError, ValueError], int] = f(0)
+```
+
 ## Type Aliases
 Since the environment type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
 
 - `pfun.effect.Success[A]` is a type-alias for `Effect[object, typing.NoReturn, A]`, which is useful for effects that can't fail and doesn't use the environment
 - `pfun.effect.Try[E, A]` is a type-alias for `Effect[object, E, A]`, which is useful for effects that can fail but doesn't use the environment
 - `pfun.effect.Depends[R, A]` is a type-alias for `Effect[R, typing.NoReturn, A]` which is useful for effects that can't fail but uses environment `R`
+
+## Combining effects
+Sometimes you need to keep the the result of two or more effects in scope to work with
+both at the same time. This can lead to code like the following:
+```python
+from pfun.effect import success
+
+
+two = success(2)
+
+four = two.and_then(lambda a: lambda two.map(lambda b: a + b))
+```
+In these cases, consider using `pfun.effect.lift` or `pfun.effect.combine`.
+
+`lift` is a decorator that enables any function to work with effects
+```python
+from pfun.effect import lift
+
+
+def add(a: int, b: int) -> int:
+    return a + b
+
+four = lift(add)(two, two)
+```
+`combine` is like `lift` but with its arguments flipped:
+```python
+from pfun.effect import combine
+
+four = combine(two, two)(add)
+```

@@ -10,6 +10,8 @@
 ::: pfun.map_m
 ::: pfun.absolve
 ::: pfun.combine
+::: pfun.lift
 ::: pfun.catch
 ::: pfun.catch_all
 ::: pfun.from_awaitable
+::: pfun.from_callable

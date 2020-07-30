@@ -103,8 +103,9 @@ class TestEffect(MonadTest):
                                range(5)).run(None) == (0, 2, 4)
 
     def test_filter_m_generator(self):
-        e = effect.filter_m(lambda v: effect.success(v % 2 == 0),
-                            (v for v in range(5)))
+        e = effect.filter_m(
+            lambda v: effect.success(v % 2 == 0), (v for v in range(5))
+        )
         assert e.run(None) == (0, 2, 4)
         assert e.run(None) == (0, 2, 4)
 
@@ -145,6 +146,13 @@ class TestEffect(MonadTest):
         assert effect.combine(effect.success('a'),
                               effect.success('b'))(f).run(None) == 'ab'
 
+    def test_lift(self):
+        def f(a, b):
+            return a + b
+
+        assert effect.lift(f)(effect.success(2),
+                              effect.success(2)).run(None) == 4
+
     def test_catch(self):
         def f(fail):
             if fail:
@@ -152,13 +160,10 @@ class TestEffect(MonadTest):
             else:
                 return 1
 
-        assert effect.catch(ValueError)(lambda: f(False)).run(None) == 1
-        catched_error = effect.catch(ValueError)(lambda: f(True))
-        with pytest.raises(Exception):
-            # todo
-            catched_error.run(None)
+        assert effect.catch(ValueError)(f)(False).run(None) == 1
+        catched_error = effect.catch(ValueError)(f)(True)
         with pytest.raises(ValueError):
-            effect.catch(ZeroDivisionError)(lambda: f(True))
+            catched_error.run(None)
 
     def test_catch_all(self):
         def f(value_error):
@@ -167,13 +172,34 @@ class TestEffect(MonadTest):
             else:
                 raise ZeroDivisionError()
 
-        catched_value_error = effect.catch_all(lambda: f(True))
-        catched_division_error = effect.catch_all(lambda: f(False))
+        catched_value_error = effect.catch_all(f)(True)
+        catched_division_error = effect.catch_all(f)(False)
         with pytest.raises(ValueError):
             catched_value_error.run(None)
 
         with pytest.raises(ZeroDivisionError):
             catched_division_error.run(None)
+
+    def test_from_callable(self):
+        def f(s: str) -> either.Either[str, str]:
+            return either.Right(s)
+
+        async def g(s: str) -> either.Either[str, str]:
+            return f(s)
+
+        assert effect.from_callable(f).run('env') == 'env'
+        assert effect.from_callable(g).run('env') == 'env'
+
+    def test_memoize(self):
+        state = ref.Ref(())
+        e = state.modify(
+            lambda t: t + ('modify was called',)
+        ).discard_and_then(
+            effect.success('result')
+        ).memoize()
+        double_e = e.discard_and_then(e)
+        assert double_e.run(None) == 'result'
+        assert state.value == ('modify was called',)
 
 
 class TestResoure:
