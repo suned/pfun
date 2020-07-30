@@ -184,7 +184,11 @@ class TestEffect(MonadTest):
         def f(s: str) -> either.Either[str, str]:
             return either.Right(s)
 
+        async def g(s: str) -> either.Either[str, str]:
+            return f(s)
+
         assert effect.from_callable(f).run('env') == 'env'
+        assert effect.from_callable(g).run('env') == 'env'
 
     def test_memoize(self):
         state = ref.Ref(())

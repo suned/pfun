@@ -428,7 +428,7 @@ def _effect_lift_call_hook(context: MethodContext) -> Type:
         rs = []
         es = []
         for effect_type in context.arg_types:
-            r, e, a = effect_type[0].args
+            r, e, a = get_proper_type(effect_type[0]).args
             as_.append(a)
             rs.append(r)
             es.append(e)
