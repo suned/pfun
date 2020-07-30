@@ -4,6 +4,7 @@ site_url: https://pfun.readthedocs.io
 repo_name: suned/pfun
 repo_url: https://github.com/suned/pfun
 edit_uri: ''
+google_analytics: ['UA-174083870-1', 'pfun.readthedocs.io']
 nav:
     - 'Guide':
         - Install: install.md
