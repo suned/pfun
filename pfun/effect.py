@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
 from functools import wraps
 from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
                     Iterable, NoReturn, Optional, Tuple, Type, TypeVar, Union,
                     overload)
+
+import dill
 
 from .aio_trampoline import Call, Done, Trampoline
 from .aio_trampoline import sequence as sequence_trampolines
@@ -41,6 +44,7 @@ class MemoizedRunE(Immutable, Generic[R, E, A]):
                 return Done(result)
             else:
                 return Done(self.result)
+
         return Call(thunk)
 
 
@@ -181,6 +185,28 @@ class RuntimeEnv(Immutable, Generic[A]):
     """
     r: A
     exit_stack: AsyncExitStack
+    process_executor: ProcessPoolExecutor
+    thread_executor: ThreadPoolExecutor
+
+    async def run_in_process_executor(
+        self, f: Callable[..., B], *args: Any, **kwargs: Any
+    ) -> B:
+        loop = asyncio.get_running_loop()
+        payload = dill.dumps((f, args, kwargs))
+        return dill.loads(
+            await loop.run_in_executor(
+                self.process_executor, run_dill_encoded, payload
+            )
+        )
+
+    async def run_in_thread_executor(
+        self, f: Callable[..., B], *args: Any, **kwargs: Any
+    ) -> B:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            self.thread_executor,
+            lambda: f(*args, **kwargs)
+        )
 
 
 class Effect(Generic[R, E, A], Immutable):
@@ -232,12 +258,23 @@ class Effect(Generic[R, E, A], Immutable):
                         return Done(either)
 
                     async def thunk():
-                        next_ = f(either.get)
-                        if asyncio.iscoroutine(next_):
-                            effect = await next_
+                        if is_cpu_bound(f):
+                            next_ = await r.run_in_process_executor(
+                                f, either.get
+                            )
+                            return await next_.run_e(r)
+                        elif is_io_bound(f):
+                            next_ = await r.run_in_thread_executor(
+                                f, either.get
+                            )
+                            return await next_.run_e(r)
                         else:
-                            effect = next_
-                        return await effect.run_e(r)
+                            next_ = f(either.get)
+                            if asyncio.iscoroutine(next_):
+                                effect = await next_
+                            else:
+                                effect = next_
+                            return await effect.run_e(r)
 
                     return Call(thunk)
 
@@ -356,12 +393,23 @@ class Effect(Generic[R, E, A], Immutable):
                         return Done(either)
 
                     async def thunk():
-                        next_ = f(either.get)
-                        if asyncio.iscoroutine(next_):
-                            effect = await next_
+                        if is_cpu_bound(f):
+                            next_ = await r.run_in_process_executor(
+                                f, either.get
+                            )
+                            return await next_.run_e(r)
+                        elif is_io_bound(f):
+                            next_ = await r.run_in_thread_executor(
+                                f, either.get
+                            )
+                            return await next_.run_e(r)
                         else:
-                            effect = next_
-                        return await effect.run_e(r)
+                            next_ = f(either.get)
+                            if asyncio.iscoroutine(next_):
+                                effect = await next_
+                            else:
+                                effect = next_
+                            return await effect.run_e(r)
 
                     return Call(thunk)
 
@@ -408,16 +456,20 @@ class Effect(Generic[R, E, A], Immutable):
             discard_and_then(error(reason))
         )
 
-    async def __call__(self, r: R) -> A:  # type: ignore
+    async def __call__(  # type: ignore
+        self, r: R, max_processes: int = None, max_threads: int = None
+    ) -> A:
         """
         Run the function wrapped by this `Effect` asynchronously, \
         including potential side-effects. If the function fails the \
         resulting error will be raised as an exception.
 
         Args:
-            r: The environment with which to run this `Effect` \
-            asyncio_run: Function to run the coroutine returned by the \
-            wrapped function
+            r: The environment with which to run this `Effect`
+            max_processes: The max number of processes used to run cpu bound \
+                parts of this effect
+            max_threads: The max number of threads used to run io bound \
+                parts of this effect
         Return:
             The succesful result of the wrapped function if it succeeds
 
@@ -427,8 +479,13 @@ class Effect(Generic[R, E, A], Immutable):
                           Exception
 
         """
-        async with AsyncExitStack() as stack:
-            env = RuntimeEnv(r, stack)
+        stack = AsyncExitStack()
+        process_executor = ProcessPoolExecutor(max_workers=max_processes)
+        thread_executor = ThreadPoolExecutor(max_workers=max_threads)
+        async with stack:
+            stack.enter_context(process_executor)
+            stack.enter_context(thread_executor)
+            env = RuntimeEnv(r, stack, process_executor, thread_executor)
             trampoline = await self.run_e(env)  # type: ignore
             result = await trampoline.run()
             if isinstance(result, Left):
@@ -436,12 +493,16 @@ class Effect(Generic[R, E, A], Immutable):
                 if isinstance(error, Exception):
                     raise error
                 else:
-                    raise RuntimeError(repr(error))
+                    raise RuntimeError(error)
             else:
                 return result.get
 
     def run(
-        self, r: R, asyncio_run: Callable[[Awaitable[A]], A] = asyncio.run
+        self,
+        r: R,
+        asyncio_run: Callable[[Awaitable[A]], A] = asyncio.run,
+        max_processes: int = None,
+        max_threads: int = None
     ) -> A:
         """
         Run the function wrapped by this `Effect`, including potential \
@@ -452,6 +513,10 @@ class Effect(Generic[R, E, A], Immutable):
             r: The environment with which to run this `Effect` \
             asyncio_run: Function to run the coroutine returned by the \
             wrapped function
+            max_processes: The max number of processes used to run cpu bound \
+                parts of this effect
+            max_threads: The max number of threads used to run io bound \
+                parts of this effect
         Return:
             The succesful result of the wrapped function if it succeeds
         Raises:
@@ -460,7 +525,9 @@ class Effect(Generic[R, E, A], Immutable):
                           Exception
         """
 
-        return asyncio_run(self(r))
+        return asyncio_run(
+            self(r, max_processes=max_processes, max_threads=max_threads)
+        )
 
     @add_method_repr
     def map(self, f: Callable[[A], Union[Awaitable[B], B]]) -> Effect[R, E, B]:
@@ -481,6 +548,18 @@ class Effect(Generic[R, E, A], Immutable):
         async def run_e(r: RuntimeEnv[R]) -> Trampoline[Either[E, B]]:
             def cont(either):
                 async def thunk() -> Trampoline[Either]:
+                    if is_cpu_bound(f):
+                        return Done(
+                            Right(
+                                await r.run_in_process_executor(f, either.get)
+                            )
+                        )
+                    elif is_io_bound(f):
+                        return Done(
+                            Right(
+                                await r.run_in_thread_executor(f, either.get)
+                            )
+                        )
                     result = f(either.get)
                     if asyncio.iscoroutine(result):
                         result = await result  # type: ignore
@@ -725,8 +804,17 @@ def error(reason: E1) -> Effect[object, E1, NoReturn]:
 A2 = TypeVar('A2')
 
 
-def combine(*effects: Effect[R1, E1, A2]
-            ) -> Callable[[Callable[..., A1]], Effect[Any, Any, A1]]:
+def get_runtime_env() -> Success[RuntimeEnv[object]]:
+    async def run_e(r: RuntimeEnv[object]
+                    ) -> Trampoline[Either[NoReturn, RuntimeEnv[object]]]:
+        return Done(Right(r))
+
+    return Effect(run_e)
+
+
+def combine(
+    *effects: Effect[R1, E1, A2]
+) -> Callable[[Callable[..., Union[Awaitable[A1], A1]]], Effect[Any, Any, A1]]:
     """
     Create an effect that produces the result of calling the passed function \
     with the results of effects in `effects`
@@ -743,11 +831,27 @@ def combine(*effects: Effect[R1, E1, A2]
         function that takes a combiner function and returns an \
         `Effect` that applies the function to the results of `effects`
     """
-    def _(f: Callable[..., A1]):
+    def _(f: Callable[..., Union[Awaitable[A1], A1]]) -> Effect[Any, Any, A1]:
         effect = sequence_async(effects)
         args_repr = ", ".join([repr(effect) for effect in effects])
         repr_ = f'combine({args_repr})({repr(f)})'
-        return effect.map(lambda seq: f(*seq)).with_repr(repr_)
+
+        async def call_f(r: RuntimeEnv[object], *args: Any) -> A1:
+            if is_cpu_bound(f):
+                return await r.run_in_process_executor(
+                    f, *args  # type: ignore
+                )
+            elif is_io_bound(f):
+                return await r.run_in_thread_executor(f, *args)  # type: ignore
+            else:
+                result = f(*args)
+                if asyncio.iscoroutine(result):
+                    result = await result  # type: ignore
+                return result  # type: ignore
+
+        return get_runtime_env().and_then(
+            lambda r: effect.map(lambda seq: call_f(r, *seq))  # type: ignore
+        ).with_repr(repr_)
 
     return _
 
@@ -776,7 +880,18 @@ class lift(Generic[L]):
         wraps(f)(self)
         self._f = f
 
-    def __call__(self, *args: Effect) -> Effect:
+    async def _call_f(self, r: RuntimeEnv[object], args: Iterable) -> Any:
+        if is_cpu_bound(self._f):
+            return await r.run_in_process_executor(self._f, *args)
+        elif is_io_bound(self._f):
+            return await r.run_in_thread_executor(self._f, *args)
+        else:
+            result = self._f(*args)
+            if asyncio.iscoroutine(result):
+                result = await result
+            return result
+
+    def __call__(self, *effects: Effect) -> Effect:
         """
         Args:
             args: `Effect` instances, the result of which should be passed \
@@ -784,10 +899,11 @@ class lift(Generic[L]):
         Return:
             `f` applied to the success values of `args`
         """
-        effect = sequence_async(args)
-        args_repr = ", ".join([repr(effect) for effect in args])
+        effect = sequence_async(effects)
+        args_repr = ", ".join([repr(effect) for effect in effects])
         repr_ = f'lift({repr(self._f)})({args_repr})'
-        return effect.map(lambda seq: self._f(*seq)).with_repr(repr_)
+        return combine(get_runtime_env(),
+                       effect)(self._call_f).with_repr(repr_)
 
 
 @add_repr
@@ -817,15 +933,90 @@ def from_callable(
         `f` as an `Effect`
     """
     async def run_e(r: RuntimeEnv[R1]) -> Trampoline[Either[E1, A1]]:
-        either = f(r.r)
-        if asyncio.iscoroutine(either):
-            either = await either  # type: ignore
-        return Done(either)  # type: ignore
+        if is_cpu_bound(f):
+            return Done(
+                await r.run_in_process_executor(f, r.r)  # type: ignore
+            )
+        elif is_io_bound(f):
+            return Done(await r.run_in_thread_executor(f, r.r))  # type: ignore
+        else:
+            either = f(r.r)
+            if asyncio.iscoroutine(either):
+                either = await either  # type: ignore
+            return Done(either)  # type: ignore
 
     return Effect(run_e)
 
 
 EX = TypeVar('EX', bound=Exception)
+
+
+def run_dill_encoded(payload: bytes) -> bytes:
+    fun, args, kwargs = dill.loads(payload)
+    return dill.dumps(fun(*args, **kwargs))
+
+
+F1 = TypeVar('F1', bound=Callable)
+
+
+def cpu_bound(f: F1) -> F1:
+    """
+    Decorator for functions that should be executed in separate a separate
+    process during effect evaluation
+
+    Example:
+        >>> success(2).map(cpu_bound(lambda v: v + 2)).run(None)
+        4
+    Args:
+        f: The function to decorate
+    Return:
+        `f` decorated
+    """
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'Argument {f} to cpu_bound must not be async function'
+        )
+
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    decorator.__cpu_bound__ = True  # type: ignore
+    return decorator  # type: ignore
+
+
+def io_bound(f: F1) -> F1:
+    """
+    Decorator for functions that should be executed in separate a separate
+    thread during effect evaluation
+
+    Example:
+        >>> success(2).map(io_bound(lambda v: v + 2)).run(None)
+        4
+    Args:
+        f: The function to decorate
+    Return:
+        `f` decorated
+    """
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'Argument {f} to io_bound must not be async function'
+        )
+
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    decorator.__io_bound__ = True  # type: ignore
+    return decorator  # type: ignore
+
+
+def is_cpu_bound(f: F1) -> bool:
+    return hasattr(f, '__cpu_bound__') and f.__cpu_bound__  # type: ignore
+
+
+def is_io_bound(f: F1) -> bool:
+    return hasattr(f, '__io_bound__') and f.__io_bound__  # type: ignore
 
 
 class catch(Immutable, Generic[EX], init=False):
@@ -849,7 +1040,7 @@ class catch(Immutable, Generic[EX], init=False):
             error: The first exception type to catch
             errors: The remaining exception types to catch
         """
-        object.__setattr__(self, 'errors', (error,) + errors)
+        object.__setattr__(self, 'errors', (error, ) + errors)
 
     def __call__(self, f: Callable[..., B]) -> Callable[..., Try[EX, B]]:
         """
@@ -860,37 +1051,32 @@ class catch(Immutable, Generic[EX], init=False):
             async def run_e(r: RuntimeEnv[object]
                             ) -> Trampoline[Either[EX, B]]:
                 try:
+                    if is_cpu_bound(f):
+                        return Done(
+                            Right(
+                                await
+                                r.run_in_process_executor(f, *args, *kwargs)
+                            )
+                        )
+                    elif is_io_bound(f):
+                        return Done(
+                            Right(
+                                await
+                                r.run_in_thread_executor(f, *args, **kwargs)
+                            )
+                        )
                     return Done(Right(f(*args, **kwargs)))
                 except Exception as e:
                     if any(isinstance(e, t) for t in self.errors):
                         return Done(Left(e))  # type: ignore
                     raise
+
             sig_repr = _get_sig_repr(args, kwargs)
             error_sig_repr = ', '.join([e.__name__ for e in self.errors])
             repr_ = f'catch({error_sig_repr})({repr(f)})({sig_repr})'
             return Effect(run_e).with_repr(repr_)
 
         return decorator
-
-
-def catch_all(f: Callable[..., A1]) -> Callable[..., Try[Exception, A1]]:
-    """
-    Decorator that catches all exceptions as an `Effect`. If the
-    decorated function performs additional side-effects they are not carried
-    out until the effect is run
-
-    Example:
-        >>> f = catch_all(lambda v: 1 / v)
-        >>> f(0).either().run()
-        Left(ZeroDivisionError('division by zero'))
-
-    Args:
-        f: Function to be decorated
-
-    Return:
-        `f` decorated as to catch all exceptions as an `Effect`
-    """
-    return catch(Exception)(f)
 
 
 Success = Effect[object, NoReturn, A1]
@@ -921,7 +1107,8 @@ __all__ = [
     'combine',
     'lift',
     'catch',
-    'catch_all',
     'from_awaitable',
-    'from_callable'
+    'from_callable',
+    'cpu_bound',
+    'io_bound'
 ]

@@ -21,7 +21,7 @@ try:
     from aiohttp.client_exceptions import ClientError
 except ImportError:
     raise ImportError(
-        'Could not import aiohttp. To use pfun.effect.http, '
+        'Could not import aiohttp. To use pfun.http, '
         'install pfun with \n\n\tpip install pfun[http]'
     )
 

@@ -1,8 +1,6 @@
 from typing_extensions import Protocol
 
-from .aio_trampoline import Done, Trampoline
-from .effect import Effect, Try, add_repr, get_environment
-from .either import Either, Left, Right
+from .effect import Effect, Try, add_repr, catch, get_environment, io_bound
 from .functions import curry
 from .immutable import Immutable
 
@@ -11,7 +9,7 @@ class Files(Immutable):
     """
     Module that enables reading and writing from files
     """
-    def read(self, path: str) -> Effect[object, OSError, str]:
+    def read(self, path: str) -> Try[OSError, str]:
         """
         get an `Effect` that reads the content of a file as a str
 
@@ -24,15 +22,12 @@ class Files(Immutable):
         Return:
             `Effect` that reads file located at `path`
         """
-        async def run_e(_) -> Trampoline[Either[OSError, str]]:
-            try:
-                with open(path) as f:
-                    contents = f.read()
-                return Done(Right(contents))
-            except OSError as e:
-                return Done(Left(e))
+        @io_bound
+        def f() -> str:
+            with open(path) as f:
+                return f.read()
 
-        return Effect(run_e)
+        return catch(OSError)(f)()
 
     def read_bytes(self, path: str) -> Try[OSError, bytes]:
         """
@@ -47,15 +42,12 @@ class Files(Immutable):
         Return:
             `Effect` that reads file located at `path`
         """
-        async def run_e(_) -> Trampoline[Either[OSError, bytes]]:
-            try:
-                with open(path, 'b') as f:
-                    contents = f.read()
-                return Done(Right(contents))
-            except OSError as e:
-                return Done(Left(e))
+        @io_bound
+        def f() -> bytes:
+            with open(path, 'b') as f:
+                return f.read()
 
-        return Effect(run_e)
+        return catch(OSError)(f)()
 
     def write(self, path: str, content: str) -> Try[OSError, None]:
         """
@@ -75,15 +67,12 @@ class Files(Immutable):
         Return:
             `Effect` that that writes `content` to file at `path`
         """
-        async def run_e(_) -> Trampoline[Either[OSError, None]]:
-            try:
-                with open(path, 'w') as f:
-                    f.write(content)
-                return Done(Right(None))
-            except OSError as e:
-                return Done(Left(e))
+        @io_bound
+        def f() -> None:
+            with open(path, 'w') as f:
+                f.write(content)
 
-        return Effect(run_e)
+        return catch(OSError)(f)()
 
     def write_bytes(self, path: str, content: bytes) -> Try[OSError, None]:
         """
@@ -103,15 +92,12 @@ class Files(Immutable):
         Return:
             `Effect` that that writes `content` to file at `path`
         """
-        async def run_e(_) -> Trampoline[Either[OSError, None]]:
-            try:
-                with open(path, 'wb') as f:
-                    f.write(content)
-                return Done(Right(None))
-            except OSError as e:
-                return Done(Left(e))
+        @io_bound
+        def f() -> None:
+            with open(path, 'wb') as f:
+                f.write(content)
 
-        return Effect(run_e)
+        return catch(OSError)(f)()
 
     def append(self, path: str, content: str) -> Try[OSError, None]:
         """
@@ -131,15 +117,12 @@ class Files(Immutable):
         Return:
             `Effect` that that appends `content` to file at `path`
         """
-        async def run_e(_) -> Trampoline[Either[OSError, None]]:
-            try:
-                with open(path, 'a+') as f:
-                    f.write(content)
-                return Done(Right(None))
-            except OSError as e:
-                return Done(Left(e))
+        @io_bound
+        def f() -> None:
+            with open(path, 'a+') as f:
+                f.write(content)
 
-        return Effect(run_e)
+        return catch(OSError)(f)()
 
     def append_bytes(self, path: str, content: bytes) -> Try[OSError, None]:
         """
@@ -159,15 +142,12 @@ class Files(Immutable):
         Return:
             `Effect` that that appends `content` to file at `path`
         """
-        async def run_e(_) -> Trampoline[Either[OSError, None]]:
-            try:
-                with open(path, 'ab+') as f:
-                    f.write(content)
-                return Done(Right(None))
-            except OSError as e:
-                return Done(Left(e))
+        @io_bound
+        def f() -> None:
+            with open(path, 'ab+') as f:
+                f.write(content)
 
-        return Effect(run_e)
+        return catch(OSError)(f)()
 
 
 class HasFiles(Protocol):
