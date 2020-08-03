@@ -4,7 +4,7 @@ from unittest import mock
 import aiohttp
 import asynctest
 import pytest
-from hypothesis import assume, given
+from hypothesis import assume, given, settings
 
 from pfun import (Dict, Immutable, List, compose, console, effect, either,
                   files, http, identity, logging, ref, sql, subprocess)
@@ -209,6 +209,7 @@ class TestEffect(MonadTest):
     def test_map_io_bound(self, e, value):
         e.map(effect.io_bound(lambda _: value)).run(None) == value
 
+    @settings(deadline=None)
     @given(effects(), effects())
     def test_combine_cpu_bound(self, e1, e2):
         effect.combine(e1, e2)(effect.cpu_bound(lambda v1, v2: (v1, v2))
