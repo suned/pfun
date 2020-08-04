@@ -382,7 +382,7 @@ async def sleep_and_add_1(a: int) -> int:
 assert success(1).map(sleep_and_add_1).run(None) == 2
 ```
 
-When using `pfun` with async frameworks such as [ASGI web servers](https://asgi.readthedocs.io/en/latest/), you can await the the result of effects using `Effect._call__` (which is really what `Effect.run` calls using the supplied event-loop):
+When using `pfun` with async frameworks such as [ASGI web servers](https://asgi.readthedocs.io/en/latest/), you can await the the result of effects using `Effect.__call__` (which is really what `Effect.run` calls using the supplied event-loop):
 
 ```python
 async def f() -> str:
