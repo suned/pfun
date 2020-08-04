@@ -37,7 +37,7 @@ from pfun.effect import success, Effect
 e: Effect[object, NoReturn, str] = success('Success!')
 assert e.run(None) == 'Success!'
 ```
-(You don't actually have to write the type of `e` explicitly, as it can be inferred by your type checker. We do it here simply because it's instructive to look at the types). Don't worry about the meaning of `object` and `NoReturn` for now, we'll explain that later. For now, just understand that when `e` has the type `Effect[object, NoReturn, str]`, it means that when you call `e` with any parameter, it will return a `str` (the value `Success!`).
+(You don't actually have to write the type of `e` explicitly, as it can be inferred by your type checker. We do it here simply because it's instructive to look at the types). Don't worry about the meaning of `object` and `NoReturn` for now, we'll explain that later. For now, just understand that when `e` has the type `Effect[object, NoReturn, str]`, it means that when you call `e.run` with any parameter, it will return a `str` (the value `Success!`).
 
 You can work with the success value of an effect using instance methods of `Effect`. If you want to transform the result of an `Effect` with a function without side-effects you can use `map`, which takes a function of the type `Callable[[A], B]` as an argument, where `A` is the success type of your effect:
 
