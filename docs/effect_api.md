@@ -12,6 +12,7 @@
 ::: pfun.combine
 ::: pfun.lift
 ::: pfun.catch
-::: pfun.catch_all
 ::: pfun.from_awaitable
 ::: pfun.from_callable
+::: pfun.cpu_bound
+::: pfun.io_bound

@@ -7,9 +7,9 @@ edit_uri: ''
 nav:
     - 'Guide':
         - Install: install.md
-        - Immutable Objects And Data Structures: immutable_objects_and_data.md
-        - Useful Functions: useful_functions.md
         - Effectful (But Side-Effect Free) Programming: effectful_but_side_effect_free.md
+        - Useful Functions: useful_functions.md
+        - Immutable Objects And Data Structures: immutable_objects_and_data.md
         - Stack-Safety And Recursion: stack_safety.md
     - Other Resources: other_resources.md
     - 'API Reference':
@@ -33,6 +33,7 @@ theme:
     palette:
         primary: blue
     logo: nav_logo.svg
+    favicon: nav_logo.svg
 markdown_extensions:
     - codehilite
     - admonition

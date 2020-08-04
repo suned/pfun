@@ -361,9 +361,9 @@ def _lift_call_hook(context: MethodContext) -> Type:
 
 
 def _effect_catch_hook(context: FunctionContext) -> Type:
-    error_types = [arg_type[0].ret_type
-                   for arg_type in context.arg_types
-                   if arg_type]
+    error_types = [
+        arg_type[0].ret_type for arg_type in context.arg_types if arg_type
+    ]
     return context.default_return_type.copy_modified(args=error_types)
 
 
@@ -470,6 +470,32 @@ def _effect_lift_call_signature_hook(context: MethodSigContext):
         return context.default_signature
 
 
+def _effect_cpu_bound_hook(context: FunctionContext) -> Type:
+    try:
+        f_type = context.arg_types[0][0]
+        if f_type.ret_type.type.fullname == 'typing.Coroutine':
+            context.api.fail(
+                "Function arguments to 'pfun.effect.cpu_bound' can't be async",
+                context.context
+            )
+        return context.default_return_type
+    except AttributeError:
+        return context.default_return_type
+
+
+def _effect_io_bound_hook(context: FunctionContext) -> Type:
+    try:
+        f_type = context.arg_types[0][0]
+        if f_type.ret_type.type.fullname == 'typing.Coroutine':
+            context.api.fail(
+                "Function arguments to 'pfun.effect.io_bound' can't be async",
+                context.context
+            )
+        return context.default_return_type
+    except AttributeError:
+        return context.default_return_type
+
+
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
@@ -485,6 +511,10 @@ class PFun(Plugin):
             return _variadic_decorator_hook
         if fullname == 'pfun.effect.combine':
             return _combine_hook
+        if fullname == 'pfun.effect.cpu_bound':
+            return _effect_cpu_bound_hook
+        if fullname == 'pfun.effect.io_bound':
+            return _effect_io_bound_hook
         return None
 
     def get_method_hook(self, fullname: str):

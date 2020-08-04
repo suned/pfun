@@ -34,14 +34,6 @@
       pass
 
     reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int, c: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
-- case: variadic_decorators_handle_type_aliases
-  main: |
-      from pfun.effect import catch_all
-
-      def f(a: str) -> int:
-        ...
-
-      reveal_type(catch_all(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, builtins.Exception, builtins.int*]'
 - case: curry_nullary_function
   main: |
     from pfun import curry
@@ -321,3 +313,19 @@
 
 
     reveal_type(catch(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'
+- case: effect_cpu_bound_fails_with_async_function
+  main: |
+    from pfun.effect import cpu_bound
+
+    async def f() -> int:
+      ...
+
+    cpu_bound(f)  # E: Function arguments to 'pfun.effect.cpu_bound' can't be async
+- case: effect_io_bound_fails_with_async_function
+  main: |
+    from pfun.effect import io_bound
+
+    async def f() -> int:
+      ...
+
+    io_bound(f)  # E: Function arguments to 'pfun.effect.io_bound' can't be async

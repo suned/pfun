@@ -322,9 +322,9 @@ recovered: Effect[object, ZeroDivisionError, str] = e.recover(handle_errors)
 
 You will frequently handle errors by using `isinstance` to compare errors with types, so defining your own error types becomes even more important when using `pfun` to distinguish one error source from another.
 
-## Asynchronous IO
-`Effect` uses `asyncio` under the hood to run io bound side-effects asynchronously when possible.
-This can lead to significant speed ups when an effect spends alot of time waiting for io.
+## Concurrency
+`Effect` uses `asyncio` under the hood to run effects asynchronously.
+This can lead to significant speed ups.
 
 Consider for example this program that calls `curl http://www.google.com` in a subprocess 50 times:
 ```python
@@ -335,7 +335,7 @@ import subprocess
 
 [subprocess.run(['curl', 'http://www.google.com']) for _ in range(50)]
 ```
-Timing the execution using the unix `time` informs me this takes 5.15 seconds on my computer. Compare this to the program below which does more or less the same thing, but using `pfun.subprocess`:
+Timing the execution using the unix `time` informs me this takes 5.15 seconds on a normal consumer laptop. Compare this to the program below which does more or less the same thing, but using `pfun.subprocess`:
 
 ```python
 # call_google_async.py
@@ -388,6 +388,38 @@ When using `pfun` with async frameworks such as [ASGI web servers](https://asgi.
 async def f() -> str:
     e: Effect[object, NoReturn, str] = ...
     return await e(None)
+```
+
+Since `Effect` uses `asyncio` you should be careful not to create effects that block the main thread. Blocking happens in two ways:
+
+- Performing IO
+- Calling functions that take a long time to return
+
+To avoid blocking the main thread, synchronous IO should be performed in a separate thread, and CPU bound functions should be called in a separate process. `pfun.effect` does this automatically with functions passed to its api when they are decorated with `pfun.effect.io_bound` or `pfun.effect.cpu_bound`:
+```python
+import time
+
+from pfun.effect import success, cpu_bound, io_bound
+
+
+def slow_function(a: int) -> int:
+    # simulate doing something slow
+    time.sleep(2)
+    return a + 2
+
+
+def performs_io(a: int) -> None:
+    with open('foo.txt', 'w') as f:
+        f.write(str(a))
+
+success(2).map(cpu_bound(slow_function))
+success(2).map(io_bound(performs_io))
+```
+`io_bound` and `cpu_bound` can be used to decorate functions that are used
+as arguments anywhere in the `pfun.effect` api. However, the decorator must directly wrap the function passed to the api in order for `pfun` to recognize that the function should be called in a separate process or thread. In other words, this won't work:
+```python
+decorated = cpu_bound(slow_function)
+success(2).map(lambda v: decorated(v))
 ```
 
 ## Purely Functional State
@@ -460,7 +492,7 @@ async def f(r: str) -> Either[Exception, float]:
 effect: Effect[str, Exception, float] = from_callable(f)
 ```
 
-`pfun.effect.catch` and `pfun.effect.catch_all` are used to decorate functions
+`pfun.effect.catch` is used to decorate functions
 that may raise exceptions. If the decorated function performs side effects, they
 are not carried out until the effect is run
 ```python

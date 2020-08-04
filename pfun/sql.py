@@ -15,7 +15,7 @@ try:
     import asyncpg
 except ImportError:
     raise ImportError(
-        'Could not import asyncpg. To use pfun.effect.sql, '
+        'Could not import asyncpg. To use pfun.sql, '
         'install pfun with \n\n\tpip install pfun[sql]'
     )
 
@@ -98,6 +98,10 @@ class SQL(Immutable, init=False):
         Args:
             connection_str: connection string of the format \
             `postgres://<user>:<password>@<host>/<database>`
+
+        Raises:
+            MalformedConnectionStr: if the connection string does not conform \
+            to the postgres scheme
         """
         url = urllib.parse.urlparse(connection_str)
         if url.scheme not in {'postgresql', 'postgres'}:

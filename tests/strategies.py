@@ -28,10 +28,16 @@ def maybes(value_strategy=anything()):
     return one_of(justs, nothings)
 
 
+def rights(value_strategy=anything()):
+    return builds(Right, value_strategy)
+
+
+def lefts(value_strategy=anything()):
+    return builds(Left, value_strategy)
+
+
 def eithers(value_strategy=anything()):
-    lefts = builds(Left, value_strategy)
-    rights = builds(Right, value_strategy)
-    return one_of(lefts, rights)
+    return one_of(lefts(), rights())
 
 
 def nullaries(value_strategy=anything()):
