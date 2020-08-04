@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pfun"
-version = "1.2.0"
+version = "0.10.0"
 description = ""
 authors = ["Sune Debel <sad@archii.ai>"]
 readme = "README.md"
