@@ -4,7 +4,7 @@
 ::: pfun.Depends
 ::: pfun.success
 ::: pfun.error
-::: pfun.get_environment
+::: pfun.depend
 ::: pfun.sequence_async
 ::: pfun.filter_
 ::: pfun.for_each

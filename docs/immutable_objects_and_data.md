@@ -33,7 +33,7 @@ class C(Immutable):
 
 assert C().l == ()
 ```
-In addition, if the `pfun` mypy plugin is enabled, mypy can check for assignments that will fail
+In addition, if the `pfun` MyPy plugin is enabled, MyPy can check for assignments that will fail
 at runtime.
 
 ## List

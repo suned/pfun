@@ -178,10 +178,10 @@ class Resource(Immutable, Generic[E, C]):
 
 class RuntimeEnv(Immutable, Generic[A]):
     """
-    Wraps the user supplied environment R and supplies various utilities
+    Wraps the user supplied dependency R and supplies various utilities
     for the effect runtime such as the resource AsyncExitStack
 
-    :attribute r: The user supplied environment value
+    :attribute r: The user supplied dependency value
     :attribute exit_stack: AsyncExitStack used to enable Effect resources
     """
     r: A
@@ -465,7 +465,7 @@ class Effect(Generic[R, E, A], Immutable, Monad):
         resulting error will be raised as an exception.
 
         Args:
-            r: The environment with which to run this `Effect`
+            r: The dependency with which to run this `Effect`
             max_processes: The max number of processes used to run cpu bound \
                 parts of this effect
             max_threads: The max number of threads used to run io bound \
@@ -510,7 +510,7 @@ class Effect(Generic[R, E, A], Immutable, Monad):
         raised as an exception.
 
         Args:
-            r: The environment with which to run this `Effect` \
+            r: The dependency with which to run this `Effect` \
             asyncio_run: Function to run the coroutine returned by the \
             wrapped function
             max_processes: The max number of processes used to run cpu bound \
@@ -601,38 +601,38 @@ def success(value: A1) -> Effect[object, NoReturn, A1]:
 
 
 @overload
-def get_environment(r_type: None = None) -> Depends:
+def depend(r_type: None = None) -> Depends:
     pass
 
 
 @overload
-def get_environment(r_type: Type[R1] = None) -> Depends[R1, R1]:
+def depend(r_type: Type[R1] = None) -> Depends[R1, R1]:
     pass
 
 
-def get_environment(r_type: Optional[Type[R1]] = None) -> Depends[R1, R1]:
+def depend(r_type: Optional[Type[R1]] = None) -> Depends[R1, R1]:
     """
-    Get an `Effect` that produces the environment passed to `run` \
+    Get an `Effect` that produces the dependency passed to `run` \
     when executed
 
     Example:
-        >>> get_environment(str).run('environment')
-        'environment'
+        >>> depend(str).run('dependency')
+        'dependency'
 
     Args:
-        r_type: The expected environment type of the resulting effect. \
+        r_type: The expected dependency type of the resulting effect. \
         Used ONLY for type-checking and doesn't impact runtime behaviour in \
         any way
 
     Return:
-        `Effect` that produces the enviroment passed to `run`
+        `Effect` that produces the dependency passed to `run`
     """
     async def run_e(env):
         return Done(Right(env.r))
 
     return Effect(
         run_e,
-        f'get_environment({r_type.__name__ if r_type is not None else ""})'
+        f'depend({r_type.__name__ if r_type is not None else ""})'
     )
 
 
@@ -923,7 +923,7 @@ def from_callable(
     f: Callable[[R1], Union[Awaitable[Either[E1, A1]], Either[E1, A1]]]
 ) -> Effect[R1, E1, A1]:
     """
-    Create an `Effect` from a function that takes an environment and returns \
+    Create an `Effect` from a function that takes a dependency and returns \
     an `Either`
 
     Example:
@@ -1110,7 +1110,7 @@ __all__ = [
     'Try',
     'Depends',
     'success',
-    'get_environment',
+    'depend',
     'sequence_async',
     'sequence',
     'filter_',

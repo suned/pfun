@@ -4,8 +4,7 @@ from typing import Any, Iterable, Type, TypeVar, Union
 from typing_extensions import Protocol
 
 from .dict import Dict
-from .effect import (Effect, Resource, Try, add_repr, error, get_environment,
-                     success)
+from .effect import Effect, Resource, Try, add_repr, depend, error, success
 from .either import Either, Left, Right
 from .functions import curry
 from .immutable import Immutable
@@ -118,8 +117,7 @@ class SQL(Immutable, init=False):
 
         object.__setattr__(self, 'connection', Resource(connection_factory))
 
-    def get_connection(self
-                       ) -> Try[asyncpg.PostgresError, asyncpg.Connection]:
+    def get_connection(self) -> Try[asyncpg.PostgresError, asyncpg.Connection]:
         """
         Get an `Effect` that produces a
         `asyncpg.Connection`. Used to work with `asyncpg` directly.
@@ -234,8 +232,8 @@ class SQL(Immutable, init=False):
 
         return self.get_connection().and_then(_fetch)
 
-    def fetch_one(self, query: str, *args: Any, timeout: float = None
-                  ) -> Try[SQLError, Dict[str, Any]]:
+    def fetch_one(self, query: str, *args: Any,
+                  timeout: float = None) -> Try[SQLError, Dict[str, Any]]:
         """
         Get an `Effect` that executes `query` and returns the first \
         result as a `Dict or fails with `EmptyResultSetError` if the \
@@ -282,6 +280,7 @@ class HasSQL(Protocol):
     sql: SQL
 
 
+@curry
 @add_repr
 def get_connection(
 ) -> Effect[HasSQL, asyncpg.PostgresError, asyncpg.Connection]:
@@ -300,10 +299,10 @@ def get_connection(
     Return:
         `Effect` that produces `asyncpg.Connection`
     """
-    return get_environment(HasSQL
-                           ).and_then(lambda env: env.sql.get_connection())
+    return depend(HasSQL).and_then(lambda env: env.sql.get_connection())
 
 
+@curry
 @add_repr
 def execute(query: str, *args: Any, timeout: float = None
             ) -> Effect[HasSQL, asyncpg.PostgresError, str]:
@@ -327,11 +326,12 @@ def execute(query: str, *args: Any, timeout: float = None
     Return:
         `Effect` that executes `query` and produces the database response
     """
-    return get_environment(HasSQL).and_then(
+    return depend(HasSQL).and_then(
         lambda env: env.sql.execute(query, *args, timeout=timeout)
     )
 
 
+@curry
 @add_repr
 def execute_many(query: str, args: Iterable[Any], timeout: float = None
                  ) -> Effect[HasSQL, asyncpg.PostgresError, Iterable[str]]:
@@ -356,11 +356,12 @@ def execute_many(query: str, args: Iterable[Any], timeout: float = None
         `Effect` that executes `query` with all args in `args` and \
         produces a database response for each query
     """
-    return get_environment(HasSQL).and_then(
+    return depend(HasSQL).and_then(
         lambda env: env.sql.execute_many(query, args, timeout=timeout)
     )
 
 
+@curry
 @add_repr
 def fetch(query: str, *args: Any, timeout: float = None
           ) -> Effect[HasSQL, asyncpg.PostgresError, Results]:
@@ -380,11 +381,12 @@ def fetch(query: str, *args: Any, timeout: float = None
     Return:
         `Effect` that retrieves rows returned by `query` as `Results`
     """
-    return get_environment(HasSQL).and_then(
+    return depend(HasSQL).and_then(
         lambda env: env.sql.fetch(query, *args, timeout=timeout)
     )
 
 
+@curry
 @add_repr
 def fetch_one(query: str, *args: Any, timeout: float = None
               ) -> Effect[HasSQL, SQLError, Dict[str, Any]]:
@@ -408,6 +410,6 @@ def fetch_one(query: str, *args: Any, timeout: float = None
         `Effect` that retrieves the first row returned by `query` as \
         `pfun.dict.Dict[str, Any]`
     """
-    return get_environment(HasSQL).and_then(
+    return depend(HasSQL).and_then(
         lambda env: env.sql.fetch_one(query, *args, timeout=timeout)
     )

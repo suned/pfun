@@ -62,8 +62,8 @@ class TestEffect(MonadTest):
         assert effect.success(first).run(env) != effect.success(second
                                                                 ).run(env)
 
-    def test_get_environment(self):
-        assert effect.get_environment().run('env') == 'env'
+    def test_depend(self):
+        assert effect.depend().run('env') == 'env'
 
     def test_from_awaitable(self):
         async def f():
