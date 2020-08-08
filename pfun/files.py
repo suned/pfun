@@ -1,6 +1,6 @@
 from typing_extensions import Protocol
 
-from .effect import Effect, Try, add_repr, catch, get_environment, io_bound
+from .effect import Effect, Try, add_repr, catch, depend, io_bound
 from .functions import curry
 from .immutable import Immutable
 
@@ -175,7 +175,7 @@ def read(path: str) -> Effect[HasFiles, OSError, str]:
     Return:
         `Effect` that reads file located at `path`
     """
-    return get_environment(HasFiles).and_then(lambda env: env.files.read(path))
+    return depend(HasFiles).and_then(lambda env: env.files.read(path))
 
 
 @curry
@@ -198,9 +198,8 @@ def write(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     Return:
         `Effect` that that writes `content` to file at `path`
     """
-    return get_environment(HasFiles).and_then(
-        lambda env: env.files.write(path, content)
-    )
+    return depend(HasFiles
+                  ).and_then(lambda env: env.files.write(path, content))
 
 
 @add_repr
@@ -219,8 +218,7 @@ def read_bytes(path: str) -> Effect[HasFiles, OSError, bytes]:
     Return:
         `Effect` that reads file located at `path`
     """
-    return get_environment(HasFiles
-                           ).and_then(lambda env: env.files.read_bytes(path))
+    return depend(HasFiles).and_then(lambda env: env.files.read_bytes(path))
 
 
 @curry
@@ -243,9 +241,8 @@ def write_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     Return:
         `Effect` that that writes `content` to file at `path`
     """
-    return get_environment(HasFiles).and_then(
-        lambda env: env.files.write_bytes(path, content)
-    )
+    return depend(HasFiles
+                  ).and_then(lambda env: env.files.write_bytes(path, content))
 
 
 @curry
@@ -268,9 +265,8 @@ def append(path: str, content: str) -> Effect[HasFiles, OSError, None]:
     Return:
         `Effect` that that appends `content` to file at `path`
     """
-    return get_environment(HasFiles).and_then(
-        lambda env: env.files.append(path, content)
-    )
+    return depend(HasFiles
+                  ).and_then(lambda env: env.files.append(path, content))
 
 
 @curry
@@ -293,6 +289,6 @@ def append_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
     Return:
         `Effect` that that appends `content` to file at `path`
     """
-    return get_environment(HasFiles).and_then(
+    return depend(HasFiles).and_then(
         lambda env: env.files.append_bytes(path, content)
     )

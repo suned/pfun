@@ -112,7 +112,6 @@ class Right(Either_, Generic[A]):
     """
     The right result
     """
-
     def or_else(self, default: C) -> A:
         return self.get
 
@@ -156,7 +155,6 @@ class Left(Either_, Generic[B]):
     """
     The left result
     """
-
     def or_else(self, default: C) -> C:
         return default
 
@@ -238,8 +236,8 @@ def sequence(iterable: Iterable[Either[A, B]]) -> Either[Iterable[A], B]:
 
 
 @curry
-def map_m(f: Callable[[A], Either[B, C]],
-          iterable: Iterable[A]) -> Either[Iterable[B], C]:
+def for_each(f: Callable[[A], Either[B, C]], iterable: Iterable[A]
+             ) -> Either[Iterable[B], C]:
     """
     Map each in element in ``iterable`` to
     an `Either` by applying ``f``,
@@ -247,7 +245,7 @@ def map_m(f: Callable[[A], Either[B, C]],
     from left to right and collect the results
 
     Example:
-        >>> map_m(Right, range(3))
+        >>> for_each(Right, range(3))
         Right((0, 1, 2))
 
     Args:
@@ -260,15 +258,15 @@ def map_m(f: Callable[[A], Either[B, C]],
 
 
 @curry
-def filter_m(f: Callable[[A], Either[bool, B]],
-             iterable: Iterable[A]) -> Either[Iterable[A], B]:
+def filter_(f: Callable[[A], Either[bool, B]], iterable: Iterable[A]
+            ) -> Either[Iterable[A], B]:
     """
     Map each element in ``iterable`` by applying ``f``,
     filter the results by the value returned by ``f``
     and combine from left to right.
 
     Example:
-        >>> filter_m(lambda v: Right(v % 2 == 0), range(3))
+        >>> filter(lambda v: Right(v % 2 == 0), range(3))
         Right((0, 2))
 
     Args:
@@ -344,8 +342,8 @@ __all__ = [
     'Left',
     'Right',
     'either',
-    'map_m',
+    'for_each',
     'sequence',
-    'filter_m',
+    'filter_',
     'catch'
 ]

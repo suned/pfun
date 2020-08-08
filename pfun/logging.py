@@ -4,9 +4,9 @@ from typing import Optional, Tuple, Type, Union
 
 from typing_extensions import Protocol
 
-from .effect import (Depends, Success, add_repr, from_callable,
-                     get_environment, io_bound)
+from .effect import Depends, Success, add_repr, depend, from_callable, io_bound
 from .either import Right
+from .functions import curry
 from .immutable import Immutable
 
 ExcInfo = Tuple[Type[BaseException], BaseException, TracebackType]
@@ -430,9 +430,10 @@ def get_logger(name: Optional[str] = None) -> Depends[HasLogging, Logger]:
         `Effect` that produces a `Logger`
 
     """
-    return get_environment().map(lambda env: env.logging.get_logger(name))
+    return depend().map(lambda env: env.logging.get_logger(name))
 
 
+@curry
 @add_repr
 def debug(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -454,12 +455,13 @@ def debug(
     Return:
         `Effect` that calls `logging.debug` with `msg`
     """
-    return get_environment().and_then(
+    return depend().and_then(
         lambda env: env.logging.
         debug(msg, stack_info=stack_info, exc_info=exc_info)
     )
 
 
+@curry
 @add_repr
 def info(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -481,12 +483,13 @@ def info(
     Return:
         `Effect` that calls `logging.info` with `msg`
     """
-    return get_environment().and_then(
+    return depend().and_then(
         lambda env: env.logging.
         info(msg, stack_info=stack_info, exc_info=exc_info)
     )
 
 
+@curry
 @add_repr
 def warning(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -508,12 +511,13 @@ def warning(
     Return:
         `Effect` that calls `logging.warning` with `msg`
     """
-    return get_environment().and_then(
+    return depend().and_then(
         lambda env: env.logging.
         warning(msg, stack_info=stack_info, exc_info=exc_info)
     )
 
 
+@curry
 @add_repr
 def error(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -535,12 +539,13 @@ def error(
     Return:
         `Effect` that calls `logging.error` with `msg`
     """
-    return get_environment().and_then(
+    return depend().and_then(
         lambda env: env.logging.
         error(msg, stack_info=stack_info, exc_info=exc_info)
     )
 
 
+@curry
 @add_repr
 def critical(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -562,12 +567,13 @@ def critical(
     Return:
         `Effect` that calls `logging.critical` with `msg`
     """
-    return get_environment().and_then(
+    return depend().and_then(
         lambda env: env.logging.
         critical(msg, stack_info=stack_info, exc_info=exc_info)
     )
 
 
+@curry
 @add_repr
 def exception(
     msg: str, stack_info: bool = True, exc_info: Union[bool, ExcInfo] = True
@@ -589,7 +595,7 @@ def exception(
     Return:
         `Effect` that calls `logging.exception` with `msg`
     """
-    return get_environment().and_then(
+    return depend().and_then(
         lambda env: env.logging.
         exception(msg, stack_info=stack_info, exc_info=exc_info)
     )

@@ -4,7 +4,7 @@ from typing import NoReturn
 from typing_extensions import Protocol
 
 from .aio_trampoline import Done, Trampoline
-from .effect import Effect, Success, add_repr, get_environment
+from .effect import Effect, Success, add_repr, depend
 from .either import Either, Right
 from .immutable import Immutable
 
@@ -86,8 +86,7 @@ def print_line(msg: str = '') -> Effect[HasConsole, NoReturn, None]:
         `Effect` that prints to the console using the \
         `HasConsole` provided to `run`
     """
-    return get_environment(HasConsole
-                           ).and_then(lambda env: env.console.print(msg))
+    return depend(HasConsole).and_then(lambda env: env.console.print(msg))
 
 
 @add_repr
@@ -109,5 +108,4 @@ def get_line(prompt: str = '') -> Effect[HasConsole, NoReturn, str]:
     Return:
         an `Effect` that produces a `str` read from stdin
     """
-    return get_environment(HasConsole
-                           ).and_then(lambda env: env.console.input(prompt))
+    return depend(HasConsole).and_then(lambda env: env.console.input(prompt))

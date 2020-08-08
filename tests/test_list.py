@@ -1,3 +1,4 @@
+import builtins
 import random
 
 import pytest
@@ -6,7 +7,7 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import lists as lists_
 
 from pfun import List, compose, identity
-from pfun.list import filter_m, map_m, sequence, value
+from pfun.list import filter_, for_each, sequence, value
 
 from .monad_test import MonadTest
 from .strategies import anything, lists, unaries
@@ -79,7 +80,7 @@ class TestList(MonadTest):
         def p(v):
             return id(v) % 2 == 0
 
-        assert List(l).filter(p) == List(filter(p, l))
+        assert List(l).filter(p) == List(builtins.filter(p, l))
 
     @given(lists_(integers()))
     def test_reduce(self, l):
@@ -113,8 +114,8 @@ class TestList(MonadTest):
         with recursion_limit(100):
             sequence([value(v) for v in range(500)])
 
-    def test_filter_m(self):
-        assert filter_m(lambda v: value(v % 2 == 0), range(3)) == value((0, 2))
+    def test_filter_(self):
+        assert filter_(lambda v: value(v % 2 == 0), range(3)) == value((0, 2))
 
-    def test_map_m(self):
-        assert map_m(value, range(3)) == value((0, 1, 2))
+    def test_for_each(self):
+        assert for_each(value, range(3)) == value((0, 1, 2))

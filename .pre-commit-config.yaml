@@ -6,7 +6,7 @@ repos:
           stages: [commit]
           language: system
           entry: trailing-whitespace-fixer
-          types: [text]
+          types: [python]
 
         - id: end-of-file-fixer
           name: end-of-file-fixer

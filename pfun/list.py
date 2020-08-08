@@ -1,3 +1,4 @@
+import builtins
 from functools import reduce
 from typing import Callable, Iterable, Optional, Tuple, TypeVar, cast
 
@@ -122,7 +123,7 @@ class List(Monad, Tuple[A, ...]):
         Return:
             new `List` filtered by ``f``
         """
-        return List(filter(f, self))
+        return List(builtins.filter(f, self))
 
     def and_then(self, f: 'Callable[[A], List[B]]') -> 'List[B]':
         """
@@ -163,8 +164,8 @@ def value(a: A) -> List[A]:
 
 
 @curry
-def map_m(f: Callable[[A], List[B]],
-          iterable: Iterable[A]) -> List[Iterable[B]]:
+def for_each(f: Callable[[A], List[B]], iterable: Iterable[A]
+             ) -> List[Iterable[B]]:
     """
     Map each in element in ``iterable`` to
     an `List` by applying ``f``,
@@ -172,7 +173,7 @@ def map_m(f: Callable[[A], List[B]],
     from left to right and collect the results
 
     Example:
-        >>> map_m(lambda v: List([v]), range(3))
+        >>> for_each(lambda v: List([v]), range(3))
         List(((0, 1, 2),))
 
     Args:
@@ -202,15 +203,15 @@ def sequence(iterable: Iterable[List[A]]) -> List[Iterable[A]]:
 
 
 @curry
-def filter_m(f: Callable[[A], List[bool]],
-             iterable: Iterable[A]) -> List[Iterable[A]]:
+def filter_(f: Callable[[A], List[bool]], iterable: Iterable[A]
+            ) -> List[Iterable[A]]:
     """
     Map each element in ``iterable`` by applying ``f``,
     filter the results by the value returned by ``f``
     and combine from left to right.
 
     Example:
-        >>> filter_m(lambda v: List([v % 2 == 0]), range(3))
+        >>> filter(lambda v: List([v % 2 == 0]), range(3))
         List(((0, 2),))
     Args:
         f: Function to map ``iterable`` by
@@ -222,5 +223,5 @@ def filter_m(f: Callable[[A], List[bool]],
 
 
 __all__ = [
-    'List', 'value', 'map_m', 'sequence', 'filter_m'
+    'List', 'value', 'for_each', 'sequence', 'filter_'
 ]

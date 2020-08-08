@@ -1,7 +1,7 @@
 from hypothesis import assume, given
 
 from pfun import compose, identity
-from pfun.trampoline import Done, filter_m, map_m, sequence
+from pfun.trampoline import Done, filter_, for_each, sequence
 
 from .monad_test import MonadTest
 from .strategies import anything, trampolines, unaries
@@ -47,8 +47,8 @@ class TestTrampoline(MonadTest):
         with recursion_limit(100):
             sequence([Done(v) for v in range(500)]).run()
 
-    def test_filter_m(self):
-        assert filter_m(lambda v: Done(v % 2 == 0), range(3)).run() == (0, 2)
+    def test_filter(self):
+        assert filter_(lambda v: Done(v % 2 == 0), range(3)).run() == (0, 2)
 
-    def test_map_m(self):
-        assert map_m(Done, range(3)).run() == (0, 1, 2)
+    def test_for_each(self):
+        assert for_each(Done, range(3)).run() == (0, 1, 2)

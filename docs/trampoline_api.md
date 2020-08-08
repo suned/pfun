@@ -2,6 +2,6 @@
 ::: pfun.trampoline.Done
 ::: pfun.trampoline.Call
 ::: pfun.trampoline.AndThen
-::: pfun.trampoline.map_m
+::: pfun.trampoline.for_each
 ::: pfun.trampoline.sequence
-::: pfun.trampoline.filter_m
+::: pfun.trampoline.filter_

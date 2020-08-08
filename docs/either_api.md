@@ -16,7 +16,7 @@
             - map
             - or_else
 ::: pfun.either.either
-::: pfun.either.map_m
+::: pfun.either.for_each
 ::: pfun.either.sequence
-::: pfun.either.filter_m
+::: pfun.either.filter_
 ::: pfun.either.catch

@@ -16,6 +16,7 @@ from .either import Either, Left, Right
 from .either import sequence as sequence_eithers
 from .functions import curry
 from .immutable import Immutable
+from .monad import Monad
 
 R = TypeVar('R', contravariant=True)
 E = TypeVar('E', covariant=True)
@@ -177,10 +178,10 @@ class Resource(Immutable, Generic[E, C]):
 
 class RuntimeEnv(Immutable, Generic[A]):
     """
-    Wraps the user supplied environment R and supplies various utilities
+    Wraps the user supplied dependency R and supplies various utilities
     for the effect runtime such as the resource AsyncExitStack
 
-    :attribute r: The user supplied environment value
+    :attribute r: The user supplied dependency value
     :attribute exit_stack: AsyncExitStack used to enable Effect resources
     """
     r: A
@@ -204,12 +205,11 @@ class RuntimeEnv(Immutable, Generic[A]):
     ) -> B:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
-            self.thread_executor,
-            lambda: f(*args, **kwargs)
+            self.thread_executor, lambda: f(*args, **kwargs)
         )
 
 
-class Effect(Generic[R, E, A], Immutable):
+class Effect(Generic[R, E, A], Immutable, Monad):
     """
     Wrapper for functions of type \
     `Callable[[R], Awaitable[pfun.Either[E, A]]]` that are allowed to \
@@ -465,7 +465,7 @@ class Effect(Generic[R, E, A], Immutable):
         resulting error will be raised as an exception.
 
         Args:
-            r: The environment with which to run this `Effect`
+            r: The dependency with which to run this `Effect`
             max_processes: The max number of processes used to run cpu bound \
                 parts of this effect
             max_threads: The max number of threads used to run io bound \
@@ -510,7 +510,7 @@ class Effect(Generic[R, E, A], Immutable):
         raised as an exception.
 
         Args:
-            r: The environment with which to run this `Effect` \
+            r: The dependency with which to run this `Effect` \
             asyncio_run: Function to run the coroutine returned by the \
             wrapped function
             max_processes: The max number of processes used to run cpu bound \
@@ -601,38 +601,38 @@ def success(value: A1) -> Effect[object, NoReturn, A1]:
 
 
 @overload
-def get_environment(r_type: None = None) -> Depends:
+def depend(r_type: None = None) -> Depends:
     pass
 
 
 @overload
-def get_environment(r_type: Type[R1] = None) -> Depends[R1, R1]:
+def depend(r_type: Type[R1] = None) -> Depends[R1, R1]:
     pass
 
 
-def get_environment(r_type: Optional[Type[R1]] = None) -> Depends[R1, R1]:
+def depend(r_type: Optional[Type[R1]] = None) -> Depends[R1, R1]:
     """
-    Get an `Effect` that produces the environment passed to `run` \
+    Get an `Effect` that produces the dependency passed to `run` \
     when executed
 
     Example:
-        >>> get_environment(str).run('environment')
-        'environment'
+        >>> depend(str).run('dependency')
+        'dependency'
 
     Args:
-        r_type: The expected environment type of the resulting effect. \
+        r_type: The expected dependency type of the resulting effect. \
         Used ONLY for type-checking and doesn't impact runtime behaviour in \
         any way
 
     Return:
-        `Effect` that produces the enviroment passed to `run`
+        `Effect` that produces the dependency passed to `run`
     """
     async def run_e(env):
         return Done(Right(env.r))
 
     return Effect(
         run_e,
-        f'get_environment({r_type.__name__ if r_type is not None else ""})'
+        f'depend({r_type.__name__ if r_type is not None else ""})'
     )
 
 
@@ -677,21 +677,43 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
     """
     iterable = tuple(iterable)
 
-    async def run_e(r: RuntimeEnv[R1]):
-        awaitables = [e.run_e(r) for e in iterable]  # type: ignore
-        trampolines = await asyncio.gather(*awaitables)
-        # TODO should this be run in an executor to avoid blocking?
-        # maybe depending on the number of effects?
-        trampoline = sequence_trampolines(trampolines)
-        return trampoline.map(lambda eithers: sequence_eithers(eithers))
+    async def run_e(r: RuntimeEnv[R1]) -> Trampoline[Either[E1, Iterable[A1]]]:
+        async def thunk() -> Trampoline[Either[E1, Iterable[A1]]]:
+            awaitables = [e.run_e(r) for e in iterable]  # type: ignore
+            trampolines = await asyncio.gather(*awaitables)
+            # TODO should this be run in an executor to avoid blocking?
+            # maybe depending on the number of effects?
+            trampoline = sequence_trampolines(trampolines)
+            return trampoline.map(
+                lambda eithers: sequence_eithers(eithers)  # type: ignore
+            )
+
+        return Call(thunk)
+
+    return Effect(run_e)
+
+
+@add_repr
+def sequence(iterable: Iterable[Effect[R1, E1, A1]]
+             ) -> Effect[R1, E1, Iterable[A1]]:
+    iterable = tuple(iterable)
+
+    async def run_e(r: RuntimeEnv[R1]) -> Trampoline[Either[E1, Iterable[A1]]]:
+        async def thunk() -> Trampoline[Either[E1, Iterable[A1]]]:
+            trampolines = [await e.run_e(r) for e in iterable]  # type: ignore
+            trampoline = sequence_trampolines(trampolines)
+            return trampoline.map(
+                lambda eithers: sequence_eithers(eithers)  # type: ignore
+            )
+        return Call(thunk)
 
     return Effect(run_e)
 
 
 @curry
 @add_repr
-def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
-          iterable: Iterable[A1]) -> Effect[R1, E1, Iterable[A1]]:
+def for_each(f: Callable[[A1], Effect[R1, E1, B]], iterable: Iterable[A1]
+             ) -> Effect[R1, E1, Iterable[B]]:
     """
     Map each in element in ``iterable`` to
     an `Effect` by applying ``f``,
@@ -699,7 +721,7 @@ def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
     from left to right and collect the results
 
     Example:
-        >>> map_m(success, range(3)).run(None)
+        >>> for_each(success, range(3)).run(None)
         (0, 1, 2)
 
     Args:
@@ -708,21 +730,20 @@ def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
     Return:
         `f` mapped over `iterable` and combined from left to right.
     """
-    effects = (f(x) for x in iterable)
-    return sequence_async(effects)
+    return sequence(f(x) for x in iterable)
 
 
 @curry
 @add_repr
-def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
-             iterable: Iterable[A]) -> Effect[R1, E1, Iterable[A]]:
+def filter_(f: Callable[[A], Effect[R1, E1, bool]], iterable: Iterable[A]
+            ) -> Effect[R1, E1, Iterable[A]]:
     """
     Map each element in ``iterable`` by applying ``f``,
     filter the results by the value returned by ``f``
     and combine from left to right.
 
     Example:
-        >>> filter_m(lambda v: success(v % 2 == 0), range(3)).run(None)
+        >>> filter(lambda v: success(v % 2 == 0), range(3)).run(None)
         (0, 2)
 
     Args:
@@ -733,20 +754,10 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
         `iterable` mapped and filtered by `f`
     """
     iterable = tuple(iterable)
-
-    async def run_e(r: RuntimeEnv[R1]):
-        async def thunk():
-            awaitables = [f(a).run_e(r) for a in iterable]
-            trampolines = await asyncio.gather(*awaitables)
-            trampoline = sequence_trampolines(trampolines)
-            return trampoline.map(
-                lambda eithers: sequence_eithers(eithers).
-                map(lambda bs: tuple(a for a, b in zip(iterable, bs) if b))
-            )
-
-        return Call(thunk)
-
-    return Effect(run_e)
+    bools = sequence(f(a) for a in iterable)
+    return bools.map(
+        lambda bs: tuple(a for b, a in zip(bs, iterable) if b)
+    )
 
 
 @add_repr
@@ -832,14 +843,15 @@ def combine(
         `Effect` that applies the function to the results of `effects`
     """
     def _(f: Callable[..., Union[Awaitable[A1], A1]]) -> Effect[Any, Any, A1]:
-        effect = sequence_async(effects)
+        effect = sequence(effects)
         args_repr = ", ".join([repr(effect) for effect in effects])
         repr_ = f'combine({args_repr})({repr(f)})'
 
         async def call_f(r: RuntimeEnv[object], *args: Any) -> A1:
             if is_cpu_bound(f):
                 return await r.run_in_process_executor(
-                    f, *args  # type: ignore
+                    f,  # type: ignore
+                    *args
                 )
             elif is_io_bound(f):
                 return await r.run_in_thread_executor(f, *args)  # type: ignore
@@ -899,7 +911,7 @@ class lift(Generic[L]):
         Return:
             `f` applied to the success values of `args`
         """
-        effect = sequence_async(effects)
+        effect = sequence(effects)
         args_repr = ", ".join([repr(effect) for effect in effects])
         repr_ = f'lift({repr(self._f)})({args_repr})'
         return combine(get_runtime_env(),
@@ -911,7 +923,7 @@ def from_callable(
     f: Callable[[R1], Union[Awaitable[Either[E1, A1]], Either[E1, A1]]]
 ) -> Effect[R1, E1, A1]:
     """
-    Create an `Effect` from a function that takes an environment and returns \
+    Create an `Effect` from a function that takes a dependency and returns \
     an `Either`
 
     Example:
@@ -1098,10 +1110,11 @@ __all__ = [
     'Try',
     'Depends',
     'success',
-    'get_environment',
+    'depend',
     'sequence_async',
-    'filter_m',
-    'map_m',
+    'sequence',
+    'filter_',
+    'for_each',
     'absolve',
     'error',
     'combine',

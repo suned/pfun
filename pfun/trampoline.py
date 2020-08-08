@@ -120,8 +120,8 @@ class AndThen(Generic[A, B], Trampoline[B]):
 
 
 @curry
-def map_m(f: Callable[[A], Trampoline[B]],
-          iterable: Iterable[A]) -> Trampoline[Iterable[B]]:
+def for_each(f: Callable[[A], Trampoline[B]], iterable: Iterable[A]
+             ) -> Trampoline[Iterable[B]]:
     """
     Map each in element in ``iterable`` to
     an `Trampoline` by applying ``f``,
@@ -159,8 +159,8 @@ def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
 
 
 @curry
-def filter_m(f: Callable[[A], Trampoline[bool]],
-             iterable: Iterable[A]) -> Trampoline[Iterable[A]]:
+def filter_(f: Callable[[A], Trampoline[bool]],
+            iterable: Iterable[A]) -> Trampoline[Iterable[A]]:
     """
     Map each element in ``iterable`` by applying ``f``,
     filter the results by the value returned by ``f``
@@ -184,7 +184,6 @@ __all__ = [
     'Done',
     'Call',
     'AndThen',
-    'map_m',
+    'for_each',
     'sequence',
-    'filter_m',
-]
+    'filter_', ]

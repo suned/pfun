@@ -10,9 +10,10 @@ from typing import Iterable, Mapping, NoReturn, Union
 from typing_extensions import Protocol
 
 from .dict import Dict
-from .effect import (Depends, Effect, Resource, Try, add_repr, error,
-                     get_environment, success)
+from .effect import (Depends, Effect, Resource, Try, add_repr, depend, error,
+                     success)
 from .either import Right
+from .functions import curry
 from .immutable import Immutable
 from .maybe import Maybe, from_optional
 
@@ -243,11 +244,12 @@ def get_session() -> Depends[HasHTTP, aiohttp.ClientSession]:
     Return:
         `Effect` that succeeds with `aiohttp.ClientSession`
     """
-    return get_environment(HasHTTP).and_then(
+    return depend(HasHTTP).and_then(
         lambda env: env.http.session.get()
     )
 
 
+@curry
 @add_repr
 def get(
     url: str,
@@ -290,7 +292,7 @@ def get(
     Return:
         `Effect` that produces a `Response`
     """
-    return get_environment(HasHTTP).and_then(
+    return depend(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'get',
             url,
@@ -320,6 +322,7 @@ def get(
     )
 
 
+@curry
 @add_repr
 def put(
     url: str,
@@ -362,7 +365,7 @@ def put(
     Return:
         `Effect` that produces a `Response`
     """
-    return get_environment().and_then(
+    return depend().and_then(
         lambda env: env.http.make_request(
             'put',
             url,
@@ -392,6 +395,7 @@ def put(
     )
 
 
+@curry
 @add_repr
 def post(
     url: str,
@@ -434,7 +438,7 @@ def post(
     Return:
         `Effect` that produces a `Response`
     """
-    return get_environment(HasHTTP).and_then(
+    return depend(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'post',
             url,
@@ -464,6 +468,7 @@ def post(
     )
 
 
+@curry
 @add_repr
 def delete(
     url: str,
@@ -506,7 +511,7 @@ def delete(
     Return:
         `Effect` that produces a `Response`
     """
-    return get_environment(HasHTTP).and_then(
+    return depend(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'delete',
             url,
@@ -536,6 +541,7 @@ def delete(
     )
 
 
+@curry
 @add_repr
 def head(
     url: str,
@@ -578,7 +584,7 @@ def head(
     Return:
         `Effect` that produces a `Response`
     """
-    return get_environment(HasHTTP).and_then(
+    return depend(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'head',
             url,
@@ -608,6 +614,7 @@ def head(
     )
 
 
+@curry
 @add_repr
 def options(
     url: str,
@@ -650,7 +657,7 @@ def options(
     Return:
         `Effect` that produces a `Response`
     """
-    return get_environment(HasHTTP).and_then(
+    return depend(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'options',
             url,
@@ -680,6 +687,7 @@ def options(
     )
 
 
+@curry
 @add_repr
 def patch(
     url: str,
@@ -722,7 +730,7 @@ def patch(
     Return:
         `Effect` that produces a `Response`
     """
-    return get_environment(HasHTTP).and_then(
+    return depend(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'patch',
             url,

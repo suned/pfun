@@ -16,7 +16,7 @@
             - or_else
 ::: pfun.maybe.maybe
 ::: pfun.maybe.flatten
-::: pfun.maybe.map_m
+::: pfun.maybe.for_each
 ::: pfun.maybe.sequence
-::: pfun.maybe.filter_m
+::: pfun.maybe.filter_
 ::: pfun.maybe.from_optional

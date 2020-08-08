@@ -136,21 +136,25 @@ def pipeline(
     return compose(*reversed(rest), second, first)
 
 
-class Curry(Immutable):
-    f: Callable
+class Curry:
+    _f: Callable
+
+    def __init__(self, f: Callable):
+        functools.wraps(f)(self)
+        self._f = f  # type: ignore
 
     def __repr__(self):
-        return repr(self.f)
+        return repr(self._f)
 
     def __call__(self, *args, **kwargs):
-        signature = inspect.signature(self.f)
+        signature = inspect.signature(self._f)
         bound = signature.bind_partial(*args, **kwargs)
         bound.apply_defaults()
         arg_names = {a for a in bound.arguments.keys()}
         parameters = {p for p in signature.parameters.keys()}
         if parameters - arg_names == set():
-            return self.f(*args, **kwargs)
-        partial = functools.partial(self.f, *args, **kwargs)
+            return self._f(*args, **kwargs)
+        partial = functools.partial(self._f, *args, **kwargs)
         return Curry(partial)
 
 

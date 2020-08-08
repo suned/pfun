@@ -3,8 +3,8 @@ from typing import Any
 from hypothesis import assume, given
 
 from pfun import List, Unary, compose, identity
-from pfun.maybe import (Just, Maybe, Nothing, filter_m, flatten, map_m, maybe,
-                        sequence)
+from pfun.maybe import (Just, Maybe, Nothing, filter_, flatten, for_each,
+                        maybe, sequence)
 
 from .monad_test import MonadTest
 from .strategies import anything, lists, maybes, unaries
@@ -100,8 +100,8 @@ class TestMaybe(MonadTest):
         with recursion_limit(100):
             sequence([Just(v) for v in range(500)])
 
-    def test_filter_m(self):
-        assert filter_m(lambda v: Just(v % 2 == 0), range(3)) == Just((0, 2))
+    def test_filter(self):
+        assert filter_(lambda v: Just(v % 2 == 0), range(3)) == Just((0, 2))
 
-    def test_map_m(self):
-        assert map_m(Just, range(3)) == Just((0, 1, 2))
+    def test_for_each(self):
+        assert for_each(Just, range(3)) == Just((0, 1, 2))
