@@ -85,6 +85,29 @@
 
     reveal_type(f(1))  # N: Revealed type is 'def [B] (b: B`-2) -> Union[builtins.int*, B`-2]'
     reveal_type(f(1)(''))  # N: Revealed type is 'Union[builtins.int, builtins.str*]'
+- case: curry_optional_and_variadic
+  main: |
+    from typing import TypeVar
+    from pfun import curry
+
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+    T3 = TypeVar('T3')
+
+    @curry
+    def f(pos_1: T2, pos_2: T2, *args: T3, keyword: T1 = None, **kwargs: T2) -> T3:
+      ...
+    
+    reveal_type(f)  # N: Revealed type is 'Overload(def [T2] (pos_1: T2`-1) -> def [T3] (pos_2: T2`-1, *args: T3`-2) -> T3`-2, def [T2, T3, T1] (pos_1: T2`-1, pos_2: T2`-1, *args: T3`-2, *, keyword: Union[T1`-3, None] =, **kwargs: T2`-1) -> T3`-2, def [T1, T2] (*, keyword: Union[T1`-3, None] =, **kwargs: T2`-1) -> def (pos_1: T2`-1) -> def [T3] (pos_2: T2`-1, *args: T3`-2) -> T3`-2)'
+- case: curry_optional_only
+  main: |
+    from pfun import curry
+
+    @curry
+    def f(a: str = '', b: str = '') -> str:
+      pass
+    
+    reveal_type(f)  # N: Revealed type is 'def (a: builtins.str =, b: builtins.str =) -> builtins.str'
 - case: compose_simple_functions
   main: |
     from pfun import compose

@@ -136,7 +136,7 @@ def _curry_hook(context: FunctionContext) -> Type:
                 arg_types=last_f.arg_types + [arg_type],
                 arg_kinds=last_f.arg_kinds + [kind],
                 arg_names=last_f.arg_names + [name],
-                variables=list(variables),
+                variables=list(sorted(variables, key=str)),
                 ret_type=ret_type
             )
         else:
@@ -147,7 +147,7 @@ def _curry_hook(context: FunctionContext) -> Type:
                     arg_names=[name],
                     ret_type=ret_type,
                     fallback=function.fallback,
-                    variables=list(variables)
+                    variables=list(sorted(variables, key=str))
                 )
             )
 
@@ -164,7 +164,11 @@ def _curry_hook(context: FunctionContext) -> Type:
     merged = merge(functions)
     if optional_args:
         mod_functions = [
-            f.copy_modified(variables=list(set(f.variables) - opt_variables))
+            f.copy_modified(
+                variables=list(
+                    sorted(set(f.variables) - opt_variables, key=str)
+                )
+            )
             for f in functions
         ]
         mod_merged = merge(mod_functions)
@@ -174,7 +178,7 @@ def _curry_hook(context: FunctionContext) -> Type:
             arg_names=list(opt_arg_names),
             ret_type=mod_merged,
             fallback=function.fallback,
-            variables=list(opt_variables)
+            variables=list(sorted(opt_variables, key=str))
         )
         return Overloaded([merged, function, with_opts])
     return Overloaded([merged, function])
