@@ -249,8 +249,8 @@ def flatten(maybes: Sequence[Maybe[A]]) -> List[A]:
 
 
 @curry
-def map_m(f: Callable[[A], Maybe[B]],
-          iterable: Iterable[A]) -> Maybe[Iterable[B]]:
+def for_each(f: Callable[[A], Maybe[B]], iterable: Iterable[A]
+             ) -> Maybe[Iterable[B]]:
     """
     Map each in element in ``iterable`` to
     an `Maybe` by applying ``f``,
@@ -258,7 +258,7 @@ def map_m(f: Callable[[A], Maybe[B]],
     from left to right and collect the results
 
     Example:
-        >>> map_m(Just, range(3))
+        >>> for_each(Just, range(3))
         Just((0, 1, 2))
 
     Args:
@@ -287,15 +287,15 @@ def sequence(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
 
 
 @curry
-def filter_m(f: Callable[[A], Maybe[bool]],
-             iterable: Iterable[A]) -> Maybe[Iterable[A]]:
+def filter_(f: Callable[[A], Maybe[bool]], iterable: Iterable[A]
+            ) -> Maybe[Iterable[A]]:
     """
     Map each element in ``iterable`` by applying ``f``,
     filter the results by the value returned by ``f``
     and combine from left to right.
 
     Example:
-        >>> filter_m(lambda v: Just(v % 2 == 0), range(3))
+        >>> filter(lambda v: Just(v % 2 == 0), range(3))
         Just((0, 2))
 
     Args:
@@ -370,8 +370,8 @@ __all__ = [
     'Nothing',
     'maybe',
     'flatten',
-    'map_m',
+    'for_each',
     'sequence',
-    'filter_m',
+    'filter_',
     'from_optional'
 ]

@@ -6,8 +6,8 @@
 ::: pfun.error
 ::: pfun.get_environment
 ::: pfun.sequence_async
-::: pfun.filter_m
-::: pfun.map_m
+::: pfun.filter_
+::: pfun.for_each
 ::: pfun.absolve
 ::: pfun.combine
 ::: pfun.lift

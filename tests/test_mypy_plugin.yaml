@@ -51,7 +51,7 @@
     def f(a: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> builtins.int, def (a: builtins.int) -> builtins.int)'
+    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int) -> builtins.int'
 - case: curry_binary_function
   main: |
     from pfun import curry
@@ -70,6 +70,21 @@
       pass
 
     reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> def (b: builtins.int) -> def (c: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int, c: builtins.int) -> builtins.int)'
+- case: curry_generic_function
+  main: |
+    from typing import TypeVar, Union
+
+    from pfun import curry
+
+    A = TypeVar('A')
+    B = TypeVar('B')
+
+    @curry
+    def f(a: A, b: B) -> Union[A, B]:
+      ...
+
+    reveal_type(f(1))  # N: Revealed type is 'def [B] (b: B`-2) -> Union[builtins.int*, B`-2]'
+    reveal_type(f(1)(''))  # N: Revealed type is 'Union[builtins.int, builtins.str*]'
 - case: compose_simple_functions
   main: |
     from pfun import compose

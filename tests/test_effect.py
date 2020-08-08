@@ -98,19 +98,20 @@ class TestEffect(MonadTest):
         with recursion_limit(100):
             e.run(None)
 
-    def test_filter_m(self):
-        assert effect.filter_m(lambda v: effect.success(v % 2 == 0),
-                               range(5)).run(None) == (0, 2, 4)
+    def test_filter(self):
+        assert effect.filter_(lambda v: effect.success(v % 2 == 0), range(5)
+                              ).run(None) == (0, 2, 4)
 
-    def test_filter_m_generator(self):
-        e = effect.filter_m(
-            lambda v: effect.success(v % 2 == 0), (v for v in range(5))
+    def test_filter_generator(self):
+        e = effect.filter_(
+            lambda v: effect.success(v % 2 == 0),
+            (v for v in range(5))
         )
         assert e.run(None) == (0, 2, 4)
         assert e.run(None) == (0, 2, 4)
 
-    def test_map_m(self):
-        assert effect.map_m(effect.success, range(3)).run(None) == (0, 1, 2)
+    def test_for_each(self):
+        assert effect.for_each(effect.success, range(3)).run(None) == (0, 1, 2)
 
     def test_either(self):
         success = effect.success(1)

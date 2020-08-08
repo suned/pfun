@@ -6,12 +6,13 @@ from functools import reduce
 from mypy import checkmember, infer
 from mypy.checker import TypeChecker
 from mypy.mro import calculate_mro
-from mypy.nodes import ARG_POS, Block, ClassDef, NameExpr, TypeInfo
+from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
+                        ARG_STAR2, Block, ClassDef, NameExpr, TypeInfo)
 from mypy.plugin import (ClassDefContext, FunctionContext, MethodContext,
                          MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.types import (ARG_POS, AnyType, CallableType, Instance, Overloaded,
-                        Type, TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
+from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
+                        TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
                         UnionType, get_proper_type)
 
 _CURRY = 'pfun.functions.curry'
@@ -51,37 +52,132 @@ def _get_callable_type(type_: Type,
 def _curry_hook(context: FunctionContext) -> Type:
     arg_type = context.arg_types[0][0]
     function = _get_callable_type(arg_type, context)
+
     if function is None:
+        # argument was not callable type or function
         return context.default_return_type
 
-    if not function.arg_types:
+    if len(function.arg_types) < 2:
+        # nullary or unary function: nothing to do
         return function
+
+    type_vars = {var.fullname: var for var in function.variables}
+
+    def get_variables(*types):
+        def collect_variables(*ts):
+            variables = []
+            for type_ in ts:
+                if isinstance(type_, TypeVarType):
+                    variables.append(type_)
+                if hasattr(type_, 'args'):
+                    variables += get_variables(*type_.args)
+                if isinstance(type_, CallableType):
+                    variables += get_variables(
+                        type_.ret_type, *type_.arg_types
+                    )
+                if isinstance(type_, UnionType):
+                    variables += get_variables(*type_.items)
+            return variables
+
+        return set(type_vars[v.fullname] for v in collect_variables(*types))
+
+    args = tuple(
+        zip(function.arg_types, function.arg_kinds, function.arg_names)
+    )
+    optional_args = tuple(
+        filter(lambda a: a[1] in (ARG_OPT, ARG_NAMED_OPT, ARG_STAR2), args)
+    )
+    positional_args = tuple(
+        filter(lambda a: a[1] in (ARG_POS, ARG_NAMED, ARG_STAR), args)
+    )
+
+    if not positional_args:
+        # no positional args: nothing to do
+        return function
+    opt_arg_types, opt_arg_kinds, opt_arg_names = (tuple(zip(*optional_args))
+                                                   if optional_args
+                                                   else ((), (), ()))
+    pos_arg_types, pos_arg_kinds, pos_arg_names = tuple(zip(*positional_args))
+    arg_type, *arg_types = pos_arg_types
+    arg_name, *arg_names = pos_arg_names
+    arg_kind, *arg_kinds = pos_arg_kinds
     return_type = function.ret_type
-    last_function = CallableType(
-        arg_types=[function.arg_types[-1]],
-        arg_kinds=[function.arg_kinds[-1]],
-        arg_names=[function.arg_names[-1]],
-        ret_type=return_type,
-        fallback=function.fallback
-    )
-    args = list(
-        zip(
-            function.arg_types[:-1],
-            function.arg_kinds[:-1],
-            function.arg_names[:-1]
-        )
-    )
-    for arg_type, kind, name in reversed(args):
-        last_function = CallableType(
+
+    opt_variables = get_variables(*opt_arg_types)
+    variables = get_variables(arg_type)
+    if len(pos_arg_types) == 1:
+        variables |= get_variables(return_type)
+        ret_type = return_type
+    else:
+        ret_type = AnyType(TypeOfAny.special_form)
+    functions = [
+        CallableType(
             arg_types=[arg_type],
-            arg_kinds=[kind],
-            arg_names=[name],
-            ret_type=last_function,
+            arg_kinds=[arg_kind],
+            arg_names=[arg_name],
+            ret_type=ret_type,
             fallback=function.fallback,
-            variables=function.variables,
-            implicit=True
+            variables=list(variables)
         )
-    return Overloaded([last_function, function])
+    ]
+
+    remaining_args = zip(arg_types, arg_kinds, arg_names)
+    for i, (arg_type, kind, name) in enumerate(remaining_args):
+        variables = get_variables(arg_type)
+        if i == len(arg_types) - 1:
+            variables |= get_variables(return_type)
+            ret_type = return_type
+        else:
+            ret_type = AnyType(TypeOfAny.special_form)
+        variables -= set.union(*[set(f.variables) for f in functions])
+        if kind == ARG_STAR:
+            last_f = functions[i]
+            functions[i] = last_f.copy_modified(
+                arg_types=last_f.arg_types + [arg_type],
+                arg_kinds=last_f.arg_kinds + [kind],
+                arg_names=last_f.arg_names + [name],
+                variables=list(variables),
+                ret_type=ret_type
+            )
+        else:
+            functions.append(
+                CallableType(
+                    arg_types=[arg_type],
+                    arg_kinds=[kind],
+                    arg_names=[name],
+                    ret_type=ret_type,
+                    fallback=function.fallback,
+                    variables=list(variables)
+                )
+            )
+
+    def merge(fs):
+        if len(fs) == 1:
+            return fs[0]
+        first, next_, *rest = fs
+        first.ret_type = next_
+        for f in rest:
+            next_.ret_type = f
+            next_ = f
+        return first
+
+    merged = merge(functions)
+    if optional_args:
+        mod_functions = [
+            f.copy_modified(variables=list(set(f.variables) - opt_variables))
+            for f in functions
+        ]
+        mod_merged = merge(mod_functions)
+        with_opts = CallableType(
+            arg_types=list(opt_arg_types),
+            arg_kinds=list(opt_arg_kinds),
+            arg_names=list(opt_arg_names),
+            ret_type=mod_merged,
+            fallback=function.fallback,
+            variables=list(opt_variables)
+        )
+        return Overloaded([merged, function, with_opts])
+    return Overloaded([merged, function])
 
 
 def _variadic_decorator_hook(context: FunctionContext) -> Type:

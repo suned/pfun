@@ -1,4 +1,4 @@
 ::: pfun.list.List
-::: pfun.list.map_m
+::: pfun.list.for_each
 ::: pfun.list.sequence
-::: pfun.list.filter_m
+::: pfun.list.filter_

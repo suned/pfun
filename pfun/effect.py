@@ -16,6 +16,7 @@ from .either import Either, Left, Right
 from .either import sequence as sequence_eithers
 from .functions import curry
 from .immutable import Immutable
+from .monad import Monad
 
 R = TypeVar('R', contravariant=True)
 E = TypeVar('E', covariant=True)
@@ -204,12 +205,11 @@ class RuntimeEnv(Immutable, Generic[A]):
     ) -> B:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
-            self.thread_executor,
-            lambda: f(*args, **kwargs)
+            self.thread_executor, lambda: f(*args, **kwargs)
         )
 
 
-class Effect(Generic[R, E, A], Immutable):
+class Effect(Generic[R, E, A], Immutable, Monad):
     """
     Wrapper for functions of type \
     `Callable[[R], Awaitable[pfun.Either[E, A]]]` that are allowed to \
@@ -677,21 +677,43 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
     """
     iterable = tuple(iterable)
 
-    async def run_e(r: RuntimeEnv[R1]):
-        awaitables = [e.run_e(r) for e in iterable]  # type: ignore
-        trampolines = await asyncio.gather(*awaitables)
-        # TODO should this be run in an executor to avoid blocking?
-        # maybe depending on the number of effects?
-        trampoline = sequence_trampolines(trampolines)
-        return trampoline.map(lambda eithers: sequence_eithers(eithers))
+    async def run_e(r: RuntimeEnv[R1]) -> Trampoline[Either[E1, Iterable[A1]]]:
+        async def thunk() -> Trampoline[Either[E1, Iterable[A1]]]:
+            awaitables = [e.run_e(r) for e in iterable]  # type: ignore
+            trampolines = await asyncio.gather(*awaitables)
+            # TODO should this be run in an executor to avoid blocking?
+            # maybe depending on the number of effects?
+            trampoline = sequence_trampolines(trampolines)
+            return trampoline.map(
+                lambda eithers: sequence_eithers(eithers)  # type: ignore
+            )
+
+        return Call(thunk)
+
+    return Effect(run_e)
+
+
+@add_repr
+def sequence(iterable: Iterable[Effect[R1, E1, A1]]
+             ) -> Effect[R1, E1, Iterable[A1]]:
+    iterable = tuple(iterable)
+
+    async def run_e(r: RuntimeEnv[R1]) -> Trampoline[Either[E1, Iterable[A1]]]:
+        async def thunk() -> Trampoline[Either[E1, Iterable[A1]]]:
+            trampolines = [await e.run_e(r) for e in iterable]  # type: ignore
+            trampoline = sequence_trampolines(trampolines)
+            return trampoline.map(
+                lambda eithers: sequence_eithers(eithers)  # type: ignore
+            )
+        return Call(thunk)
 
     return Effect(run_e)
 
 
 @curry
 @add_repr
-def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
-          iterable: Iterable[A1]) -> Effect[R1, E1, Iterable[A1]]:
+def for_each(f: Callable[[A1], Effect[R1, E1, B]], iterable: Iterable[A1]
+             ) -> Effect[R1, E1, Iterable[B]]:
     """
     Map each in element in ``iterable`` to
     an `Effect` by applying ``f``,
@@ -699,7 +721,7 @@ def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
     from left to right and collect the results
 
     Example:
-        >>> map_m(success, range(3)).run(None)
+        >>> for_each(success, range(3)).run(None)
         (0, 1, 2)
 
     Args:
@@ -708,21 +730,20 @@ def map_m(f: Callable[[A1], Effect[R1, E1, A1]],
     Return:
         `f` mapped over `iterable` and combined from left to right.
     """
-    effects = (f(x) for x in iterable)
-    return sequence_async(effects)
+    return sequence(f(x) for x in iterable)
 
 
 @curry
 @add_repr
-def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
-             iterable: Iterable[A]) -> Effect[R1, E1, Iterable[A]]:
+def filter_(f: Callable[[A], Effect[R1, E1, bool]], iterable: Iterable[A]
+            ) -> Effect[R1, E1, Iterable[A]]:
     """
     Map each element in ``iterable`` by applying ``f``,
     filter the results by the value returned by ``f``
     and combine from left to right.
 
     Example:
-        >>> filter_m(lambda v: success(v % 2 == 0), range(3)).run(None)
+        >>> filter(lambda v: success(v % 2 == 0), range(3)).run(None)
         (0, 2)
 
     Args:
@@ -733,20 +754,10 @@ def filter_m(f: Callable[[A], Effect[R1, E1, bool]],
         `iterable` mapped and filtered by `f`
     """
     iterable = tuple(iterable)
-
-    async def run_e(r: RuntimeEnv[R1]):
-        async def thunk():
-            awaitables = [f(a).run_e(r) for a in iterable]
-            trampolines = await asyncio.gather(*awaitables)
-            trampoline = sequence_trampolines(trampolines)
-            return trampoline.map(
-                lambda eithers: sequence_eithers(eithers).
-                map(lambda bs: tuple(a for a, b in zip(iterable, bs) if b))
-            )
-
-        return Call(thunk)
-
-    return Effect(run_e)
+    bools = sequence(f(a) for a in iterable)
+    return bools.map(
+        lambda bs: tuple(a for b, a in zip(bs, iterable) if b)
+    )
 
 
 @add_repr
@@ -832,14 +843,15 @@ def combine(
         `Effect` that applies the function to the results of `effects`
     """
     def _(f: Callable[..., Union[Awaitable[A1], A1]]) -> Effect[Any, Any, A1]:
-        effect = sequence_async(effects)
+        effect = sequence(effects)
         args_repr = ", ".join([repr(effect) for effect in effects])
         repr_ = f'combine({args_repr})({repr(f)})'
 
         async def call_f(r: RuntimeEnv[object], *args: Any) -> A1:
             if is_cpu_bound(f):
                 return await r.run_in_process_executor(
-                    f, *args  # type: ignore
+                    f,  # type: ignore
+                    *args
                 )
             elif is_io_bound(f):
                 return await r.run_in_thread_executor(f, *args)  # type: ignore
@@ -899,7 +911,7 @@ class lift(Generic[L]):
         Return:
             `f` applied to the success values of `args`
         """
-        effect = sequence_async(effects)
+        effect = sequence(effects)
         args_repr = ", ".join([repr(effect) for effect in effects])
         repr_ = f'lift({repr(self._f)})({args_repr})'
         return combine(get_runtime_env(),
@@ -1100,8 +1112,9 @@ __all__ = [
     'success',
     'get_environment',
     'sequence_async',
-    'filter_m',
-    'map_m',
+    'sequence',
+    'filter_',
+    'for_each',
     'absolve',
     'error',
     'combine',

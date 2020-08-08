@@ -3,7 +3,8 @@ from typing import Any
 from hypothesis import assume, given
 
 from pfun import Unary, compose, identity
-from pfun.either import Either, Left, Right, either, filter_m, map_m, sequence
+from pfun.either import (Either, Left, Right, either, filter_, for_each,
+                         sequence)
 from tests.monad_test import MonadTest
 from tests.strategies import anything, eithers, unaries
 
@@ -74,8 +75,8 @@ class TestEither(MonadTest):
         with recursion_limit(100):
             sequence([Right(v) for v in range(500)])
 
-    def test_filter_m(self):
-        assert filter_m(lambda v: Right(v % 2 == 0), range(3)) == Right((0, 2))
+    def test_filter(self):
+        assert filter_(lambda v: Right(v % 2 == 0), range(3)) == Right((0, 2))
 
-    def test_map_m(self):
-        assert map_m(Right, range(3)) == Right((0, 1, 2))
+    def test_for_each(self):
+        assert for_each(Right, range(3)) == Right((0, 1, 2))
