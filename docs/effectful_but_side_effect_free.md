@@ -284,7 +284,7 @@ cant_fail: Effect[files.HasFiles, NoReturn, str] = as_either.map(lambda either: 
 
 Once you've handled whatever errors you want, you can push the error back into error type of the effect using `pfun.effect.absolve`:
 ```python
-from typing import Any, NoReturn, List
+from typing import NoReturn, List
 
 from pfun.effect import Effect, absolve, files
 from pfun.either import Either
@@ -295,7 +295,7 @@ def handle(either: Either[Union[OSError, ZeroDivisionError], str]) -> Either[Zer
     ...
 
 # define an effect that can fail
-e: Effect[Any, Union[OSError, ZeroDivisionError], List[int]] = files.read('foo.txt').and_then(parse)
+e: Effect[object, Union[OSError, ZeroDivisionError], List[int]] = files.read('foo.txt').and_then(parse)
 # handle errors using e.either.map
 without_os_error: Effect[object, NoReturn, Either[OSError, str]] = e.either().map(handle)
 # push the remaining error into the error type using absolve
@@ -304,7 +304,7 @@ e2: Effect[object, OSError, str] = absolve(without_os_error)
 
 At a slightly higher level, you can use `Effect.recover`, which takes a function that can inspect the error and handle it.
 ```python
-from typing import Any, Union
+from typing import Union
 from pfun.effect import success, error, Effect
 
 
@@ -350,7 +350,8 @@ This program finishes in 0.78 seconds, according to `time`. The crucial differen
 You can create an effect from a Python awaitable using `pfun.effect.from_awaitable`, allowing you to integrate with `asyncio` directly in your own code:
 ```python
 import asyncio
-from typing import Any, NoReturn
+from typing import NoReturn
+
 from pfun.effect import from_awaitable, Effect
 
 
@@ -365,7 +366,7 @@ assert e.run(None) == 'success!'
 
 You can also pass `async` functions directly to `map` and `and_then`:
 ```python
-from typing import Any, NoReturn
+from typing import NoReturn
 import asyncio
 
 from pfun.effect import success
@@ -423,7 +424,7 @@ success(2).map(lambda v: decorated(v))
 Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. `pfun.ref` provides exactly this. `pfun.ref` works by mutating state only by calling `Effect` instances.
 
 ```python
-from typing import Tuple, Any, NoReturn
+from typing import Tuple, NoReturn
 
 from pfun.ref import Ref
 from pfun.effect import Effect
@@ -446,7 +447,7 @@ assert ref.value == (1,)
 
 `pfun.ref` can of course be combined with the module pattern:
 ```python
-from typing import Tuple, Any, NoReturn, Protocol
+from typing import Tuple, NoReturn, Protocol
 
 from pfun.ref import Ref
 from pfun.effect import depend, Effect
