@@ -192,6 +192,7 @@ class TestEffect(MonadTest):
     def test_and_then_io_bound(self, e1, e2):
         e1.and_then(effect.io_bound(lambda _: e2)).run(None) == e2.run(None)
 
+    @settings(deadline=None)
     @given(effects())
     def test_recover_cpu_bound(self, e):
         effect.error('').recover(effect.cpu_bound(lambda _: e)
