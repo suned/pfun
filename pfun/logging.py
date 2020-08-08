@@ -6,6 +6,7 @@ from typing_extensions import Protocol
 
 from .effect import Depends, Success, add_repr, depend, from_callable, io_bound
 from .either import Right
+from .functions import curry
 from .immutable import Immutable
 
 ExcInfo = Tuple[Type[BaseException], BaseException, TracebackType]
@@ -432,6 +433,7 @@ def get_logger(name: Optional[str] = None) -> Depends[HasLogging, Logger]:
     return depend().map(lambda env: env.logging.get_logger(name))
 
 
+@curry
 @add_repr
 def debug(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -459,6 +461,7 @@ def debug(
     )
 
 
+@curry
 @add_repr
 def info(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -486,6 +489,7 @@ def info(
     )
 
 
+@curry
 @add_repr
 def warning(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -513,6 +517,7 @@ def warning(
     )
 
 
+@curry
 @add_repr
 def error(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -540,6 +545,7 @@ def error(
     )
 
 
+@curry
 @add_repr
 def critical(
     msg: str, stack_info: bool = False, exc_info: Union[bool, ExcInfo] = False
@@ -567,6 +573,7 @@ def critical(
     )
 
 
+@curry
 @add_repr
 def exception(
     msg: str, stack_info: bool = True, exc_info: Union[bool, ExcInfo] = True
