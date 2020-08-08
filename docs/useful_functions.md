@@ -46,7 +46,7 @@ the MyPy plugin infers the following overloaded signatures:
 
 The reasoning behind this behaviour is that the main use-case for currying is
 to pass partially applied functions as arguments to other functions that expect
-unary function arguments such as `pfun.effect.Effect.map` ar `pfun.effect.Effect.and_then`,
+unary function arguments such as `pfun.effect.Effect.map` or `pfun.effect.Effect.and_then`,
 and in by-far most cases, we need the required arguments to be applied last:
 
 ```python
