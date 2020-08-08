@@ -432,7 +432,7 @@ def _effect_recover_hook(context: MethodContext) -> Type:
         r2 = e2.args[0]
         return_type_args[0] = _combine_environments(r1, r2)
         return return_type.copy_modified(args=return_type_args)
-    except AttributeError:
+    except (AttributeError, IndexError):
         return return_type
 
 
