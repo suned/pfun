@@ -30,7 +30,7 @@ In other words, `Effect` takes three type paramaters: `R`, `E` and `A`. We'll st
 The `A` in `Effect[R, E, A]` is the _success type_. This is the type that the effect function will return if no error occurs. For example, in an `Effect` instance that reads a file as a `str`, `A` would be parameterized with `str`. You can create an `Effect` instance that succeeds with the value `a` using `pfun.effect.success(a)`:
 
 ```python
-from typing import Any, NoReturn
+from typing import NoReturn
 from pfun.effect import success, Effect
 
 
@@ -49,7 +49,7 @@ assert e.run(None) == "1"
 If you want to transform the result of an `Effect` with a function that produces other side effects (that is, returns an `Effect` instance), you use `and_then`:
 ```python
 add_1 = lambda v: success(v + 1)
-e: Effect[Any, NoReturn, int] = success(1).and_then(add_1)
+e: Effect[object, NoReturn, int] = success(1).and_then(add_1)
 assert e.run(None) == 2
 ```
 (for those with previous functional programming experince, `and_then` is the "bind" operation of `Effect`).
@@ -59,7 +59,7 @@ assert e.run(None) == 2
 The `E` in `Effect[R, E, A]` is the _error type_. This is type that the `run` function will raise if it fails. You can create an effect that does nothing but fail using `pfun.effect.error`:
 
 ```python
-from typing import Any, NoReturn
+from typing import NoReturn
 
 from pfun.effect import Effect, error
 
@@ -71,8 +71,6 @@ e.run(None)  # raises: RuntimeError('Whoops!')
 For a concrete example, take a look at the `pfun.files` module that helps you read from files:
 
 ```python
-from typing import Any
-
 from pfun.effect import Effect
 from pfun.files import Files
 
@@ -153,7 +151,7 @@ In many cases the api for effects involved in the module pattern is split into t
 
 Lets rewrite our example from before to follow the module pattern:
 ```python
-from typing import Any, Protocol
+from typing import Protocol
 from http.client import HTTPError
 
 from pfun.effect import Effect, depend
