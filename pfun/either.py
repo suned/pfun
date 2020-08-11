@@ -6,7 +6,7 @@ from typing import Any, Callable, Generic, Iterable, TypeVar, Union, cast
 
 from .functions import curry
 from .immutable import Immutable
-from .monad import Monad, filter_m_, map_m_, sequence_
+from .monad import Monad, filter_m_, map_m_
 
 A = TypeVar('A', covariant=True)
 B = TypeVar('B', covariant=True)
@@ -218,7 +218,7 @@ def either(f: Callable[..., A]) -> Callable[..., Either[A, B]]:
     return decorator
 
 
-def sequence(iterable: Iterable[Either[A, B]]) -> Either[Iterable[A], B]:
+def sequence(iterable: Iterable[Either[A, B]]) -> Either[A, Iterable[B]]:
     """
     Evaluate each ``Either`` in `iterable` from left to right
     and collect the results
@@ -232,12 +232,17 @@ def sequence(iterable: Iterable[Either[A, B]]) -> Either[Iterable[A], B]:
     Return:
         ``Either`` of collected results
     """
-    return cast(Either[Iterable[A], B], sequence_(Right, iterable))
+    result = []
+    for either in iterable:
+        if isinstance(either, Left):
+            return either
+        result.append(either.get)
+    return Right(tuple(result))
 
 
 @curry
 def for_each(f: Callable[[A], Either[B, C]], iterable: Iterable[A]
-             ) -> Either[Iterable[B], C]:
+             ) -> Either[B, Iterable[C]]:
     """
     Map each in element in ``iterable`` to
     an `Either` by applying ``f``,
@@ -254,12 +259,12 @@ def for_each(f: Callable[[A], Either[B, C]], iterable: Iterable[A]
     Return:
          ``f`` mapped over ``iterable`` and combined from left to right.
     """
-    return cast(Either[Iterable[B], C], map_m_(Right, f, iterable))
+    return cast(Either[B, Iterable[C]], map_m_(Right, f, iterable))
 
 
 @curry
-def filter_(f: Callable[[A], Either[bool, B]], iterable: Iterable[A]
-            ) -> Either[Iterable[A], B]:
+def filter_(f: Callable[[A], Either[B, bool]], iterable: Iterable[A]
+            ) -> Either[B, Iterable[A]]:
     """
     Map each element in ``iterable`` by applying ``f``,
     filter the results by the value returned by ``f``
@@ -275,7 +280,7 @@ def filter_(f: Callable[[A], Either[bool, B]], iterable: Iterable[A]
     Return:
         `iterable` mapped and filtered by `f`
     """
-    return cast(Either[Iterable[A], B], filter_m_(Right, f, iterable))
+    return cast(Either[B, Iterable[A]], filter_m_(Right, f, iterable))
 
 
 def tail_rec(f: Callable[[D], Either[C, Either[D, B]]], a: D) -> Either[C, B]:
