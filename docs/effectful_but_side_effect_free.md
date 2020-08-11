@@ -310,7 +310,7 @@ from pfun.effect import success, error, Effect
 
 def handle_errors(reason: Union[OSError, ZeroDivisionError]) -> Effect[object, ZeroDivisionError, str]:
     if isinstance(reason, OSError):
-        return success('default value)
+        return success('default value')
     return error(reason)
 
 
