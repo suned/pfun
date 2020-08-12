@@ -3,7 +3,7 @@ from asyncio import iscoroutine
 from typing import Awaitable, Callable, Generic, Iterable, TypeVar, Union, cast
 
 from .immutable import Immutable
-from .monad import Monad
+from .monad import Monad, sequence_
 
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
@@ -139,11 +139,7 @@ def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
     :param iterable: The iterable to collect results from
     :returns: ``Trampoline`` of collected results
     """
-    iterable = tuple(iterable)
-
-    async def thunk():
-        return Done(tuple([await t.run() for t in iterable]))
-    return Call(thunk)
+    return cast(Trampoline[Iterable[A]], sequence_(Done, iterable))
 
 
 __all__ = ['Trampoline', 'Done', 'sequence', 'Call', 'AndThen']
