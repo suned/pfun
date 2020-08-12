@@ -685,7 +685,7 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
             # maybe depending on the number of effects?
             trampoline = sequence_trampolines(trampolines)
             return trampoline.map(
-                lambda eithers: sequence_eithers(eithers)  # type: ignore
+                lambda eithers: sequence_eithers(eithers)
             )
 
         return Call(thunk)
@@ -703,7 +703,7 @@ def sequence(iterable: Iterable[Effect[R1, E1, A1]]
             trampolines = [await e.run_e(r) for e in iterable]  # type: ignore
             trampoline = sequence_trampolines(trampolines)
             return trampoline.map(
-                lambda eithers: sequence_eithers(eithers)  # type: ignore
+                lambda eithers: sequence_eithers(eithers)
             )
         return Call(thunk)
 
