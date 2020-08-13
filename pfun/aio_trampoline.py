@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from asyncio import iscoroutine
-from typing import Awaitable, Callable, Generic, Iterable, TypeVar, Union, cast
 from functools import reduce
+from typing import Awaitable, Callable, Generic, Iterable, TypeVar, Union, cast
 
 from .immutable import Immutable
 from .monad import Monad, sequence_
