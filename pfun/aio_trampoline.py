@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from asyncio import iscoroutine
 from typing import Awaitable, Callable, Generic, Iterable, TypeVar, Union, cast
+from functools import reduce
 
 from .immutable import Immutable
 from .monad import Monad, sequence_
@@ -139,7 +140,9 @@ def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
     :param iterable: The iterable to collect results from
     :returns: ``Trampoline`` of collected results
     """
-    return cast(Trampoline[Iterable[A]], sequence_(Done, iterable))
+    def combine(es, e):
+        return es.and_then(lambda xs: e.map(lambda x: (xs.append(x), xs)[1]))
+    return reduce(combine, iterable, Done([])).map(tuple)
 
 
 __all__ = ['Trampoline', 'Done', 'sequence', 'Call', 'AndThen']
