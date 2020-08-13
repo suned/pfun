@@ -1,3 +1,5 @@
+cimport cython
+
 from functools import reduce
 import asyncio
 
@@ -16,7 +18,6 @@ cdef class UserContinuation(Continuation):
         self.f = f
 
     cdef object apply(self, object v):
-        fr = repr(self.f)
         return self.f(v)
 
 cdef class MapContinuation(Continuation):
@@ -30,21 +31,22 @@ cdef class MapContinuation(Continuation):
 
 
 
-async def await_effect(effect):
+async def try_await(v):
     try:
-        return await effect
+        return await v
     except TypeError:
-        return effect
+        return v
 
 
+@cython.trashcan(True)
 cdef class Effect:
     async def __call__(self, r):
         cdef Effect effect = self
         while not isinstance(effect, Success) or isinstance(effect, Error):
-            effect = (<Effect?>await await_effect(effect.resume(r)))
+            effect = (<Effect?>await try_await(effect.resume(r)))
         if isinstance(effect, Success):
-            return effect.result
-        raise RuntimeError(effect.reason)
+            return await try_await(effect.result)
+        raise RuntimeError(await try_await(effect.reason))
 
     def and_then(self, f):
         return self.c_and_then(UserContinuation.__new__(UserContinuation, f))
@@ -72,7 +74,7 @@ cdef class Success(Effect):
         return self
 
     async def apply_continuation(self, Continuation f, object r):
-        return await await_effect(f.apply(self.result))
+        return await try_await(f.apply(await try_await(self.result)))
 
 
 cdef class Error(Effect):
@@ -98,7 +100,7 @@ cdef class AndThenContinuation(Continuation):
     def make_call(self, v):
         async def thunk():
             e = self.continuation.apply(v)
-            cdef Effect effect = await await_effect(e)
+            cdef Effect effect = await try_await(e)
             return effect.c_and_then(self.f)
         
         return Call.__new__(Call, thunk)
@@ -147,7 +149,7 @@ cdef class Depend(Effect):
         return Success(r)
 
     async def apply_continuation(self, Continuation f, object r):
-        return await await_effect(f.apply(r))
+        return await try_await(f.apply(r))
 
 
 cdef class SequenceContinuation(Continuation):
