@@ -1,3 +1,4 @@
+# cython: profile=True
 cimport cython
 
 from functools import reduce
