@@ -1,22 +1,26 @@
-# cython: profile=True
-cimport cython
-
-from functools import reduce
 import asyncio
 
 
-@cython.trashcan(True)
+async def async_identity(object v):
+    return v
+
+
 cdef class Effect:
     cdef bint is_done(self):
         return False
 
     async def __call__(self, object r):
-        cdef Effect effect = self
-        while not effect.is_done():
-            effect = (<Effect?>await effect.resume(r))
+        effect = await self.do(r)
         if isinstance(effect, Success):
             return effect.result
         raise RuntimeError(effect.reason)
+    
+    async def do(self, r):
+        cdef Effect effect = self
+        while not effect.is_done():
+            effect = (<Effect?>await effect.resume(r))
+        return effect
+
 
     def and_then(self, f):
         if asyncio.iscoroutinefunction(f):
@@ -25,7 +29,7 @@ cdef class Effect:
             async def g(x):
                 return f(x)
             return self.c_and_then(g)
-    
+
     cdef Effect c_and_then(self, object f):
         return AndThen.__new__(AndThen, self, f)
 
@@ -43,6 +47,11 @@ cdef class Effect:
 
     async def apply_continuation(self, object f, object r):
         raise NotImplementedError()
+    
+    def discard_and_then(self, Effect effect):
+        async def g(x):
+            return effect
+        return self.c_and_then(g)
 
 
 cdef class Success(Effect):
@@ -89,7 +98,7 @@ cdef class AndThen(Effect):
 
     async def resume(self, object r):
         return await self.effect.apply_continuation(self.continuation, r)
-    
+
     cdef Effect c_and_then(self, f):
         async def g(v):
             async def thunk():
@@ -121,17 +130,46 @@ cdef class Depend(Effect):
         return await f(r)
 
 cdef Effect combine(Effect es, Effect e):
-    async def f(xs):
-        async def g(x):
+    async def f(list xs):
+        async def g(object x):
             xs.append(x)
             return Success.__new__(Success, xs)
-        
+
         return AndThen.__new__(AndThen, e, g)
     return AndThen.__new__(AndThen, es, f)
 
-def sequence(effects):
+
+cpdef Effect sequence(effects):
     cdef Effect result = Success([])
     cdef Effect effect
     for effect in effects:
         result = combine(result, effect)
     return result.map(tuple)
+
+
+cdef class SequenceAsync(Effect):
+    cdef tuple effects
+
+    def __cinit__(self, effects):
+        self.effects = effects
+
+    async def sequence(self, object r):
+        async def thunk():
+            awaitables = [effect.do(r)
+                            for effect in self.effects]
+            effects = await asyncio.gather(*awaitables)
+            return sequence(effects)
+        return Call.__new__(Call, thunk)
+
+    async def resume(self, object r):
+        async def thunk():
+            return await self.sequence(r)
+        return Call.__new__(Call, thunk)
+
+    async def apply_continuation(self, object f, object r):
+        cdef Effect sequenced = await self.sequence(r)
+        return sequenced.c_and_then(f)
+
+
+def sequence_async(effects):
+    return SequenceAsync.__new__(SequenceAsync, tuple(effects))
