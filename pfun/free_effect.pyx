@@ -17,7 +17,9 @@ cdef class Effect:
     
     async def do(self, r):
         cdef Effect effect = self
+        stack = []
         while not effect.is_done():
+            stack.append(effect)
             effect = (<Effect?>await effect.resume(r))
         return effect
 
@@ -147,6 +149,23 @@ cpdef Effect sequence(effects):
     return result.map(tuple)
 
 
+cdef class FromAwaitable(Effect):
+    cdef object awaitable
+
+    def __cinit__(self, awaitable):
+        self.awaitable = awaitable
+    
+    async def resume(self, object r):
+        return Success.__new__(Success, await self.awaitable)
+    
+    async def apply_continuation(self, object f, object r):
+        return f(await self.awaitable)
+
+
+def from_awaitable(awaitable):
+    return FromAwaitable(awaitable)
+
+
 cdef class SequenceAsync(Effect):
     cdef tuple effects
 
@@ -155,16 +174,14 @@ cdef class SequenceAsync(Effect):
 
     async def sequence(self, object r):
         async def thunk():
-            awaitables = [effect.do(r)
-                            for effect in self.effects]
-            effects = await asyncio.gather(*awaitables)
+            cdef Effect effect
+            aws = [effect.do(r) for effect in self.effects]
+            effects = await asyncio.gather(*aws)
             return sequence(effects)
         return Call.__new__(Call, thunk)
 
     async def resume(self, object r):
-        async def thunk():
-            return await self.sequence(r)
-        return Call.__new__(Call, thunk)
+        return await self.sequence(r)
 
     async def apply_continuation(self, object f, object r):
         cdef Effect sequenced = await self.sequence(r)
