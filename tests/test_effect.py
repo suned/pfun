@@ -242,6 +242,7 @@ class TestEffect(MonadTest):
         assert effect.from_callable(effect.io_bound(f)
                                     ).run(None) == f(None).get
 
+    @settings(deadline=None)
     @given(unaries())
     def test_catch_cpu_bound(self, f):
         assert effect.catch(Exception)(effect.cpu_bound(f)
