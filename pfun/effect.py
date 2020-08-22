@@ -631,8 +631,7 @@ def depend(r_type: Optional[Type[R1]] = None) -> Depends[R1, R1]:
         return Done(Right(env.r))
 
     return Effect(
-        run_e,
-        f'depend({r_type.__name__ if r_type is not None else ""})'
+        run_e, f'depend({r_type.__name__ if r_type is not None else ""})'
     )
 
 
@@ -684,9 +683,7 @@ def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
             # TODO should this be run in an executor to avoid blocking?
             # maybe depending on the number of effects?
             trampoline = sequence_trampolines(trampolines)
-            return trampoline.map(
-                lambda eithers: sequence_eithers(eithers)
-            )
+            return trampoline.map(lambda eithers: sequence_eithers(eithers))
 
         return Call(thunk)
 
@@ -702,9 +699,8 @@ def sequence(iterable: Iterable[Effect[R1, E1, A1]]
         async def thunk() -> Trampoline[Either[E1, Iterable[A1]]]:
             trampolines = [await e.run_e(r) for e in iterable]  # type: ignore
             trampoline = sequence_trampolines(trampolines)
-            return trampoline.map(
-                lambda eithers: sequence_eithers(eithers)
-            )
+            return trampoline.map(lambda eithers: sequence_eithers(eithers))
+
         return Call(thunk)
 
     return Effect(run_e)
@@ -712,8 +708,8 @@ def sequence(iterable: Iterable[Effect[R1, E1, A1]]
 
 @curry
 @add_repr
-def for_each(f: Callable[[A1], Effect[R1, E1, B]], iterable: Iterable[A1]
-             ) -> Effect[R1, E1, Iterable[B]]:
+def for_each(f: Callable[[A1], Effect[R1, E1, B]],
+             iterable: Iterable[A1]) -> Effect[R1, E1, Iterable[B]]:
     """
     Map each in element in ``iterable`` to
     an `Effect` by applying ``f``,
@@ -735,8 +731,8 @@ def for_each(f: Callable[[A1], Effect[R1, E1, B]], iterable: Iterable[A1]
 
 @curry
 @add_repr
-def filter_(f: Callable[[A], Effect[R1, E1, bool]], iterable: Iterable[A]
-            ) -> Effect[R1, E1, Iterable[A]]:
+def filter_(f: Callable[[A], Effect[R1, E1, bool]],
+            iterable: Iterable[A]) -> Effect[R1, E1, Iterable[A]]:
     """
     Map each element in ``iterable`` by applying ``f``,
     filter the results by the value returned by ``f``
@@ -755,9 +751,7 @@ def filter_(f: Callable[[A], Effect[R1, E1, bool]], iterable: Iterable[A]
     """
     iterable = tuple(iterable)
     bools = sequence(f(a) for a in iterable)
-    return bools.map(
-        lambda bs: tuple(a for b, a in zip(bs, iterable) if b)
-    )
+    return bools.map(lambda bs: tuple(a for b, a in zip(bs, iterable) if b))
 
 
 @add_repr
@@ -1054,7 +1048,18 @@ class catch(Immutable, Generic[EX], init=False):
         """
         object.__setattr__(self, 'errors', (error, ) + errors)
 
-    def __call__(self, f: Callable[..., B]) -> Callable[..., Try[EX, B]]:
+    @overload
+    def __call__(self, f: Callable[..., Awaitable[B]]
+                 ) -> Callable[..., Try[EX, B]]:
+        ...
+
+    @overload
+    def __call__(self, f: Callable[..., B]
+                 ) -> Callable[..., Try[EX, B]]:
+        ...
+
+    def __call__(self, f: Union[Callable[..., Awaitable[B]], Callable[..., B]]
+                 ) -> Callable[..., Try[EX, B]]:
         """
         Decorate `f` to catch exceptions as an `Effect`
         """
@@ -1067,17 +1072,24 @@ class catch(Immutable, Generic[EX], init=False):
                         return Done(
                             Right(
                                 await
-                                r.run_in_process_executor(f, *args, *kwargs)
+                                r.run_in_process_executor(
+                                    f, *args, *kwargs  # type: ignore
+                                )
                             )
                         )
                     elif is_io_bound(f):
                         return Done(
                             Right(
                                 await
-                                r.run_in_thread_executor(f, *args, **kwargs)
+                                r.run_in_thread_executor(
+                                    f, *args, **kwargs  # type: ignore
+                                )
                             )
                         )
-                    return Done(Right(f(*args, **kwargs)))
+                    result = f(*args, **kwargs)
+                    if asyncio.iscoroutine(result):
+                        result = await result  # type: ignore
+                    return Done(Right(result))  # type: ignore
                 except Exception as e:
                     if any(isinstance(e, t) for t in self.errors):
                         return Done(Left(e))  # type: ignore

@@ -461,10 +461,13 @@ def _lift_call_hook(context: MethodContext) -> Type:
 
 
 def _effect_catch_hook(context: FunctionContext) -> Type:
-    error_types = [
-        arg_type[0].ret_type for arg_type in context.arg_types if arg_type
-    ]
-    return context.default_return_type.copy_modified(args=error_types)
+    try:
+        error_types = [
+            arg_type[0].ret_type for arg_type in context.arg_types if arg_type
+        ]
+        return context.default_return_type.copy_modified(args=error_types)
+    except AttributeError:
+        return context.default_return_type
 
 
 def _effect_catch_call_hook(context: MethodContext) -> Type:
