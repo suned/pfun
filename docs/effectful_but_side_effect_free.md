@@ -490,9 +490,7 @@ async def f(r: str) -> Either[Exception, float]:
 effect: Effect[str, Exception, float] = from_callable(f)
 ```
 
-`pfun.effect.catch` is used to decorate functions
-that may raise exceptions. If the decorated function performs side effects, they
-are not carried out until the effect is run
+`pfun.effect.catch` is used to decorate sync and async functions that may raise exceptions. If the decorated function performs side effects, they are not carried out until the effect is run
 ```python
 from pfun.effect import catch, Effect
 
