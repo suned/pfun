@@ -1,10 +1,6 @@
 import asyncio
 
 
-async def async_identity(object v):
-    return v
-
-
 cdef class Effect:
     cdef bint is_done(self):
         return False
@@ -17,9 +13,7 @@ cdef class Effect:
     
     async def do(self, r):
         cdef Effect effect = self
-        stack = []
         while not effect.is_done():
-            stack.append(effect)
             effect = (<Effect?>await effect.resume(r))
         return effect
 
@@ -86,6 +80,7 @@ cdef class Error(Effect):
 
     async def apply_continuation(self, object f, object r):
         return self
+
 
 cdef class AndThen(Effect):
     cdef Effect effect
