@@ -16,7 +16,7 @@ class Dict(Immutable, Mapping[K, V], init=False):
 
     _d: Dict_[K, V]
 
-    def __init__(self, d: Union[Dict_[K, V], 'Dict[K, V]'] = dict()):
+    def __init__(self, d: Mapping[K, V] = dict()):
         """
         Args:
             d: `dict` instance to wrap
