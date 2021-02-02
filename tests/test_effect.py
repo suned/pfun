@@ -265,6 +265,7 @@ class TestResource:
         effect = resource.get()
         assert effect.run(None) == mock_resource
         mock_resource.__aenter__.assert_called_once()
+        mock_resource.__aexit__.assert_called_once()
         assert resource.resource is None
 
     def test_resources_are_unique(self):
