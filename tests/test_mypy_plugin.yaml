@@ -126,7 +126,7 @@
     class C(Immutable):
       field: int
 
-    C()  # E: Too few arguments for "C"
+    C()  # E: Missing positional argument "field" in call to "C"
 - case: cant_set_immutable_attribute
   main: |
     from pfun import Immutable
