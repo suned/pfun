@@ -258,7 +258,7 @@ class TestEffect(MonadTest):
                                        )(None).run(None) == f(None)
 
 
-class TestResoure:
+class TestResource:
     def test_get(self):
         mock_resource = asynctest.MagicMock()
         resource = Resource(lambda: either.Right(mock_resource))
@@ -308,9 +308,10 @@ class HasFiles:
 
 class TestFiles:
     def test_read(self):
-        with mock_open('content'):
+        with mock_open('content') as mocked_open:
             e = files.read('foo.txt')
             assert e.run(HasFiles()) == 'content'
+            mocked_open.assert_called_once_with('foo.txt')
 
     def test_write(self):
         with mock_open() as mocked_open:
@@ -320,9 +321,10 @@ class TestFiles:
             mocked_open().write.assert_called_once_with('content')
 
     def test_read_bytes(self):
-        with mock_open(b'content'):
+        with mock_open(b'content') as mocked_open:
             e = files.read_bytes('foo.txt')
             assert e.run(HasFiles()) == b'content'
+            mocked_open.assert_called_once_with('foo.txt', 'rb')
 
     def test_write_bytes(self):
         with mock_open() as mocked_open:

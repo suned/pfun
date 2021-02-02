@@ -44,7 +44,7 @@ class Files(Immutable):
         """
         @io_bound
         def f() -> bytes:
-            with open(path, 'b') as f:
+            with open(path, 'rb') as f:
                 return f.read()
 
         return catch(OSError)(f)()
