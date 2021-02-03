@@ -26,7 +26,6 @@ except ImportError:
         'install pfun with \n\n\tpip install pfun[http]'
     )
 
-
 JSonPrim = Union[int, str, float, Dict_[str, Any]]
 JSon = Union[Iterable[JSonPrim], JSonPrim]
 
@@ -101,26 +100,30 @@ class HTTP(Immutable, init=False):
             self,
             'session',
             Resource(
-                lambda: Right(aiohttp.ClientSession(
-                    connector=connector,
-                    cookies=cookies,
-                    headers=headers,
-                    skip_auto_headers=skip_auto_headers,
-                    auth=auth,
-                    json_serialize=json_serialize,
-                    version=version,
-                    cookie_jar=cookie_jar,
-                    read_timeout=read_timeout,
-                    conn_timeout=conn_timeout,
-                    timeout=timeout,
-                    raise_for_status=raise_for_status,
-                    connector_owner=connector_owner,
-                    auto_decompress=auto_decompress,
-                    requote_redirect_url=requote_redirect_url,
-                    trust_env=trust_env,
-                    trace_configs=(trace_configs if trace_configs is None
-                                   else list(trace_configs))
-                ))
+                lambda: Right(
+                    aiohttp.ClientSession(
+                        connector=connector,
+                        cookies=cookies,
+                        headers=headers,
+                        skip_auto_headers=skip_auto_headers,
+                        auth=auth,
+                        json_serialize=json_serialize,
+                        version=version,
+                        cookie_jar=cookie_jar,
+                        read_timeout=read_timeout,
+                        conn_timeout=conn_timeout,
+                        timeout=timeout,
+                        raise_for_status=raise_for_status,
+                        connector_owner=connector_owner,
+                        auto_decompress=auto_decompress,
+                        requote_redirect_url=requote_redirect_url,
+                        trust_env=trust_env,
+                        trace_configs=(
+                            trace_configs
+                            if trace_configs is None else list(trace_configs)
+                        )
+                    )
+                )
             )
         )
 
@@ -205,7 +208,12 @@ class HTTP(Immutable, init=False):
                             from_optional(response.reason),
                             response.cookies,
                             Dict(response.headers),
-                            Dict(response.links),
+                            Dict(
+                                {
+                                    k: str(response.links[k])
+                                    for k in response.links
+                                }
+                            ),
                             from_optional(response.charset)
                         )
                     )
@@ -244,9 +252,7 @@ def get_session() -> Depends[HasHTTP, aiohttp.ClientSession]:
     Return:
         `Effect` that succeeds with `aiohttp.ClientSession`
     """
-    return depend(HasHTTP).and_then(
-        lambda env: env.http.session.get()
-    )
+    return depend(HasHTTP).and_then(lambda env: env.http.session.get())
 
 
 @curry
