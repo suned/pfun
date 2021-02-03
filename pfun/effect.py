@@ -172,7 +172,7 @@ class Resource(Immutable, Generic[E, C]):
     async def __aexit__(self, *args, **kwargs):
         resource = self.resource
         object.__setattr__(self, 'resource', None)
-        if isinstance(self.resource, Right):
+        if isinstance(resource, Right):
             return await resource.get.__aexit__(*args, **kwargs)
 
 
