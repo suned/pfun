@@ -35,4 +35,4 @@ Requires [poetry](https://poetry.eustace.io/)
 - Install dependencies with `poetry install`
 - Build documentation with `poetry run mkdocs serve`
 - Run tests with `poetry run tox`
-- Lint with `poetry run pre-commit --all`
+- Lint with `poetry run pre-commit run --all`
