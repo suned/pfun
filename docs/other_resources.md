@@ -6,3 +6,10 @@
 
 ## Examples
 - [Todo-Backend](https://github.com/suned/pfun-todo-backend/) (implementation of [todobackend.com](https://todobackend.com/))
+
+## Similar Projects
+
+- [returns](https://returns.readthedocs.io/en/latest/)
+- [toolz](https://toolz.readthedocs.io/en/latest/)
+- [awesome-functional-python](https://github.com/sfermigier/awesome-functional-python)
+- [Zio](https://zio.dev/) (a Scala library that inspired `pfun.effect`)
