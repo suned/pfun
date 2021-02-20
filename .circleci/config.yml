@@ -16,8 +16,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          - py38-dependency-cache-{{ checksum "poetry.lock" }}
-          - py38-dependency-cache-
+          keys:
+            - py38-dependency-cache-{{ checksum "poetry.lock" }}
+            - py38-dependency-cache-
       - install_poetry
       - install_dependencies
       - run:
