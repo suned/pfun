@@ -1,9 +1,11 @@
-In functional programming, programs are built by composing functions that have no [side-effects](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). This means that problems that we normally solve using side-effects in imperative programming such as performing io or raising exceptions are solved differently. In this section we study the three modules `pfun` provides for working with side-effects in purely functional style.
+In functional programming, programs are built by composing functions that have no [side-effects](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). This means that problems that we normally solve using side-effects in imperative programming, such as performing io or raising exceptions, are solved differently. In this section we study the three modules `pfun` provides for working with side-effects in purely functional style.
 
 - `pfun.maybe` helps you deal with missing values without exceptions.
 - `pfun.either` helps you deal with errors without exceptions.
 - `pfun.effect` helps you work with side-effects in functional style.
 
+
+If you have some experience with functionl programming, you can probably skip ahead to the section on `pfun.effect.Effect`.
 ## Maybe
 The job of the `pfun.maybe.Maybe` type is to help you work with missing values, in much the same way that the built-in `None` type is used. One of the main disadvantages of the `None` type is that you end up with logic for dealing with missing values all over the place, using code like `if foo is not None`.
 
@@ -21,10 +23,12 @@ def lookup(d: dict, key: str) -> Optional[str]:
 ```
 When using `pfun.maybe` to do the same thing, you will wrap the result of the lookup in a `pfun.maybe.Just` instance, and return a `pfun.maybe.Nothing` instance if the key wasn't found. In other words, it would look like this:
 ```python
+from typing import Dict
+
 from pfun.maybe import Maybe, Just, Nothing
 
 
-def lookup(d: dict, key: str) -> Maybe[str]:
+def lookup(d: Dict[str, str], key: str) -> Maybe[str]:
     try:
         return Just(d[key])
     except KeyError:
@@ -36,19 +40,19 @@ lookup({'key': 'value'}, 'key').map(lambda v: f'found {v}')
 ```
 But what happens if you `map` a function that returns a new `Just` or `Nothing`? e.g:
 ```python
-def maybe_is_42(val: int) -> Maybe[int]:
-    if val == 42:
+def maybe_is_42(val: str) -> Maybe[str]:
+    if val == '42':
         return Just(val)
     return Nothing()
 
-lookup({'key': 42}, 'key').map(maybe_is_42)
+lookup({'key': '42'}, 'key').map(maybe_is_42)
 ```
 You end up with `Just(Just(42))`! Thats probably not what you wanted.
 
 When you want to apply a function that returns `Just` or `Nothing`, you should probably use `and_then`, which knows how to "unwrap" the result:
 
 ```python
-lookup({'key': 42}, 'key').and_then(maybe_is_42)
+lookup({'key': '42'}, 'key').and_then(maybe_is_42)  # Just('42')
 ```
 (For those with previous functional programming experience, `and_then` is the [bind](https://en.wikipedia.org/wiki/Monad_(functional_programming)#Overview) operation of `Maybe`)
 
@@ -62,7 +66,43 @@ else:
 ```
 
 ## Either
-`pfun.either.Either` is a type that allows you to work with errors without raising exceptions. It works in much the same way as `pfun.maybe.Maybe`: when a function returns succesfully, it returns a `pfun.either.Right` instance, when it fails, it returns a `pfun.either.Left` instance.
+One downside of the `pfun.maybe.Maybe` type is that it's not great for dealing with errors because `pfun.maybe.Nothing` can't provide any information about what went wrong. `pfun.either.Either` is a type that's used very similarly to `Maybe`, but unlike `Maybe` it can wrap an error value, as well as a success value.
+
+Just like when working with `Maybe` there are two types involved: `pfun.either.Right` and `pfun.either.Left`. The `Right` type is used to wrap successful results by convention. `Left` is used to wrap errors. Using the `lookup` function from before as an example, it would like this:
+
+```python
+from typing import Dict
+
+from pfun.either import Either, Right, Left
+
+
+def lookup(d: Dict[str, str], key: str) -> Either[Exception, str]:
+    try:
+        return Right(d[key])
+    except KeyError as e:
+        return Left(e)
+```
+
+Just like with `Maybe` you can apply functions to values wrapped by `Right` using the `map` function, and you can transform results into new `Either` values with `and_then`:
+```python
+lookup({'key': 'value'}, 'key').map(lambda v: f'found {v}!')
+
+def is_42(value: str) -> Either[str, str]: 
+    return Right(value) if value == '42' else Left('Wasn\'t 42')
+
+
+lookup({'key': '42'}).and_then(is_42)  # Right('42')
+```
+Just like with `Maybe`, `Either` is actually a type-alias for `Union[Left[TypeVar('L')], Right[TypeVar('R')]]`, which allows the type-checker to narrow the type to one or the other using `isinstance` checks.
+
+```python
+value = lookup(some_dict, 'key')
+if isinstance(Right, value):
+    ...  # type checker knows that value is a Right
+else:
+    ...  # type checker knows that value is a Left
+```
+
 ## Effect
 The `pfun.effect.Effect` type lets you express side-effects in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "[functional effect system](https://en.wikipedia.org/wiki/Effect_system)", which is precisely what `pfun.effect.Effect` is. The core type you will use when expressing side-effects with `pfun` is `pfun.effect.Effect`. `Effect` has a function `run` that perfoms the side-effect it represents. `run` is a function that:
 
