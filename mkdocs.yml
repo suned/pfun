@@ -6,6 +6,7 @@ repo_url: https://github.com/suned/pfun
 edit_uri: ''
 nav:
     - 'Guide':
+        - What Is This?: what_is_this.md
         - Install: install.md
         - Effectful (But Side-Effect Free) Programming: effectful_but_side_effect_free.md
         - Useful Functions: useful_functions.md

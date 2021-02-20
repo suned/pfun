@@ -161,7 +161,7 @@ class HTTP(Immutable, init=False):
 
         Example:
             >>> http = HTTP()
-            >>> http.make_request('get', 'http://foo.com')(None)
+            >>> http.make_request('get', 'http://foo.com').run(None)
             Response(...)
 
         Args:
@@ -290,7 +290,7 @@ def get(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> get('http://foo.com')(Env())
+        >>> get('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -363,7 +363,7 @@ def put(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> put('http://foo.com')(Env())
+        >>> put('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -436,7 +436,7 @@ def post(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> post('http://foo.com')(Env())
+        >>> post('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -509,7 +509,7 @@ def delete(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> delete('http://foo.com')(Env())
+        >>> delete('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -582,7 +582,7 @@ def head(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> head('http://foo.com')(Env())
+        >>> head('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -655,7 +655,7 @@ def options(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> options('http://foo.com')(Env())
+        >>> options('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -728,7 +728,7 @@ def patch(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> patch('http://foo.com')(Env())
+        >>> patch('http://foo.com').run(Env())
         Response(...)
 
     Args:

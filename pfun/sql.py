@@ -125,7 +125,7 @@ class SQL(Immutable, init=False):
 
         Example:
             >>> sql = SQL('postgres://user@host/database')
-            >>> sql.get_connection()(None)
+            >>> sql.get_connection().run(None)
             <asyncpg.connection.Connection at ...>
 
         Return:
@@ -144,7 +144,7 @@ class SQL(Immutable, init=False):
             ...     'INSERT INTO users(name, age) VALUES($1, $2)',
             ...     'bob',
             ...     32
-            ... )(None)
+            ... ).run(None)
             'INSERT 1'
 
         Args:
@@ -173,7 +173,7 @@ class SQL(Immutable, init=False):
             >>> sql.execute_many(
             ...     'INSERT INTO users(name, age) VALUES($1, $2)',
             ...     [('bob', 32), ('alice', 20)]
-            ... )(None)
+            ... ).run(None)
             'INSERT 2'
 
         Args:
@@ -199,7 +199,7 @@ class SQL(Immutable, init=False):
 
         Example:
             >>> sql = SQL('postgres://user@host/database')
-            >>> sql.fetch('select * from users')(None)
+            >>> sql.fetch('select * from users').run(None)
             List((Dict({'name': 'bob', 'age': 32}),))
 
         Args:
@@ -226,7 +226,7 @@ class SQL(Immutable, init=False):
 
         Example:
             >>> sql = SQL('postgres://user@host/database')
-            >>> sql.fetch_one('select * from users')(None)
+            >>> sql.fetch_one('select * from users').run(None)
             Dict({'name': 'bob', 'age': 32})
 
         Args:
@@ -269,7 +269,7 @@ def get_connection(
     Example:
         >>> class Env:
         ...     sql = SQL('postgres://user@host/database')
-        >>> get_connection()(Env())
+        >>> get_connection().run(Env())
         <asyncpg.connection.Connection at ...>
 
     Return:
@@ -294,7 +294,7 @@ def execute(query: str, *args: Any, timeout: float = None
         ...     'INSERT INTO users(name, age) VALUES($1, $2)',
         ...     'bob',
         ...     32
-        ... )(Env())
+        ... ).run(Env())
         'INSERT 1'
 
     Args:
@@ -323,7 +323,7 @@ def execute_many(query: str, args: Iterable[Any], timeout: float = None
         >>> execute_many(
         ...     'INSERT INTO users(name, age) VALUES($1, $2)',
         ...     [('bob', 32), ('alice', 20)]
-        ... )(Env())
+        ... ).run(Env())
         'INSERT 2'
 
     Args:
