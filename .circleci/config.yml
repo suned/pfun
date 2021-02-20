@@ -17,8 +17,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - py38-dependency-cache-{{ checksum "poetry.lock" }}
-            - py38-dependency-cache-
+            - py38-v1-dependency-cache-{{ checksum "poetry.lock" }}
+            - py38-v1-dependency-cache-
       - install_poetry
       - install_dependencies
       - run:
@@ -32,20 +32,20 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - py37-dependency-cache-{{ checksum "poetry.lock" }}
-            - py37-dependency-cache-
+            - py37-v1-dependency-cache-{{ checksum "poetry.lock" }}
+            - py37-v1-dependency-cache-
       - install_poetry
       - install_dependencies
       - run:
           name: Test
           command: poetry run tox -e py37
       - save_cache:
-          key: py37-dependency-cache-{{ checksum "poetry.lock" }}
+          key: py37-v1-dependency-cache-{{ checksum "poetry.lock" }}
           paths:
             - ".venv"
             - ".tox"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.7/site-packages"
+            - "/usr/local/bin/poetry"
+            - $HOME/.local/lib/python3.7
   test_py38:
     working_directory: ~/pfun
     docker:
@@ -54,20 +54,20 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - py38-dependency-cache-{{ checksum "poetry.lock" }}
-            - py38-dependency-cache-
+            - py38-v1-dependency-cache-{{ checksum "poetry.lock" }}
+            - py38-v1-dependency-cache-
       - install_poetry
       - install_dependencies
       - run:
           name: Test
           command: poetry run tox -e py38
       - save_cache:
-          key: py38-dependency-cache-{{ checksum "poetry.lock" }}
+          key: py38-v1-dependency-cache-{{ checksum "poetry.lock" }}
           paths:
             - ".venv"
             - ".tox"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.8/site-packages"
+            - "/usr/local/bin/poetry"
+            - $HOME/.local/lib/python3.8
   release:
     working_directory: ~/pfun
     docker:
