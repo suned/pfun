@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 commands:
   install_poetry:
     description: Install poetry
