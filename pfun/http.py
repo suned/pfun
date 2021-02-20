@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import http
+import http.cookies
 import json
 import ssl
 from typing import Any, Callable

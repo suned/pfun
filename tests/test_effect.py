@@ -230,6 +230,7 @@ class TestEffect(MonadTest):
         effect.lift(effect.cpu_bound(lambda v1, v2: (v1, v2))
                     )(e1, e2).run(None) == (e1.run(None), e2.run(None))
 
+    @settings(deadline=None)
     @given(effects(), effects())
     def test_lift_io_bound(self, e1, e2):
         effect.lift(effect.io_bound(lambda v1, v2: (v1, v2))

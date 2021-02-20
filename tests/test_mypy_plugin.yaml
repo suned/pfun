@@ -1,4 +1,5 @@
 - case: variadic_decorators_preserve_nullary_signature
+  disable_cache: true
   main: |
     from pfun.maybe import maybe
 
@@ -8,6 +9,7 @@
 
     reveal_type(f)  # N: Revealed type is 'def () -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
 - case: variadic_decorators_preserve_unary_signature
+  disable_cache: true
   main: |
     from pfun.maybe import maybe
 
@@ -17,6 +19,7 @@
 
     reveal_type(f)  # N: Revealed type is 'def (a: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
 - case: variadic_decorators_preserve_binary_signature
+  disable_cache: true
   main: |
     from pfun.maybe import maybe
 
@@ -26,6 +29,7 @@
 
     reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
 - case: variadic_decorators_preserve_trinary_signature
+  disable_cache: true
   main: |
     from pfun.maybe import maybe
 
@@ -35,6 +39,7 @@
 
     reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int, c: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
 - case: curry_nullary_function
+  disable_cache: true
   main: |
     from pfun import curry
 
@@ -44,6 +49,7 @@
 
     reveal_type(f)  # N: Revealed type is 'def () -> builtins.int'
 - case: curry_unary_function
+  disable_cache: true
   main: |
     from pfun import curry
 
@@ -53,6 +59,7 @@
 
     reveal_type(f)  # N: Revealed type is 'def (a: builtins.int) -> builtins.int'
 - case: curry_binary_function
+  disable_cache: true
   main: |
     from pfun import curry
 
@@ -62,6 +69,7 @@
 
     reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> def (b: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int) -> builtins.int)'
 - case: curry_trinary_function
+  disable_cache: true
   main: |
     from pfun import curry
 
@@ -71,6 +79,7 @@
 
     reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> def (b: builtins.int) -> def (c: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int, c: builtins.int) -> builtins.int)'
 - case: curry_generic_function
+  disable_cache: true
   main: |
     from typing import TypeVar, Union
 
@@ -86,6 +95,7 @@
     reveal_type(f(1))  # N: Revealed type is 'def [B] (b: B`-2) -> Union[builtins.int*, B`-2]'
     reveal_type(f(1)(''))  # N: Revealed type is 'Union[builtins.int, builtins.str*]'
 - case: curry_optional_and_variadic
+  disable_cache: true
   main: |
     from typing import TypeVar
     from pfun import curry
@@ -100,6 +110,7 @@
 
     reveal_type(f)  # N: Revealed type is 'Overload(def [T2] (pos_1: T2`-1) -> def [T3] (pos_2: T2`-1, *args: T3`-2) -> T3`-2, def [T2, T3, T1] (pos_1: T2`-1, pos_2: T2`-1, *args: T3`-2, *, keyword: Union[T1`-3, None] =, **kwargs: T2`-1) -> T3`-2, def [T1, T2] (*, keyword: Union[T1`-3, None] =, **kwargs: T2`-1) -> def (pos_1: T2`-1) -> def [T3] (pos_2: T2`-1, *args: T3`-2) -> T3`-2)'
 - case: curry_optional_only
+  disable_cache: true
   main: |
     from pfun import curry
 
@@ -109,6 +120,7 @@
 
     reveal_type(f)  # N: Revealed type is 'def (a: builtins.str =, b: builtins.str =) -> builtins.str'
 - case: compose_simple_functions
+  disable_cache: true
   main: |
     from pfun import compose
 
@@ -120,6 +132,7 @@
 
     reveal_type(compose(g, f))  # N: Revealed type is 'def (builtins.str*) -> builtins.float*'
 - case: immutable_has_correct_constructor
+  disable_cache: true
   main: |
     from pfun import Immutable
 
@@ -128,6 +141,7 @@
 
     C()  # E: Missing positional argument "field" in call to "C"
 - case: cant_set_immutable_attribute
+  disable_cache: true
   main: |
     from pfun import Immutable
 
@@ -143,6 +157,7 @@
     d = D(1, '')
     d.field = 2  # E: Property "field" defined in "D" is read-only
 - case: effect_and_then_combines_protocols
+  disable_cache: true
   main: |
     from typing_extensions import Protocol
     from typing import NoReturn
@@ -159,6 +174,7 @@
     e2: Effect[P2, NoReturn, int]
     reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]'
 - case: effect_and_then_combines_protocols_variadically
+  disable_cache: true
   main: |
     from typing import NoReturn
     from typing_extensions import Protocol
@@ -179,6 +195,7 @@
     reveal_type(e1.and_then(lambda _: e2).and_then(lambda _: e3))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]'
     reveal_type(e1.and_then(lambda _: e2.and_then(lambda _: e3)))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]'
 - case: effect_and_then_combines_protocols_for_type_aliases
+  disable_cache: true
   main: |
     from typing_extensions import Protocol
     from pfun import Depends, Success
@@ -191,6 +208,7 @@
 
     reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[main.P1, <nothing>, builtins.str*]'
 - case: effect_and_then_does_not_combine_non_protocols
+  disable_cache: true
   main: |
     from typing import NoReturn
     from pfun.effect import Effect
@@ -200,6 +218,7 @@
 
     reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[Any, <nothing>, builtins.int*]'
 - case: effect_discard_and_then_combines_protocols
+  disable_cache: true
   main: |
     from typing_extensions import Protocol
     from typing import NoReturn
@@ -216,6 +235,7 @@
     e2: Effect[P2, NoReturn, int]
     reveal_type(e1.discard_and_then(e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]'
 - case: effect_ensure_combines_protocols
+  disable_cache: true
   main: |
     from typing_extensions import Protocol
     from typing import NoReturn
@@ -232,6 +252,7 @@
     e2: Effect[P2, NoReturn, int]
     reveal_type(e1.ensure(e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
 - case: effect_recover_combines_protocols
+  disable_cache: true
   main: |
     from typing_extensions import Protocol
     from typing import NoReturn
@@ -248,6 +269,7 @@
     e2: Effect[P2, NoReturn, str]
     reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str]'
 - case: effect_recover_does_not_combine_non_protocols
+  disable_cache: true
   main: |
     from typing import NoReturn
     from pfun.effect import Effect
@@ -257,6 +279,7 @@
 
     reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[Any, <nothing>, builtins.str]'
 - case: effect_combine_checks_args
+  disable_cache: true
   main: |
     from typing import Any, NoReturn
     from pfun.effect import success, combine, Effect
@@ -266,6 +289,7 @@
 
     combine(success(''), success(''))(f)  # E: Argument 1 has incompatible type "Callable[[int, int], str]"; expected "Callable[[str, str], str]"
 - case: effect_combine_combines_protocols
+  disable_cache: true
   main: |
     from typing_extensions import Protocol
     from typing import NoReturn
@@ -286,6 +310,7 @@
 
     reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
 - case: effect_combine_unions_errors
+  disable_cache: true
   main: |
     from typing import Any
     from pfun.effect import Effect, combine
@@ -298,6 +323,7 @@
 
     reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'
 - case: effect_lift_checks_arguments
+  disable_cache: true
   main: |
     from pfun.effect import lift, success
 
@@ -306,6 +332,7 @@
 
     lift(add)(success(''), success(''))  # E: Argument 1 to "success" has incompatible type "str"; expected "int"
 - case: effect_lift_handles_generics
+  disable_cache: true
   main: |
     from typing import TypeVar
     from pfun.effect import lift, success
@@ -317,6 +344,7 @@
 
     reveal_type(lift(f)(success('')))  # N: Revealed type is 'pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]'
 - case: effect_lift_infers_return_type
+  disable_cache: true
   main: |
     from typing_extensions import Protocol
     from pfun.effect import lift, Effect
@@ -334,6 +362,7 @@
     e2: Effect[P2, KeyError, int]
     reveal_type(lift(f)(e1, e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]'
 - case: effect_catch_one_error
+  disable_cache: true
   main: |
     from pfun.effect import catch
 
@@ -342,6 +371,7 @@
 
     reveal_type(catch(Exception)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, builtins.Exception, builtins.int]'
 - case: effect_catch_unions_errors
+  disable_cache: true
   main: |
     from pfun.effect import catch
 
@@ -352,6 +382,7 @@
 
     reveal_type(catch(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'
 - case: effect_cpu_bound_fails_with_async_function
+  disable_cache: true
   main: |
     from pfun.effect import cpu_bound
 
@@ -360,6 +391,7 @@
 
     cpu_bound(f)  # E: Function arguments to 'pfun.effect.cpu_bound' can't be async
 - case: effect_io_bound_fails_with_async_function
+  disable_cache: true
   main: |
     from pfun.effect import io_bound
 
