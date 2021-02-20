@@ -1,73 +1,80 @@
 version: 2
+commands:
+  install_poetry:
+    description: Install poetry
+    steps:
+      - run: pip intall poetry==1.0.9 && poetry config virtualenvs.in-project true
+  install_dependencies:
+    description: Install dependencies
+    steps:
+      - run: poetry install -E http -E sql
 jobs:
-  test:
+  lint:
     working_directory: ~/pfun
     docker:
-      - image: demosdemon/pyenv
+      - image: circleci/python:3.8.0
     steps:
       - checkout
       - restore_cache:
-          key: python-cache
-      - restore_cache:
-          key: poetry-cache
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ checksum "poetry.lock" }}
-            - dependency-cache-
-      - run:
-          name: Install python
-          command: |
-            pyenv install --skip-existing 3.7.5 && \
-            pyenv install --skip-existing 3.8.0 && \
-            pyenv local 3.7.5 3.8.0
-      - run:
-          name: Install poetry
-          command: |
-            POETRY_VERSION=1.0.9 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python && \
-            cat $HOME/.poetry/env >> $BASH_ENV
-      - run:
-          name: Configure poetry
-          command: poetry config virtualenvs.in-project true
-      - run:
-          name: Install dependencies
-          command: |
-            ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so
-            poetry install -E http
-      - save_cache:
-          key: dependency-cache-{{ checksum "poetry.lock" }}
-          paths:
-            - .venv
-            - .tox
-      - save_cache:
-          key: python-cache
-          paths:
-            - /.pyenv
-      - save_cache:
-          key: poetry-cache
-          paths:
-            - $HOME/.poetry
+          - py38-dependency-cache-{{ checksum "poetry.lock" }}
+          - py38-dependency-cache-
+      - install_poetry
+      - install_dependencies
       - run:
           name: Lint
           command: poetry run pre-commit run --all
-      - run:
-          name: Test
-          command: poetry run tox
-  release:
+  test_py37:
     working_directory: ~/pfun
     docker:
       - image: circleci/python:3.7.5
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - py37-dependency-cache-{{ checksum "poetry.lock" }}
+            - py37-dependency-cache-
+      - install_poetry
+      - install_dependencies
       - run:
-          name: Install poetry
-          command: |
-            POETRY_VERSION=1.0.9 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python && \
-            cat $HOME/.poetry/env >> $BASH_ENV
+          name: Test
+          command: poetry run tox -e py37
+      - save_cache:
+          key: py37-dependency-cache-{{ checksum "poetry.lock" }}
+          paths:
+            - ".venv"
+            - ".tox"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.7/site-packages"
+  test_py38:
+    working_directory: ~/pfun
+    docker:
+      - image: circleci/python:3.8.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - py38-dependency-cache-{{ checksum "poetry.lock" }}
+            - py38-dependency-cache-
+      - install_poetry
+      - install_dependencies
       - run:
-          name: Install depenencies
-          command: |
-            sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so
-            poetry install -E http
+          name: Test
+          command: poetry run tox -e py38
+      - save_cache:
+          key: py38-dependency-cache-{{ checksum "poetry.lock" }}
+          paths:
+            - ".venv"
+            - ".tox"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.8/site-packages"
+  release:
+    working_directory: ~/pfun
+    docker:
+      - image: circleci/python:3.8.0
+    steps:
+      - checkout
+      - install_poetry
+      - install_dependencies
       - run:
           name: Check version
           command: poetry run python scripts/check_version.py pyproject.toml $CIRCLE_TAG
@@ -82,13 +89,20 @@ workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - test:
+      - lint
+      - test_py37:
+          filters:
+            tags:
+              only: /.*/
+      - test_py38:
           filters:
             tags:
               only: /.*/
       - release:
           requires:
-            - test
+            - lint
+            - test_py37
+            - test_py38
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+)*/
