@@ -209,6 +209,7 @@ class TestEffect(MonadTest):
     def test_map_cpu_bound(self, e, value):
         e.map(effect.cpu_bound(lambda _: value)).run(None) == value
 
+    @settings(deadline=None)
     @given(effects(), anything())
     def test_map_io_bound(self, e, value):
         e.map(effect.io_bound(lambda _: value)).run(None) == value
