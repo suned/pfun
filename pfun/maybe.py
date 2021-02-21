@@ -3,6 +3,8 @@ from functools import wraps
 from typing import (Any, Callable, Generic, Iterable, Optional, Sequence,
                     TypeVar, Union, cast)
 
+from typing_extensions import Literal
+
 from .either import Either, Left
 from .functions import curry
 from .immutable import Immutable
@@ -156,7 +158,7 @@ class Just(Maybe_, Generic[A]):
     def __repr__(self):
         return f'Just({repr(self.get)})'
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[True]:
         return True
 
 
@@ -189,7 +191,7 @@ class Nothing(Maybe_):
     def map(self, f: Callable[[Any], B]) -> 'Maybe[B]':
         return self
 
-    def __bool__(self) -> bool:
+    def __bool__(self) -> Literal[False]:
         return False
 
 
