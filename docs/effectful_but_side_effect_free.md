@@ -56,10 +56,10 @@ lookup({'key': '42'}, 'key').and_then(maybe_is_42)  # Just('42')
 ```
 (For those with previous functional programming experience, `and_then` is the [bind](https://en.wikipedia.org/wiki/Monad_(functional_programming)#Overview) operation of `Maybe`)
 
-`pfun.maybe.Maybe` is in fact just a [type-alias](https://docs.python.org/3/library/typing.html#type-aliases) for `Union[Just[TypeVar('A'), Nothing]]`. This means that your type checker can figure out when you're dealing with one or the other, just like when using `Optional`:
+`pfun.maybe.Maybe` is in fact just a [type-alias](https://docs.python.org/3/library/typing.html#type-aliases) for `Union[Just[TypeVar('A'), Nothing]]`. This means that your type checker can figure out when you're dealing with one or the other using either `__bool__` or `isinstance`, just like when using `Optional`:
 ```python
 value = lookup(some_dict, 'key')
-if isinstance(Just, value):
+if value:
     ...  # type checker knows that value is a Just
 else:
     ...  # type checker knows that value is a Nothing
@@ -93,11 +93,11 @@ def is_42(value: str) -> Either[str, str]:
 
 lookup({'key': '42'}).and_then(is_42)  # Right('42')
 ```
-Just like with `Maybe`, `Either` is actually a type-alias for `Union[Left[TypeVar('L')], Right[TypeVar('R')]]`, which allows the type-checker to narrow the type to one or the other using `isinstance` checks.
+Just like with `Maybe`, `Either` is actually a type-alias for `Union[Left[TypeVar('L')], Right[TypeVar('R')]]`, which allows the type-checker to narrow the type to one or the other using`__bool__` or `isinstance` checks.
 
 ```python
 value = lookup(some_dict, 'key')
-if isinstance(Right, value):
+if value:
     ...  # type checker knows that value is a Right
 else:
     ...  # type checker knows that value is a Left
