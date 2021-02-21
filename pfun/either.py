@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Any, Callable, Generic, Iterable, TypeVar, Union, cast
 
+from typing_extensions import Literal
+
 from .functions import curry
 from .immutable import Immutable
 from .monad import Monad, filter_m_, map_m_
@@ -140,7 +142,7 @@ class Right(Either_, Generic[A]):
         """
         return isinstance(other, Right) and self.get == other.get
 
-    def __bool__(self) -> bool:
+    def __bool__(self) -> Literal[True]:
         return True
 
     def __repr__(self):
@@ -180,7 +182,7 @@ class Left(Either_, Generic[B]):
         """
         return isinstance(other, Left) and other.get == self.get
 
-    def __bool__(self) -> bool:
+    def __bool__(self) -> Literal[False]:
         return False
 
     def and_then(self, f: Callable[[A], Either[B, C]]) -> Either[B, C]:

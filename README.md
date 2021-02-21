@@ -1,6 +1,6 @@
 ## <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:50px ; height:50px "/> <br> <p align="center">Functional, composable, asynchronous, type-safe Python.</p>
 
-- [Documentation](https://pfun.readthedocs.io/en/latest/)
+- [Documentation](https://pfun.readthedocs.io/en/stable/)
 - [Known issues](https://github.com/suned/pfun/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 ## Install
