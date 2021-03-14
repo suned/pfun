@@ -55,7 +55,7 @@ cdef class Effect:
     cdef bint is_done(self):
         return False
 
-    async def __call__(self, object r):
+    async def __call__(self, object r, max_processes=None, max_threads=None):
         """
         Run the function wrapped by this `Effect` asynchronously, \
         including potential side-effects. If the function fails the \
@@ -74,8 +74,8 @@ cdef class Effect:
                           Exception
         """
         stack = AsyncExitStack()
-        process_executor = ProcessPoolExecutor()
-        thread_executor = ThreadPoolExecutor()
+        process_executor = ProcessPoolExecutor(max_workers=max_processes)
+        thread_executor = ThreadPoolExecutor(max_workers=max_threads)
         async with stack:
             stack.enter_context(process_executor)
             stack.enter_context(thread_executor)
@@ -138,7 +138,7 @@ cdef class Effect:
 
         return self.c_and_then(g)
     
-    def run(self, env):
+    def run(self, env, max_processes=None, max_threads=None):
         """
         Run the function wrapped by this `Effect`, including potential \
         side-effects. If the function fails the resulting error will be \
@@ -158,7 +158,7 @@ cdef class Effect:
             RuntimeError: if the effect fails and `E` is not a subclass of \
                           Exception
         """
-        return asyncio.run(self(env))
+        return asyncio.run(self(env, max_processes, max_threads))
 
     async def resume(self, RuntimeEnv env):
         raise NotImplementedError()
