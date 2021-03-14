@@ -12,9 +12,9 @@ typing-extensions = "^3.7"
 aiohttp = {extras = ["speedups"], version = "^3.6.2", optional = true}
 asyncpg = {version = "^0.20.1", optional = true}
 dill = "^0.3.2"
-Cython = "3.0a6"
 
 [tool.poetry.dev-dependencies]
+Cython = "3.0a6"
 pytest-mypy-plugins = "^1.3"
 pytest-asyncio = "^0.11.0"
 pytest = "^5.4.1"

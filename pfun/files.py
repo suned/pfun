@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing_extensions import Protocol
 
 from .effect import Effect, Try, add_repr, catch, depend, io_bound

@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 from subprocess import PIPE, CalledProcessError
 from typing import IO, Tuple, Union
 
 from typing_extensions import Protocol
 
-from .aio_trampoline import Done
-from .effect import Effect, Try, add_repr, depend
+from .effect import Effect, Try, add_repr, depend, from_callable
 from .either import Left, Right
 from .functions import curry
 from .immutable import Immutable
@@ -38,22 +39,20 @@ class Subprocess(Immutable):
             `Effect` that runs `cmd` in the shell and produces \
         a tuple of `(stdout, stderr)`
         """
-        async def run_e(self):
+        async def f(_):
             proc = await asyncio.create_subprocess_shell(
                 cmd, stdin=stdin, stdout=stdout, stderr=stderr
             )
             stdout_, stderr_ = await proc.communicate()
             if proc.returncode != 0:
-                return Done(
-                    Left(
-                        CalledProcessError(
-                            proc.returncode, cmd, stdout_, stderr_
-                        )
+                return Left(
+                    CalledProcessError(
+                        proc.returncode, cmd, stdout_, stderr_
                     )
                 )
-            return Done(Right((stdout_, stderr_)))
+            return Right((stdout_, stderr_))
 
-        return Effect(run_e)
+        return from_callable(f)
 
 
 class HasSubprocess(Protocol):

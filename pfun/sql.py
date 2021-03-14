@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import urllib.parse
 from typing import Any, Iterable, Type, TypeVar, Union
 

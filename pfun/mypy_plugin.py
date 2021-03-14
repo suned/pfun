@@ -472,6 +472,8 @@ def _effect_catch_hook(context: FunctionContext) -> Type:
 
 def _effect_catch_call_hook(context: MethodContext) -> Type:
     f_type = _get_callable_type(context.arg_types[0][0], context)
+    if f_type is None:
+        return context.default_return_type
     if len(context.type.args) == 1:
         return context.default_return_type.copy_modified(
             arg_types=f_type.arg_types,
