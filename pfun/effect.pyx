@@ -247,6 +247,38 @@ cdef class Effect:
             memoized `Effect`
         """
         return Memoize(self)
+    
+    def ensure(self, effect):
+        """
+        Create an `Effect` that will always run `effect`, regardless
+        of whether this `Effect` succeeds or fails. The result of
+        `effect` is ignored, and the resulting effect instead succeeds or fails
+        with the succes or error value of this effect. Useful for closing
+        resources.
+        Example:
+            >>> from pfun.effect.console import Console
+            >>> console = Console()
+            >>> finalizer = console.print('finalizing!')
+            >>> success('result').ensure(finalizer).run(None)
+            finalizing!
+            'result'
+            >>> error('whoops!').ensure(finalizer).run(None)
+            finalizing!
+            RuntimeError: whoops!
+        Args:
+            effect: `Effect` to run after this effect terminates \
+            either successfully or with an error
+        Return:
+            `Effect` that fails or succeeds with the result of \
+            this effect, but always runs `effect`
+        """
+        return self.and_then(
+            lambda value: effect.
+            discard_and_then(success(value))
+        ).recover(
+            lambda reason: effect.
+            discard_and_then(error(reason))
+        )
 
 
 cdef class Memoize(Effect):
