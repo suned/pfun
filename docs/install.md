@@ -23,3 +23,5 @@ add the following to your MyPy configuration:
 [mypy]
 plugins = pfun.mypy_plugin
 ```
+
+`pfun` is currently only tested against MyPy 0.800

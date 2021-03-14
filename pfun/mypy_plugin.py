@@ -351,7 +351,7 @@ def _combine_environments(r1: Type, r2: Type) -> Type:
 
 def _effect_and_then_hook(context: MethodContext) -> Type:
     return_type = context.default_return_type
-    return_type_args = return_type.args
+    return_type_args = list(return_type.args)
     return_type = return_type.copy_modified(args=return_type_args)
     try:
         e1 = get_proper_type(context.type)
@@ -392,7 +392,7 @@ def _combine_hook(context: FunctionContext):
         combined_error_type = UnionType.make_union(
             sorted(set(error_types), key=str)
         )
-        ret_type_args = ret_type.args
+        ret_type_args = list(ret_type.args)
         ret_type_args[1] = combined_error_type
         ret_type_args[2] = map_return_type
         env_types = [
@@ -424,7 +424,7 @@ def _combine_hook(context: FunctionContext):
 
 def _effect_recover_hook(context: MethodContext) -> Type:
     return_type = context.default_return_type
-    return_type_args = return_type.args
+    return_type_args = list(return_type.args)
     try:
         e1 = get_proper_type(context.type)
         r1 = e1.args[0]
@@ -461,10 +461,13 @@ def _lift_call_hook(context: MethodContext) -> Type:
 
 
 def _effect_catch_hook(context: FunctionContext) -> Type:
-    error_types = [
-        arg_type[0].ret_type for arg_type in context.arg_types if arg_type
-    ]
-    return context.default_return_type.copy_modified(args=error_types)
+    try:
+        error_types = [
+            arg_type[0].ret_type for arg_type in context.arg_types if arg_type
+        ]
+        return context.default_return_type.copy_modified(args=error_types)
+    except AttributeError:
+        return context.default_return_type
 
 
 def _effect_catch_call_hook(context: MethodContext) -> Type:
@@ -491,7 +494,7 @@ def _effect_catch_call_hook(context: MethodContext) -> Type:
 
 def _effect_discard_and_then_hook(context: MethodContext) -> Type:
     return_type = context.default_return_type
-    return_type_args = return_type.args
+    return_type_args = list(return_type.args)
     return_type = return_type.copy_modified(args=return_type_args)
     try:
         e1 = get_proper_type(context.type)
@@ -506,7 +509,7 @@ def _effect_discard_and_then_hook(context: MethodContext) -> Type:
 
 def _effect_ensure_hook(context: MethodContext) -> Type:
     return_type = context.default_return_type
-    return_type_args = return_type.args
+    return_type_args = list(return_type.args)
     return_type = return_type.copy_modified(args=return_type_args)
     try:
         e1 = get_proper_type(context.type)

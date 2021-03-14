@@ -184,10 +184,12 @@ class TestEffect(MonadTest):
         assert double_e.run(None) == 'result'
         assert state.value == ('modify was called', )
 
+    @settings(deadline=None)
     @given(effects(), effects())
     def test_and_then_cpu_bound(self, e1, e2):
         e1.and_then(effect.cpu_bound(lambda _: e2)).run(None) == e2.run(None)
 
+    @settings(deadline=None)
     @given(effects(), effects())
     def test_and_then_io_bound(self, e1, e2):
         e1.and_then(effect.io_bound(lambda _: e2)).run(None) == e2.run(None)
@@ -203,10 +205,12 @@ class TestEffect(MonadTest):
         effect.error('').recover(effect.io_bound(lambda _: e)
                                  ).run(None) == e.run(None)
 
+    @settings(deadline=None)
     @given(effects(), anything())
     def test_map_cpu_bound(self, e, value):
         e.map(effect.cpu_bound(lambda _: value)).run(None) == value
 
+    @settings(deadline=None)
     @given(effects(), anything())
     def test_map_io_bound(self, e, value):
         e.map(effect.io_bound(lambda _: value)).run(None) == value
@@ -222,16 +226,19 @@ class TestEffect(MonadTest):
         effect.combine(e1, e2)(effect.io_bound(lambda v1, v2: (v1, v2))
                                ).run(None) == (e1.run(None), e2.run(None))
 
+    @settings(deadline=None)
     @given(effects(), effects())
     def test_lift_cpu_bound(self, e1, e2):
         effect.lift(effect.cpu_bound(lambda v1, v2: (v1, v2))
                     )(e1, e2).run(None) == (e1.run(None), e2.run(None))
 
+    @settings(deadline=None)
     @given(effects(), effects())
     def test_lift_io_bound(self, e1, e2):
         effect.lift(effect.io_bound(lambda v1, v2: (v1, v2))
                     )(e1, e2).run(None) == (e1.run(None), e2.run(None))
 
+    @settings(deadline=None)
     @given(unaries(rights()))
     def test_from_callable_cpu_bound(self, f):
         assert effect.from_callable(effect.cpu_bound(f)
@@ -242,6 +249,7 @@ class TestEffect(MonadTest):
         assert effect.from_callable(effect.io_bound(f)
                                     ).run(None) == f(None).get
 
+    @settings(deadline=None)
     @given(unaries())
     def test_catch_cpu_bound(self, f):
         assert effect.catch(Exception)(effect.cpu_bound(f)
@@ -253,13 +261,14 @@ class TestEffect(MonadTest):
                                        )(None).run(None) == f(None)
 
 
-class TestResoure:
+class TestResource:
     def test_get(self):
         mock_resource = asynctest.MagicMock()
         resource = Resource(lambda: either.Right(mock_resource))
         effect = resource.get()
         assert effect.run(None) == mock_resource
         mock_resource.__aenter__.assert_called_once()
+        mock_resource.__aexit__.assert_called_once()
         assert resource.resource is None
 
     def test_resources_are_unique(self):
@@ -303,9 +312,10 @@ class HasFiles:
 
 class TestFiles:
     def test_read(self):
-        with mock_open('content'):
+        with mock_open('content') as mocked_open:
             e = files.read('foo.txt')
             assert e.run(HasFiles()) == 'content'
+            mocked_open.assert_called_once_with('foo.txt')
 
     def test_write(self):
         with mock_open() as mocked_open:
@@ -315,9 +325,10 @@ class TestFiles:
             mocked_open().write.assert_called_once_with('content')
 
     def test_read_bytes(self):
-        with mock_open(b'content'):
+        with mock_open(b'content') as mocked_open:
             e = files.read_bytes('foo.txt')
             assert e.run(HasFiles()) == b'content'
+            mocked_open.assert_called_once_with('foo.txt', 'rb')
 
     def test_write_bytes(self):
         with mock_open() as mocked_open:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import http
+import http.cookies
 import json
 import ssl
 from typing import Any, Callable
@@ -25,7 +25,6 @@ except ImportError:
         'Could not import aiohttp. To use pfun.http, '
         'install pfun with \n\n\tpip install pfun[http]'
     )
-
 
 JSonPrim = Union[int, str, float, Dict_[str, Any]]
 JSon = Union[Iterable[JSonPrim], JSonPrim]
@@ -101,26 +100,30 @@ class HTTP(Immutable, init=False):
             self,
             'session',
             Resource(
-                lambda: Right(aiohttp.ClientSession(
-                    connector=connector,
-                    cookies=cookies,
-                    headers=headers,
-                    skip_auto_headers=skip_auto_headers,
-                    auth=auth,
-                    json_serialize=json_serialize,
-                    version=version,
-                    cookie_jar=cookie_jar,
-                    read_timeout=read_timeout,
-                    conn_timeout=conn_timeout,
-                    timeout=timeout,
-                    raise_for_status=raise_for_status,
-                    connector_owner=connector_owner,
-                    auto_decompress=auto_decompress,
-                    requote_redirect_url=requote_redirect_url,
-                    trust_env=trust_env,
-                    trace_configs=(trace_configs if trace_configs is None
-                                   else list(trace_configs))
-                ))
+                lambda: Right(
+                    aiohttp.ClientSession(
+                        connector=connector,
+                        cookies=cookies,
+                        headers=headers,
+                        skip_auto_headers=skip_auto_headers,
+                        auth=auth,
+                        json_serialize=json_serialize,
+                        version=version,
+                        cookie_jar=cookie_jar,
+                        read_timeout=read_timeout,
+                        conn_timeout=conn_timeout,
+                        timeout=timeout,
+                        raise_for_status=raise_for_status,
+                        connector_owner=connector_owner,
+                        auto_decompress=auto_decompress,
+                        requote_redirect_url=requote_redirect_url,
+                        trust_env=trust_env,
+                        trace_configs=(
+                            trace_configs
+                            if trace_configs is None else list(trace_configs)
+                        )
+                    )
+                )
             )
         )
 
@@ -158,7 +161,7 @@ class HTTP(Immutable, init=False):
 
         Example:
             >>> http = HTTP()
-            >>> http.make_request('get', 'http://foo.com')(None)
+            >>> http.make_request('get', 'http://foo.com').run(None)
             Response(...)
 
         Args:
@@ -205,7 +208,12 @@ class HTTP(Immutable, init=False):
                             from_optional(response.reason),
                             response.cookies,
                             Dict(response.headers),
-                            Dict(response.links),
+                            Dict(
+                                {
+                                    k: str(response.links[k])
+                                    for k in response.links
+                                }
+                            ),
                             from_optional(response.charset)
                         )
                     )
@@ -244,9 +252,7 @@ def get_session() -> Depends[HasHTTP, aiohttp.ClientSession]:
     Return:
         `Effect` that succeeds with `aiohttp.ClientSession`
     """
-    return depend(HasHTTP).and_then(
-        lambda env: env.http.session.get()
-    )
+    return depend(HasHTTP).and_then(lambda env: env.http.session.get())
 
 
 @curry
@@ -284,7 +290,7 @@ def get(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> get('http://foo.com')(Env())
+        >>> get('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -357,7 +363,7 @@ def put(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> put('http://foo.com')(Env())
+        >>> put('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -430,7 +436,7 @@ def post(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> post('http://foo.com')(Env())
+        >>> post('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -503,7 +509,7 @@ def delete(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> delete('http://foo.com')(Env())
+        >>> delete('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -576,7 +582,7 @@ def head(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> head('http://foo.com')(Env())
+        >>> head('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -649,7 +655,7 @@ def options(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> options('http://foo.com')(Env())
+        >>> options('http://foo.com').run(Env())
         Response(...)
 
     Args:
@@ -722,7 +728,7 @@ def patch(
     Example:
         >>> class Env:
         ...     http = HTTP()
-        >>> patch('http://foo.com')(Env())
+        >>> patch('http://foo.com').run(Env())
         Response(...)
 
     Args:

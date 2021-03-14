@@ -4,7 +4,8 @@ from typing import Any, Iterable, Type, TypeVar, Union
 from typing_extensions import Protocol
 
 from .dict import Dict
-from .effect import Effect, Resource, Try, add_repr, depend, error, success
+from .effect import (Effect, Resource, Try, add_repr, catch, depend, error,
+                     success)
 from .either import Either, Left, Right
 from .functions import curry
 from .immutable import Immutable
@@ -124,7 +125,7 @@ class SQL(Immutable, init=False):
 
         Example:
             >>> sql = SQL('postgres://user@host/database')
-            >>> sql.get_connection()(None)
+            >>> sql.get_connection().run(None)
             <asyncpg.connection.Connection at ...>
 
         Return:
@@ -143,7 +144,7 @@ class SQL(Immutable, init=False):
             ...     'INSERT INTO users(name, age) VALUES($1, $2)',
             ...     'bob',
             ...     32
-            ... )(None)
+            ... ).run(None)
             'INSERT 1'
 
         Args:
@@ -154,17 +155,11 @@ class SQL(Immutable, init=False):
         Return:
             `Effect` that executes `query` and produces the database response
         """
-        async def _execute(connection: asyncpg.Connection
-                           ) -> Try[asyncpg.PostgresError, str]:
-            try:
-                result = await connection.execute(
-                    query, *args, timeout=timeout
-                )
-                return success(result)
-            except asyncpg.PostgresError as e:
-                return error(e)
+        @catch(asyncpg.PostgresError)
+        async def execute(connection: asyncpg.Connection) -> str:
+            return await connection.execute(query, *args, timeout=timeout)
 
-        return self.get_connection().and_then(_execute)
+        return self.get_connection().and_then(execute)
 
     def execute_many(
         self, query: str, args: Iterable[Any], timeout: float = None
@@ -178,7 +173,7 @@ class SQL(Immutable, init=False):
             >>> sql.execute_many(
             ...     'INSERT INTO users(name, age) VALUES($1, $2)',
             ...     [('bob', 32), ('alice', 20)]
-            ... )(None)
+            ... ).run(None)
             'INSERT 2'
 
         Args:
@@ -190,17 +185,11 @@ class SQL(Immutable, init=False):
             `Effect` that executes `query` with all args in `args` and \
             produces a database response for each query
         """
-        async def _execute_many(connection: asyncpg.Connection
-                                ) -> Try[asyncpg.PostgresError, str]:
-            try:
-                result = await connection.executemany(
-                    query, *args, timeout=timeout
-                )
-                return success(result)
-            except asyncpg.PostgresError as e:
-                return error(e)
+        @catch(asyncpg.PostgresError)
+        async def execute_many(connection: asyncpg.Connection) -> str:
+            return await connection.executemany(query, *args, timeout=timeout)
 
-        return self.get_connection().and_then(_execute_many)
+        return self.get_connection().and_then(execute_many)
 
     def fetch(self, query: str, *args: Any,
               timeout: float = None) -> Try[asyncpg.PostgresError, Results]:
@@ -210,7 +199,7 @@ class SQL(Immutable, init=False):
 
         Example:
             >>> sql = SQL('postgres://user@host/database')
-            >>> sql.fetch('select * from users')(None)
+            >>> sql.fetch('select * from users').run(None)
             List((Dict({'name': 'bob', 'age': 32}),))
 
         Args:
@@ -221,16 +210,12 @@ class SQL(Immutable, init=False):
         Return:
             `Effect` that retrieves rows returned by `query` as `Results`
         """
-        async def _fetch(connection: asyncpg.Connection
-                         ) -> Try[asyncpg.PostgresError, Results]:
-            try:
-                result = await connection.fetch(query, *args, timeout=timeout)
-                result = List(Dict(record) for record in result)
-                return success(result)
-            except asyncpg.PostgresError as e:
-                return error(e)
+        @catch(asyncpg.PostgresError)
+        async def fetch(connection: asyncpg.Connection) -> Results:
+            result = await connection.fetch(query, *args, timeout=timeout)
+            return List(Dict(record) for record in result)
 
-        return self.get_connection().and_then(_fetch)
+        return self.get_connection().and_then(fetch)
 
     def fetch_one(self, query: str, *args: Any,
                   timeout: float = None) -> Try[SQLError, Dict[str, Any]]:
@@ -241,7 +226,7 @@ class SQL(Immutable, init=False):
 
         Example:
             >>> sql = SQL('postgres://user@host/database')
-            >>> sql.fetch_one('select * from users')(None)
+            >>> sql.fetch_one('select * from users').run(None)
             Dict({'name': 'bob', 'age': 32})
 
         Args:
@@ -253,24 +238,17 @@ class SQL(Immutable, init=False):
             `Effect` that retrieves the first row returned by `query` as \
             `pfun.dict.Dict[str, Any]`
         """
-        async def _fetch_row(connection: asyncpg.Connection
-                             ) -> Try[asyncpg.PostgresError, Dict[str, Any]]:
-            try:
-                result = await connection.fetchrow(
-                    query, *args, timeout=timeout
+        @catch(asyncpg.PostgresError, EmptyResultSetError)
+        async def fetch_row(connection: asyncpg.Connection) -> Dict[str, Any]:
+            result = await connection.fetchrow(query, *args, timeout=timeout)
+            if result is None:
+                raise EmptyResultSetError(
+                    f'query "{query}" with args "{args}" '
+                    'returned no results'
                 )
-                if result is None:
-                    return error(
-                        EmptyResultSetError(
-                            f'query "{query}" with args "{args}" '
-                            'returned no results'
-                        )
-                    )
-                return success(Dict(result))
-            except asyncpg.PostgresError as e:
-                return error(e)
+            return Dict(result)
 
-        return self.get_connection().and_then(_fetch_row)
+        return self.get_connection().and_then(fetch_row)
 
 
 class HasSQL(Protocol):
@@ -291,7 +269,7 @@ def get_connection(
     Example:
         >>> class Env:
         ...     sql = SQL('postgres://user@host/database')
-        >>> get_connection()(Env())
+        >>> get_connection().run(Env())
         <asyncpg.connection.Connection at ...>
 
     Return:
@@ -316,7 +294,7 @@ def execute(query: str, *args: Any, timeout: float = None
         ...     'INSERT INTO users(name, age) VALUES($1, $2)',
         ...     'bob',
         ...     32
-        ... )(Env())
+        ... ).run(Env())
         'INSERT 1'
 
     Args:
@@ -345,7 +323,7 @@ def execute_many(query: str, args: Iterable[Any], timeout: float = None
         >>> execute_many(
         ...     'INSERT INTO users(name, age) VALUES($1, $2)',
         ...     [('bob', 32), ('alice', 20)]
-        ... )(Env())
+        ... ).run(Env())
         'INSERT 2'
 
     Args:

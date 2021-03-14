@@ -1,7 +1,110 @@
-In functional programming, programs are built by composing functions that have no [side-effects](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). This means that problems that we normally solve using side-effects in imperative programming such as performing io or raising exceptions are solved differently. The `pfun.effect.Effect` type lets you express side-effects in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "[functional effect system](https://en.wikipedia.org/wiki/Effect_system)", which is precisely what `pfun.effect.Effect` is.
+In functional programming, programs are built by composing functions that have no [side-effects](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). This means that problems that we normally solve using side-effects in imperative programming, such as performing io or raising exceptions, are solved differently. In this section we study the three modules `pfun` provides for working with side-effects in purely functional style.
+
+- `pfun.maybe` helps you deal with missing values without exceptions.
+- `pfun.either` helps you deal with errors without exceptions.
+- `pfun.effect` helps you work with side-effects in functional style.
+
+
+If you have some experience with functionl programming, you can probably skip ahead to the section on `pfun.effect.Effect`.
+## Maybe
+The job of the `pfun.maybe.Maybe` type is to help you work with missing values, in much the same way that the built-in `None` type is used. One of the main disadvantages of the `None` type is that you end up with logic for dealing with missing values all over the place, using code like `if foo is not None`.
+
+`pfun.maybe.Maybe` makes things a bit easier by generalising the `if foo is not None` part as a function called `map`. Imagine that you have function that looks up values in a `dict` and returns `None` if the key isn't found:
+
+```python
+from typing import Optional
+
+
+def lookup(d: dict, key: str) -> Optional[str]:
+    try:
+        return d[key]
+    except KeyError:
+        return None
+```
+When using `pfun.maybe` to do the same thing, you will wrap the result of the lookup in a `pfun.maybe.Just` instance, and return a `pfun.maybe.Nothing` instance if the key wasn't found. In other words, it would look like this:
+```python
+from typing import Dict
+
+from pfun.maybe import Maybe, Just, Nothing
+
+
+def lookup(d: Dict[str, str], key: str) -> Maybe[str]:
+    try:
+        return Just(d[key])
+    except KeyError:
+        return Nothing()
+```
+Now when using the `lookup` function, instead of checking if the return value is `None` everytime you call it, you can apply a function to the wrapped value if its not `Nothing` using `map`:
+```python
+lookup({'key': 'value'}, 'key').map(lambda v: f'found {v}')
+```
+But what happens if you `map` a function that returns a new `Just` or `Nothing`? e.g:
+```python
+def maybe_is_42(val: str) -> Maybe[str]:
+    if val == '42':
+        return Just(val)
+    return Nothing()
+
+lookup({'key': '42'}, 'key').map(maybe_is_42)
+```
+You end up with `Just(Just(42))`! Thats probably not what you wanted.
+
+When you want to apply a function that returns `Just` or `Nothing`, you should probably use `and_then`, which knows how to "unwrap" the result:
+
+```python
+lookup({'key': '42'}, 'key').and_then(maybe_is_42)  # Just('42')
+```
+(For those with previous functional programming experience, `and_then` is the [bind](https://en.wikipedia.org/wiki/Monad_(functional_programming)#Overview) operation of `Maybe`)
+
+`pfun.maybe.Maybe` is in fact just a [type-alias](https://docs.python.org/3/library/typing.html#type-aliases) for `Union[Just[TypeVar('A'), Nothing]]`. This means that your type checker can figure out when you're dealing with one or the other using either `__bool__` or `isinstance`, just like when using `Optional`:
+```python
+value = lookup(some_dict, 'key')
+if value:
+    ...  # type checker knows that value is a Just
+else:
+    ...  # type checker knows that value is a Nothing
+```
+
+## Either
+One downside of the `pfun.maybe.Maybe` type is that it's not great for dealing with errors because `pfun.maybe.Nothing` can't provide any information about what went wrong. `pfun.either.Either` is a type that's used very similarly to `Maybe`, but unlike `Maybe` it can wrap an error value, as well as a success value.
+
+Just like when working with `Maybe` there are two types involved: `pfun.either.Right` and `pfun.either.Left`. The `Right` type is used to wrap successful results by convention. `Left` is used to wrap errors. Using the `lookup` function from before as an example, it would like this:
+
+```python
+from typing import Dict
+
+from pfun.either import Either, Right, Left
+
+
+def lookup(d: Dict[str, str], key: str) -> Either[Exception, str]:
+    try:
+        return Right(d[key])
+    except KeyError as e:
+        return Left(e)
+```
+
+Just like with `Maybe` you can apply functions to values wrapped by `Right` using the `map` function, and you can transform results into new `Either` values with `and_then`:
+```python
+lookup({'key': 'value'}, 'key').map(lambda v: f'found {v}!')
+
+def is_42(value: str) -> Either[str, str]: 
+    return Right(value) if value == '42' else Left('Wasn\'t 42')
+
+
+lookup({'key': '42'}).and_then(is_42)  # Right('42')
+```
+Just like with `Maybe`, `Either` is actually a type-alias for `Union[Left[TypeVar('L')], Right[TypeVar('R')]]`, which allows the type-checker to narrow the type to one or the other using`__bool__` or `isinstance` checks.
+
+```python
+value = lookup(some_dict, 'key')
+if value:
+    ...  # type checker knows that value is a Right
+else:
+    ...  # type checker knows that value is a Left
+```
 
 ## Effect
-The core type you will use when expressing side-effects with `pfun` is `pfun.effect.Effect`. `Effect` has a function `run` that perfoms the side-effect it represents. `run` is a function that:
+The `pfun.effect.Effect` type lets you express side-effects in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "[functional effect system](https://en.wikipedia.org/wiki/Effect_system)", which is precisely what `pfun.effect.Effect` is. The core type you will use when expressing side-effects with `pfun` is `pfun.effect.Effect`. `Effect` has a function `run` that perfoms the side-effect it represents. `run` is a function that:
 
 - Takes exactly one argument
 - May or may not perform side-effects when called (including raising exceptions)
@@ -52,7 +155,7 @@ add_1 = lambda v: success(v + 1)
 e: Effect[object, NoReturn, int] = success(1).and_then(add_1)
 assert e.run(None) == 2
 ```
-(for those with previous functional programming experince, `and_then` is the "bind" operation of `Effect`).
+(for those with previous functional programming experince, `and_then` is the "[bind](https://en.wikipedia.org/wiki/Monad_(functional_programming)#Overview)" operation of `Effect`).
 
 
 ### The Error Type
@@ -114,7 +217,7 @@ if __name__ == '__main__':
 ```
 In the next section, we will discuss this _dependency injection_ capability of `Effect` in detail.
 
-## The Module Pattern
+### The Module Pattern
 This section is dedicated to the dependency type `R`. In most examples we have looked at so far, `R` is parameterized with `object`. This means that it can safely be called with any value (since all Python values are sub-types of `object`). This is mostly useful when you're working with effects that don't use the dependency argument for anything, in which case any value will do.
 
 In the previous section we saw how the `R` parameter of `Effect` can be used for dependency injection. But what happens when we try to combine two effects with different dependency types with `and_then`? The `Effect` instance returned by `and_then` must have a dependency type that is a combination of the dependency types of both the combined effects, since the dependency passed to the combined effect is also passed to the other effects.
@@ -247,7 +350,7 @@ assert make_request([])(mock_env) == b'Mocked!'
 ```
 
 
-## Error Handling
+### Error Handling
 In this section, we'll look at how to handle errors of effects with type safety. In previous sections we have already spent some time looking at the `Effect` error type. In many of the examples so far, the error type was `typing.NoReturn`. An `Effect` with this error type can never return a value for an error, or in other words, it can never fail (as those effects returned by `pfun.effect.success`). In the rest of this section we'll of course be pre-occupied with effects that _can_ fail.
 
 When you combine side effects using `Effect.and_then`, `pfun` uses `typing.Union` to combine error types, in order that the resulting effect captures all potential errors in its error type:
@@ -319,7 +422,7 @@ recovered: Effect[object, ZeroDivisionError, str] = e.recover(handle_errors)
 
 You will frequently handle errors by using `isinstance` to compare errors with types, so defining your own error types becomes even more important when using `pfun` to distinguish one error source from another.
 
-## Concurrency
+### Concurrency
 `Effect` uses `asyncio` under the hood to run effects asynchronously.
 This can lead to significant speed ups.
 
@@ -420,7 +523,7 @@ decorated = cpu_bound(slow_function)
 success(2).map(lambda v: decorated(v))
 ```
 
-## Purely Functional State
+### Purely Functional State
 Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. `pfun.ref` provides exactly this. `pfun.ref` works by mutating state only by calling `Effect` instances.
 
 ```python
@@ -460,7 +563,7 @@ class HasState(Protocol):
 def set_state(state: Tuple[int, ...]) -> Effect[HasState, NoReturn, None]:
     return depend().and_then(lambda env.state.set(state))
 ```
-## Creating Your Own Effects
+### Creating Your Own Effects
 `pfun.effect` has a number of decorators and helper functions to help you create
 your own effects.
 
@@ -490,9 +593,7 @@ async def f(r: str) -> Either[Exception, float]:
 effect: Effect[str, Exception, float] = from_callable(f)
 ```
 
-`pfun.effect.catch` is used to decorate functions
-that may raise exceptions. If the decorated function performs side effects, they
-are not carried out until the effect is run
+`pfun.effect.catch` is used to decorate sync and async functions that may raise exceptions. If the decorated function performs side effects, they are not carried out until the effect is run
 ```python
 from pfun.effect import catch, Effect
 
@@ -507,14 +608,14 @@ def f(v: int) -> int:
 effect: Effect[object, Union[ZeroDivisionError, ValueError], int] = f(0)
 ```
 
-## Type Aliases
+### Type Aliases
 Since the dependency type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
 
 - `pfun.effect.Success[A]` is a type-alias for `Effect[object, typing.NoReturn, A]`, which is useful for effects that can't fail and doesn't have dependencies
 - `pfun.effect.Try[E, A]` is a type-alias for `Effect[object, E, A]`, which is useful for effects that can fail but doesn't have dependencies
 - `pfun.effect.Depends[R, A]` is a type-alias for `Effect[R, typing.NoReturn, A]` which is useful for effects that can't fail but needs dependency `R`
 
-## Combining effects
+### Combining effects
 Sometimes you need to keep the the result of two or more effects in scope to work with
 both at the same time. This can lead to code like the following:
 ```python

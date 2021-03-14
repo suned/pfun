@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from asyncio import iscoroutine
-from functools import reduce
-from typing import Awaitable, Callable, Generic, Iterable, TypeVar, Union, cast
+from typing import (Awaitable, Callable, Generic, Iterable, List, TypeVar,
+                    Union, cast)
 
 from .immutable import Immutable
-from .monad import Monad, sequence_
+from .monad import Monad
 
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
@@ -128,7 +128,7 @@ class AndThen(Generic[A, B], Trampoline[B]):
         return AndThen(self.sub, cont)
 
 
-def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
+def sequence(iterable: Iterable[Trampoline[B]]) -> Trampoline[Iterable[B]]:
     """
     Evaluate each :class:`Trampoline` in `iterable` from left to right
     and collect the results
@@ -140,9 +140,18 @@ def sequence(iterable: Iterable[Trampoline[A]]) -> Trampoline[Iterable[A]]:
     :param iterable: The iterable to collect results from
     :returns: ``Trampoline`` of collected results
     """
-    def combine(es, e):
-        return es.and_then(lambda xs: e.map(lambda x: (xs.append(x), xs)[1]))
-    return reduce(combine, iterable, Done([])).map(tuple)
+    def combine(rs: Trampoline[List[B]],
+                t: Trampoline[B]) -> Trampoline[List[B]]:
+        return rs.and_then(
+            lambda xs: t.map(
+                lambda x: (xs.append(x), xs)[1]  # type: ignore
+            )
+        )
+
+    result: Trampoline[List[B]] = Done([])
+    for trampoline in iterable:
+        result = combine(result, trampoline)
+    return result.map(tuple)
 
 
 __all__ = ['Trampoline', 'Done', 'sequence', 'Call', 'AndThen']
