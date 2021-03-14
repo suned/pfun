@@ -1,3 +1,4 @@
+from typing import Generic
 import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
@@ -341,8 +342,6 @@ cdef class Either(Effect):
         return effect.c_and_then(f)
 
 
-
-
 cdef class ResourceGet(Effect):
     cdef Resource resource
 
@@ -364,7 +363,6 @@ cdef class ResourceGet(Effect):
     async def apply_continuation(self, object f, RuntimeEnv env):
         cdef Effect effect = await self.resume(env)
         return effect.c_and_then(f)
-
 
 
 cdef class Resource:
@@ -466,6 +464,7 @@ cdef class Error(Effect):
     async def apply_continuation(self, object f, RuntimeEnv env):
         return self
 
+
 def error(reason):
     """
     Create an `Effect` that does nothing but fail with `reason`
@@ -523,6 +522,7 @@ cdef class Depends(Effect):
 
     async def apply_continuation(self, object f, RuntimeEnv env):
         return await f(env.r)
+
 
 cdef Effect c_combine(Effect es, Effect e):
     async def f(list xs):
@@ -731,6 +731,7 @@ def lift(f):
         effect = sequence(effects)
         return effect.map(lambda xs: f(*xs))
     return decorator
+
 
 def combine(*effects):
     """
