@@ -55,6 +55,9 @@ cdef class Effect:
     """
     cdef bint is_done(self):
         return False
+    
+    def with_repr(self, repr_):
+        return WithRepr(self, repr_)
 
     async def __call__(self, object r, max_processes=None, max_threads=None):
         """
@@ -112,6 +115,7 @@ cdef class Effect:
         if asyncio.iscoroutinefunction(f):
             return self.c_and_then(f)
         else:
+            @wraps(f)
             async def g(x):
                 return f(x)
             return self.c_and_then(g)
@@ -282,6 +286,24 @@ cdef class Effect:
         )
 
 
+cdef class WithRepr(Effect):
+    cdef Effect effect
+    cdef object repr_
+
+    def __cinit__(self, effect, repr_):
+        self.effect = effect
+        self.repr_ = repr_
+    
+    def __repr__(self):
+        return self.repr_
+    
+    async def resume(self, RuntimeEnv env):
+        return self.effect.resume(env)
+    
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        return self.effect.apply_continuation(f, env)
+
+
 cdef class Memoize(Effect):
     cdef Effect effect
     cdef Effect result
@@ -427,6 +449,9 @@ cdef class Success(Effect):
 
     def __cinit__(self, result):
         self.result = result
+    
+    def __repr__(self):
+        return f'success({repr(self.result)})'
 
     async def resume(self, RuntimeEnv env):
         return self
@@ -486,6 +511,9 @@ cdef class AndThen(Effect):
     def __cinit__(self, effect, continuation):
         self.effect = effect
         self.continuation = continuation
+    
+    def __repr__(self):
+        return f'{repr(self.effect)}.and_then({repr(self.continuation)})'
 
     async def apply_continuation(self, object f, RuntimeEnv env):
         return self.effect.c_and_then(self.continuation).c_and_then(f)
@@ -593,11 +621,15 @@ cdef class FromCallable(Effect):
 
     def __cinit__(self, f):
         self.f = f
-    
-    async def resume(self, RuntimeEnv env):
+
+    async def call_f(self, RuntimeEnv env):
         either = self.f(env.r)
         if asyncio.iscoroutine(either):
             either = await either
+        return either
+    
+    async def resume(self, RuntimeEnv env):
+        either = await self.call_f(env)
         if isinstance(either, Right):
             return Success(either.get)
         return Error(either.get)
@@ -630,6 +662,32 @@ def from_callable(f):
     return FromCallable(f)
 
 
+cdef class FromIOBoundCallable(FromCallable):
+    async def call_f(self, RuntimeEnv env):
+        return await env.run_in_thread_executor(self.f, env.r)
+
+
+cdef class FromCPUBoundCallable(FromCallable):
+    async def call_f(self, RuntimeEnv env):
+        return await env.run_in_process_executor(self.f, env.r)
+
+
+def from_io_bound_callable(f):
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'argument to from_io_bound_callable must not be async, got: {repr(f)}'
+        )
+    return FromIOBoundCallable(f)
+
+
+def from_cpu_bound_callable(f):
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'argument to from_io_bound_callable must not be async, got: {repr(f)}'
+        )
+    return FromCPUBoundCallable(f)
+
+
 cdef class Catch(Effect):
     cdef tuple exceptions
     cdef object f
@@ -642,11 +700,15 @@ cdef class Catch(Effect):
         self.args = args
         self.kwargs = kwargs
     
+    async def call_f(self, RuntimeEnv env):
+        result = self.f(*self.args, **self.kwargs)
+        if asyncio.iscoroutine(result):
+            result = await result
+        return result
+
     async def resume(self, RuntimeEnv env):
         try:
-            result = self.f(*self.args, **self.kwargs)
-            if asyncio.iscoroutine(result):
-                result = await result
+            result = await self.call_f(env)
             return Success(result)
         except Exception as e:
             if any(isinstance(e, e_type) for e_type in self.exceptions):
@@ -677,6 +739,39 @@ def catch(exception, *exceptions):
         return decorator2
     return decorator1
 
+
+cdef class CatchIOBound(Catch):
+    async def call_f(self, RuntimeEnv env):
+        return await env.run_in_thread_executor(self.f, *self.args, **self.kwargs)
+
+cdef class CatchCPUBound(Catch):
+    async def call_f(self, RuntimeEnv env):
+        return await env.run_in_process_executor(self.f, *self.args, **self.kwargs)
+
+def catch_io_bound(exception, *exceptions):
+    def decorator1(f):
+        if asyncio.iscoroutinefunction(f):
+            raise ValueError(
+                f'argument to catch_io_bound must not be async, got: {repr(f)}'
+            )
+        @wraps(f)
+        def decorator2(*args, **kwargs):
+            return CatchIOBound((exception,) + exceptions, f, args, kwargs)
+        return decorator2
+    return decorator1
+
+
+def catch_cpu_bound(exception, *exceptions):
+    def decorator1(f):
+        if asyncio.iscoroutinefunction(f):
+            raise ValueError(
+                f'argument to catch_cpu_bound must not be async, got: {repr(f)}'
+            )
+        @wraps(f)
+        def decorator2(*args, **kwargs):
+            return CatchCPUBound((exception,) + exceptions, f, args, kwargs)
+        return decorator2
+    return decorator1
 
 
 cdef class SequenceAsync(Effect):
@@ -732,6 +827,54 @@ def lift(f):
         return effect.map(lambda xs: f(*xs))
     return decorator
 
+cdef class LiftIOBound(Effect):
+    cdef object f
+    cdef object effects
+
+    def __cinit__(self, f, effects):
+        self.f = f
+        self.effects = effects
+
+    async def resume(self, RuntimeEnv env):
+        async def call_f(xs):
+            return await env.run_in_thread_executor(self.f, *xs)
+        effect = sequence(self.effects)
+        return effect.map(call_f)
+
+def lift_io_bound(f):
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'argument to lift_io_bound must not be async, got: {repr(f)}'
+        )
+    @wraps(f)
+    def decorator(*effects):
+        return LiftIOBound(f, effects)
+    return decorator
+
+
+cdef class LiftCPUBound(Effect):
+    cdef object f
+    cdef object effects
+
+    def __cinit__(self, f, effects):
+        self.f = f
+        self.effects = effects
+
+    async def resume(self, RuntimeEnv env):
+        async def call_f(xs):
+            return await env.run_in_process_executor(self.f, *xs)
+        effect = sequence(self.effects)
+        return effect.map(call_f)
+
+def lift_cpu_bound(f):
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'argument to lift_cpu_bound must not be async, got: {repr(f)}'
+        )
+    @wraps(f)
+    def decorator(*effects):
+        return LiftCPUBound(f, effects)
+    return decorator
 
 def combine(*effects):
     """
@@ -748,8 +891,19 @@ def combine(*effects):
         `Effect` that applies the function to the results of `effects`
     """
     def f(g):
-        effect = sequence(effects)
-        return effect.map(lambda xs: g(*xs))
+        return lift(g)(*effects)
+    return f
+
+
+def combine_cpu_bound(*effects):
+    def f(g):
+        return lift_cpu_bound(g)(*effects)
+    return f
+
+
+def combine_io_bound(*effects):
+    def f(g):
+        return lift_io_bound(g)(*effects)
     return f
 
 
@@ -824,12 +978,6 @@ def add_method_repr(f):
 class Try:
     pass
 
-def io_bound(f):
-    return f
-
-def cpu_bound(f):
-    return f
-
 
 __all__ = [
     'Effect',
@@ -844,11 +992,17 @@ __all__ = [
     'for_each',
     'absolve',
     'error',
-    'combine',
     'lift',
+    'lift_io_bound',
+    'lift_cpu_bound',
+    'combine',
+    'combine_io_bound',
+    'combine_cpu_bound',
     'catch',
+    'catch_io_bound',
+    'catch_cpu_bound',
     'from_awaitable',
     'from_callable',
-    'cpu_bound',
-    'io_bound'
+    'from_io_bound_callable',
+    'from_cpu_bound_callable'
 ]

@@ -184,8 +184,35 @@ class lift(Generic[L]):
         ...
 
 
+class lift_cpu_bound(Generic[L]):
+    def __init__(self, f: L):
+        ...
+
+    def __call__(self, *effects: Effect) -> Effect:
+        ...
+
+
+class lift_io_bound(Generic[L]):
+    def __init__(self, f: L):
+        ...
+
+    def __call__(self, *effects: Effect) -> Effect:
+        ...
+
+
 def from_callable(
     f: Callable[[R1], Union[Awaitable[Either[E1, A1]], Either[E1, A1]]]
+) -> Effect[R1, E1, A1]:
+    ...
+
+def from_io_bound_callable(
+    f: Callable[[R1], Either[E1, A1]]
+) -> Effect[R1, E1, A1]:
+    ...
+
+
+def from_cpu_bound_callable(
+    f: Callable[[R1], Either[E1, A1]]
 ) -> Effect[R1, E1, A1]:
     ...
 
@@ -209,10 +236,26 @@ class catch(Immutable, Generic[EX], init=False):
         ...
 
 
+class catch_io_bound(Immutable, Generic[EX], init=False):
+    def __init__(self, error: Type[EX], *errors: Type[EX]):
+        ...
+
+    def __call__(self, f: Callable[..., B]
+                 ) -> Callable[..., Try[EX, B]]:
+        ...
+
+
+class catch_cpu_bound(Immutable, Generic[EX], init=False):
+    def __init__(self, error: Type[EX], *errors: Type[EX]):
+        ...
+
+    def __call__(self, f: Callable[..., B]
+                 ) -> Callable[..., Try[EX, B]]:
+        ...
+
+
 def add_method_repr(f: F1) -> F1: ...
 def add_repr(f: F1) -> F1: ...
-def cpu_bound(f: F1) -> F1: ...
-def io_bound(f: F1) -> F1: ...
 
 
 Success = Effect[object, NoReturn, A1]

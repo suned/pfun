@@ -186,79 +186,49 @@ class TestEffect(MonadTest):
 
     @settings(deadline=None)
     @given(effects(), effects())
-    def test_and_then_cpu_bound(self, e1, e2):
-        e1.and_then(effect.cpu_bound(lambda _: e2)).run(None) == e2.run(None)
-
-    @settings(deadline=None)
-    @given(effects(), effects())
-    def test_and_then_io_bound(self, e1, e2):
-        e1.and_then(effect.io_bound(lambda _: e2)).run(None) == e2.run(None)
-
-    @settings(deadline=None)
-    @given(effects())
-    def test_recover_cpu_bound(self, e):
-        effect.error('').recover(effect.cpu_bound(lambda _: e)
-                                 ).run(None) == e.run(None)
-
-    @given(effects())
-    def test_recover_io_bound(self, e):
-        effect.error('').recover(effect.io_bound(lambda _: e)
-                                 ).run(None) == e.run(None)
-
-    @settings(deadline=None)
-    @given(effects(), anything())
-    def test_map_cpu_bound(self, e, value):
-        e.map(effect.cpu_bound(lambda _: value)).run(None) == value
-
-    @settings(deadline=None)
-    @given(effects(), anything())
-    def test_map_io_bound(self, e, value):
-        e.map(effect.io_bound(lambda _: value)).run(None) == value
-
-    @settings(deadline=None)
-    @given(effects(), effects())
-    def test_combine_cpu_bound(self, e1, e2):
-        effect.combine(e1, e2)(effect.cpu_bound(lambda v1, v2: (v1, v2))
-                               ).run(None) == (e1.run(None), e2.run(None))
-
-    @given(effects(), effects())
-    def test_combine_io_bound(self, e1, e2):
-        effect.combine(e1, e2)(effect.io_bound(lambda v1, v2: (v1, v2))
-                               ).run(None) == (e1.run(None), e2.run(None))
-
-    @settings(deadline=None)
-    @given(effects(), effects())
     def test_lift_cpu_bound(self, e1, e2):
-        effect.lift(effect.cpu_bound(lambda v1, v2: (v1, v2))
-                    )(e1, e2).run(None) == (e1.run(None), e2.run(None))
+        effect.lift_cpu_bound(
+            lambda v1, v2: (v1, v2)
+        )(e1, e2).run(None) == (e1.run(None), e2.run(None))
 
     @settings(deadline=None)
     @given(effects(), effects())
     def test_lift_io_bound(self, e1, e2):
-        effect.lift(effect.io_bound(lambda v1, v2: (v1, v2))
-                    )(e1, e2).run(None) == (e1.run(None), e2.run(None))
+        effect.lift_io_bound(
+            lambda v1, v2: (v1, v2)
+        )(e1, e2).run(None) == (e1.run(None), e2.run(None))
+
+    @settings(deadline=None)
+    @given(effects(), effects())
+    def test_combine_cpu_bound(self, e1, e2):
+        effect.combine_cpu_bound(
+            e1, e2
+        )(lambda v1, v2: (v1, v2)).run(None) == (e1.run(None), e2.run(None))
+
+    @settings(deadline=None)
+    @given(effects(), effects())
+    def test_combine_io_bound(self, e1, e2):
+        effect.combine_io_bound(
+            e1, e2
+        )(lambda v1, v2: (v1, v2)).run(None) == (e1.run(None), e2.run(None))
 
     @settings(deadline=None)
     @given(unaries(rights()))
     def test_from_callable_cpu_bound(self, f):
-        assert effect.from_callable(effect.cpu_bound(f)
-                                    ).run(None) == f(None).get
+        assert effect.from_cpu_bound_callable(f).run(None) == f(None).get
 
     @given(unaries(rights()))
     def test_from_callable_io_bound(self, f):
-        assert effect.from_callable(effect.io_bound(f)
-                                    ).run(None) == f(None).get
+        assert effect.from_io_bound_callable(f).run(None) == f(None).get
 
     @settings(deadline=None)
     @given(unaries())
     def test_catch_cpu_bound(self, f):
-        assert effect.catch(Exception)(effect.cpu_bound(f)
-                                       )(None).run(None) == f(None)
+        assert effect.catch_cpu_bound(Exception)(f)(None).run(None) == f(None)
 
     @given(unaries())
     def test_catch_io_bound(self, f):
-        assert effect.catch(Exception)(effect.io_bound(f)
-                                       )(None).run(None) == f(None)
+        assert effect.catch_io_bound(Exception)(f)(None).run(None) == f(None)
 
 
 class TestResource:

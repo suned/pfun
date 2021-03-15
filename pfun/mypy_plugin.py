@@ -604,7 +604,9 @@ def _effect_io_bound_hook(context: FunctionContext) -> Type:
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
-        if fullname == 'pfun.effect.catch':
+        if fullname in ('pfun.effect.catch',
+                        'pfun.effect.catch_cpu_bound',
+                        'pfun.effect.catch_io_bound'):
             return _effect_catch_hook
         if fullname == _CURRY:
             return _curry_hook
@@ -614,12 +616,10 @@ class PFun(Plugin):
             _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all'
         ):
             return _variadic_decorator_hook
-        if fullname == 'pfun.effect.combine':
+        if fullname in ('pfun.effect.combine',
+                        'pfun.effect.combine_cpu_bound',
+                        'pfun.effect_io_bound'):
             return _combine_hook
-        if fullname == 'pfun.effect.cpu_bound':
-            return _effect_cpu_bound_hook
-        if fullname == 'pfun.effect.io_bound':
-            return _effect_io_bound_hook
         return None
 
     def get_method_hook(self, fullname: str):
@@ -631,9 +631,13 @@ class PFun(Plugin):
             return _effect_ensure_hook
         if fullname == 'pfun.effect.Effect.recover':
             return _effect_recover_hook
-        if fullname == 'pfun.effect.catch.__call__':
+        if fullname in ('pfun.effect.catch.__call__',
+                        'pfun.effect.catch_io_bound.__call__',
+                        'pfun.effect.catch_cpu_bound.__call__'):
             return _effect_catch_call_hook
-        if fullname == 'pfun.effect.lift.__call__':
+        if fullname in ('pfun.effect.lift.__call__',
+                        'pfun.effect.lift_io_bound.__call__',
+                        'pfun.effect.lift_cpu_bound.__call__'):
             return _effect_lift_call_hook
 
     def get_method_signature_hook(self, fullname: str):

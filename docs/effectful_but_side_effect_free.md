@@ -491,38 +491,6 @@ async def f() -> str:
     return await e(None)
 ```
 
-Since `Effect` uses `asyncio` you should be careful not to create effects that block the main thread. Blocking happens in two ways:
-
-- Performing IO
-- Calling functions that take a long time to return
-
-To avoid blocking the main thread, synchronous IO should be performed in a separate thread, and CPU bound functions should be called in a separate process. `pfun.effect` does this automatically with functions passed to its api when they are decorated with `pfun.effect.io_bound` or `pfun.effect.cpu_bound`:
-```python
-import time
-
-from pfun.effect import success, cpu_bound, io_bound
-
-
-def slow_function(a: int) -> int:
-    # simulate doing something slow
-    time.sleep(2)
-    return a + 2
-
-
-def performs_io(a: int) -> None:
-    with open('foo.txt', 'w') as f:
-        f.write(str(a))
-
-success(2).map(cpu_bound(slow_function))
-success(2).map(io_bound(performs_io))
-```
-`io_bound` and `cpu_bound` can be used to decorate functions that are used
-as arguments anywhere in the `pfun.effect` api. However, the decorator must directly wrap the function passed to the api in order for `pfun` to recognize that the function should be called in a separate process or thread. In other words, this won't work:
-```python
-decorated = cpu_bound(slow_function)
-success(2).map(lambda v: decorated(v))
-```
-
 ### Purely Functional State
 Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. `pfun.ref` provides exactly this. `pfun.ref` works by mutating state only by calling `Effect` instances.
 
@@ -608,6 +576,26 @@ def f(v: int) -> int:
 effect: Effect[object, Union[ZeroDivisionError, ValueError], int] = f(0)
 ```
 
+Since `Effect` uses `asyncio` you should be careful not to create effects that block the main thread. Blocking happens in two ways:
+
+- Performing IO
+- Calling functions that take a long time to return
+
+To avoid blocking the main thread, synchronous IO should be performed in a separate thread, and CPU bound functions should be called in a separate process. `pfun.effect` handles this for you, but when creating your own effects you should take care to use api functions that run your cpu or io bound code in separate processes or threads. Functions for creating effects that run your function in other threads generally have `io_bound` in their name, and functions for creating effects that run your functions in other processes generally have `cpu_bound` in their name, for example `lift_cpu_bound`:
+```python
+import time
+
+from pfun.effect import lift_cpu_bound, success
+
+
+def slow_function(a: int) -> int:
+    # simulate doing something slow
+    time.sleep(2)
+    return a + 2
+
+lift_cpu_bound(slow_function)(success(2))
+```
+Take a look at the api documentation for details.
 ### Type Aliases
 Since the dependency type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
 
