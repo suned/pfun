@@ -618,7 +618,7 @@ class PFun(Plugin):
             return _variadic_decorator_hook
         if fullname in ('pfun.effect.combine',
                         'pfun.effect.combine_cpu_bound',
-                        'pfun.effect_io_bound'):
+                        'pfun.effect.combine_io_bound'):
             return _combine_hook
         return None
 
@@ -641,7 +641,9 @@ class PFun(Plugin):
             return _effect_lift_call_hook
 
     def get_method_signature_hook(self, fullname: str):
-        if fullname == 'pfun.effect.lift.__call__':
+        if fullname in ('pfun.effect.lift.__call__',
+                        'pfun.effect.lift_cpu_bound.__call__',
+                        'pfun.effect.lift_io_bound.__call__'):
             return _effect_lift_call_signature_hook
 
     def get_base_class_hook(self, fullname: str):

@@ -172,6 +172,16 @@ def combine(
 ) -> Callable[[Callable[..., Union[Awaitable[A1], A1]]], Effect[Any, Any, A1]]:
     ...
 
+def combine_cpu_bound(
+    *effects: Effect[R1, E1, A2]
+) -> Callable[[Callable[..., A1]], Effect[Any, Any, A1]]:
+    ...
+
+def combine_io_bound(
+    *effects: Effect[R1, E1, A2]
+) -> Callable[[Callable[..., A1]], Effect[Any, Any, A1]]:
+    ...
+
 
 L = TypeVar('L', covariant=True, bound=Callable)
 
