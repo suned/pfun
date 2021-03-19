@@ -1,4 +1,4 @@
-#from . import console, files, logging, ref, subprocess  # noqa
+from . import console, files, logging, ref, subprocess  # noqa
 from .dict import Dict  # noqa
 from .effect import *  # noqa
 from .either import Either, Left, Right  # noqa

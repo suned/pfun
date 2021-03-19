@@ -1,4 +1,12 @@
-from typing import Generic
+"""
+The pfun effect system.
+
+Attributes:
+    Success (TypeAlias): Type-alias for `Effect[object, NoReturn, TypeVar('A')]`.
+    Try (TypeAlias): Type-alias for `Effect[object, TypeVar('E'), TypeVar('A')]`.
+    Depends (TypeAlias): Type-alias for `Effect[TypeVar('R'), NoReturn, TypeVar('A')]`.
+"""
+from typing import Generic, TypeVar, NoReturn
 import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
@@ -49,7 +57,7 @@ def run_dill_encoded(payload):
     return dill.dumps(fun(*args, **kwargs))
 
 
-cdef class Effect:
+cdef class CEffect:
     """
     Represents a side-effect
     """
@@ -65,13 +73,14 @@ cdef class Effect:
         including potential side-effects. If the function fails the \
         resulting error will be raised as an exception.
         Args:
-            r: The dependency with which to run this `Effect`
-            max_processes: The max number of processes used to run cpu bound \
+            self (Effect[R, E, A]):
+            r (R): The dependency with which to run this `Effect`
+            max_processes (Optional[int]): The max number of processes used to run cpu bound \
                 parts of this effect
-            max_threads: The max number of threads used to run io bound \
+            max_threads (Optional[int]): The max number of threads used to run io bound \
                 parts of this effect
         Return:
-            The succesful result of the wrapped function if it succeeds
+            Awaitable[A]: The succesful result of the wrapped function if it succeeds
         Raises:
             E: If the Effect fails and `E` is a subclass of `Exception`
             RuntimeError: if the effect fails and `E` is not a subclass of \
@@ -85,16 +94,16 @@ cdef class Effect:
             stack.enter_context(thread_executor)
             env = RuntimeEnv(r, stack, process_executor, thread_executor)
             effect = await self.do(env)
-            if isinstance(effect, Success):
+            if isinstance(effect, CSuccess):
                 return effect.result
             if isinstance(effect.reason, Exception):
                 raise effect.reason
             raise RuntimeError(effect.reason)
     
     async def do(self, RuntimeEnv env):
-        cdef Effect effect = self
+        cdef CEffect effect = self
         while not effect.is_done():
-            effect = (<Effect?>await effect.resume(env))
+            effect = (<CEffect?>await effect.resume(env))
         return effect
 
     def and_then(self, f):
@@ -106,10 +115,11 @@ cdef class Effect:
             >>> success(2).and_then(lambda i: success(i + 2)).run(None)
             4
         Arguments:
-            f: Function to pass the result of this `Effect` \
+            self (Effect[R, E, A]):
+            f (A -> Effect[Any, E2, B]): Function to pass the result of this `Effect` \
             instance once it can be computed
         Returns:
-            New `Effect` which wraps the result of \
+            Effect[Any, Union[E, E2], B]: New `Effect` which wraps the result of \
             passing the result of this `Effect` instance to `f`
         """
         if asyncio.iscoroutinefunction(f):
@@ -120,7 +130,7 @@ cdef class Effect:
                 return f(x)
             return self.c_and_then(g)
 
-    cdef Effect c_and_then(self, object f):
+    cdef CEffect c_and_then(self, object f):
         return AndThen.__new__(AndThen, self, f)
 
     def map(self, f):
@@ -130,16 +140,17 @@ cdef class Effect:
             >>> success(2).map(lambda v: v + 2).run(None)
             4
         Args:
-            f: function to map over this `Effect`
+            self (Effect[R, E, A]):
+            f (A -> B): function to map over this `Effect`
         Return:
-            new `Effect` with `f` applied to the \
+            Effect[R, E, B]: new `Effect` with `f` applied to the \
             value produced by this `Effect`.
         """
         async def g(x):
             result = f(x)
             if asyncio.iscoroutine(result):
                 result = await result
-            return Success.__new__(Success, result)
+            return CSuccess.__new__(CSuccess, result)
 
         return self.c_and_then(g)
     
@@ -149,15 +160,14 @@ cdef class Effect:
         side-effects. If the function fails the resulting error will be \
         raised as an exception.
         Args:
-            r: The dependency with which to run this `Effect` \
-            asyncio_run: Function to run the coroutine returned by the \
-            wrapped function
-            max_processes: The max number of processes used to run cpu bound \
+            self (Effect[R, E, A]):
+            r (R): The dependency with which to run this `Effect`
+            max_processes (Optional[int]): The max number of processes used to run cpu bound \
                 parts of this effect
-            max_threads: The max number of threads used to run io bound \
+            max_threads (Optional[int]): The max number of threads used to run io bound \
                 parts of this effect
         Return:
-            The succesful result of the wrapped function if it succeeds
+            A: The succesful result of the wrapped function if it succeeds
         Raises:
             E: If the Effect fails and `E` is a subclass of `Exception`
             RuntimeError: if the effect fails and `E` is not a subclass of \
@@ -171,7 +181,7 @@ cdef class Effect:
     async def apply_continuation(self, object f, RuntimeEnv env):
         raise NotImplementedError()
     
-    def discard_and_then(self, Effect effect):
+    def discard_and_then(self, CEffect effect):
         """
         Create a new effect that discards the result of this effect, \
         and produces instead ``effect``. Like ``and_then`` but does not require
@@ -186,10 +196,11 @@ cdef class Effect:
             ...     .run(Env())
             Hello!
         Args:
-            effect: `Effect` instance to run after this `Effect` \
+            self (Effect[R, E, A]):
+            effect (Effect[Any, E2, B]): `Effect` instance to run after this `Effect` \
             has run successfully.
         Return:
-            New effect that succeeds with `effect`
+            Effect[Any, Union[E, E2], B]: New effect that succeeds with `effect`
         """
         async def g(x):
             return effect
@@ -205,8 +216,10 @@ cdef class Effect:
             ...                    else 'Phew!'
             ... ).run(None)
             'Phew!'
+        Args:
+            self (Effect[R, E, A]):
         Return:
-            New `Effect` that produces a `Left[E]` if it \
+            Effect[R, NoReturn, Either[E, A]]: New `Effect` that produces a `Left[E]` if it \
             has failed, or a :`Right[A]` if it succeeds
         """
         return Either(self)
@@ -220,10 +233,11 @@ cdef class Effect:
             >>> error('Whoops!').recover(lambda _: success('Phew!')).run(None)
             'Phew!'
         Args:
-            f: Function to pass the error result of this `Effect` \
+            self (Effect[R, E, A]):
+            f (E -> Effect[Any, E2, B]): Function to pass the error result of this `Effect` \
             instance once it can be computed
         Return:
-            New :`Effect` which wraps the result of \
+            Effect[Any, E2, Union[A, B]]: New :`Effect` which wraps the result of \
             passing the error result of this `Effect` instance to `f`
         """
         return Recover(self, f)
@@ -248,8 +262,10 @@ cdef class Effect:
             >>> double_effect.run(None)
             Doing something expensive
             'result'
+        Args:
+            self (Effect[R, E, A]):
         Return:
-            memoized `Effect`
+            Effect[R, E, A]: memoized `Effect`
         """
         return Memoize(self)
     
@@ -271,10 +287,11 @@ cdef class Effect:
             finalizing!
             RuntimeError: whoops!
         Args:
-            effect: `Effect` to run after this effect terminates \
+            self (Effect[R, E, A]):
+            effect (Effect[Any, NoReturn, Any]): `Effect` to run after this effect terminates \
             either successfully or with an error
         Return:
-            `Effect` that fails or succeeds with the result of \
+            Effect[Any, E, A]: `Effect` that fails or succeeds with the result of \
             this effect, but always runs `effect`
         """
         return self.and_then(
@@ -286,8 +303,8 @@ cdef class Effect:
         )
 
 
-cdef class WithRepr(Effect):
-    cdef Effect effect
+cdef class WithRepr(CEffect):
+    cdef CEffect effect
     cdef object repr_
 
     def __cinit__(self, effect, repr_):
@@ -304,9 +321,9 @@ cdef class WithRepr(Effect):
         return self.effect.apply_continuation(f, env)
 
 
-cdef class Memoize(Effect):
-    cdef Effect effect
-    cdef Effect result
+cdef class Memoize(CEffect):
+    cdef CEffect effect
+    cdef CEffect result
 
     def __cinit__(self, effect):
         self.effect = effect
@@ -320,12 +337,12 @@ cdef class Memoize(Effect):
         return Call(thunk)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef Effect effect = await self.resume(env)
+        cdef CEffect effect = await self.resume(env)
         return effect.c_and_then(f)
 
 
-cdef class Recover(Effect):
-    cdef Effect effect
+cdef class Recover(CEffect):
+    cdef CEffect effect
     cdef object f
 
     def __cinit__(self, effect, f):
@@ -334,19 +351,19 @@ cdef class Recover(Effect):
     
     async def resume(self, RuntimeEnv env):
         async def thunk():
-            cdef Effect effect = await self.effect.do(env)
-            if isinstance(effect, Success):
+            cdef CEffect effect = await self.effect.do(env)
+            if isinstance(effect, CSuccess):
                 return effect
             return self.f(effect.reason)
         return Call(thunk)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef Effect effect = self.resume(env)
+        cdef CEffect effect = self.resume(env)
         return effect.c_and_then(f)
 
 
-cdef class Either(Effect):
-    cdef Effect effect
+cdef class Either(CEffect):
+    cdef CEffect effect
 
     def __cinit__(self, effect):
         self.effect = effect
@@ -354,17 +371,17 @@ cdef class Either(Effect):
     async def resume(self, RuntimeEnv env):
         async def thunk():
             result = await self.effect.do(env)
-            if isinstance(result, Success):
-                return Success(Right(result.result))
-            return Success(Left(result.reason))
+            if isinstance(result, CSuccess):
+                return CSuccess(Right(result.result))
+            return CSuccess(Left(result.reason))
         return Call(thunk)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef Effect effect = self.resume(env)
+        cdef CEffect effect = self.resume(env)
         return effect.c_and_then(f)
 
 
-cdef class ResourceGet(Effect):
+cdef class ResourceGet(CEffect):
     cdef Resource resource
 
     def __cinit__(self, resource):
@@ -379,11 +396,11 @@ cdef class ResourceGet(Effect):
             self.resource.resource = resource
             await env.exit_stack.enter_async_context(self.resource)
         if isinstance(self.resource.resource, Right):
-            return Success(self.resource.resource.get)
+            return CSuccess(self.resource.resource.get)
         return Error(self.resource.resource.get)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef Effect effect = await self.resume(env)
+        cdef CEffect effect = await self.resume(env)
         return effect.c_and_then(f)
 
 
@@ -441,7 +458,7 @@ cdef class Resource:
             return await resource.get.__aexit__(*args, **kwargs)
 
 
-cdef class Success(Effect):
+cdef class CSuccess(CEffect):
     cdef readonly object result
 
     cdef bint is_done(self):
@@ -467,14 +484,14 @@ def success(result):
         >>> success('Yay!').run(None)
         'Yay!'
     Args:
-        value: The value to return when the `Effect` is executed
+        value (A): The value to return when the `Effect` is executed
     Return:
-        `Effect` that wraps a function returning ``value``
+        Success[A]: Effect that wraps a function returning ``value``
     """
-    return Success(result)
+    return CSuccess(result)
 
 
-cdef class Error(Effect):
+cdef class Error(CEffect):
     cdef readonly object reason
 
     cdef bint is_done(self):
@@ -497,15 +514,15 @@ def error(reason):
         >>> error('Whoops!').run(None)
         RuntimeError: 'Whoops!'
     Args:
-        reason: Value to fail with
+        reason (E): Value to fail with
     Return:
-        `Effect` that fails with `reason`
+        Effect[object, E, NoReturn]: `Effect` that fails with `reason`
     """
     return Error(reason)
 
 
-cdef class AndThen(Effect):
-    cdef Effect effect
+cdef class AndThen(CEffect):
+    cdef CEffect effect
     cdef object continuation
 
     def __cinit__(self, effect, continuation):
@@ -521,16 +538,16 @@ cdef class AndThen(Effect):
     async def resume(self, RuntimeEnv env):
         return await self.effect.apply_continuation(self.continuation, env)
 
-    cdef Effect c_and_then(self, f):
+    cdef CEffect c_and_then(self, f):
         async def g(v):
             async def thunk():
-                cdef Effect e = await self.continuation(v)
+                cdef CEffect e = await self.continuation(v)
                 return e.c_and_then(f)
             return Call.__new__(Call, thunk)
         return AndThen.__new__(AndThen, self.effect, g)
 
 
-cdef class Call(Effect):
+cdef class Call(CEffect):
     cdef object thunk
 
     def __cinit__(self, thunk):
@@ -540,23 +557,23 @@ cdef class Call(Effect):
         return await self.thunk()
 
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef Effect effect = await self.thunk()
+        cdef CEffect effect = await self.thunk()
         return effect.c_and_then(f)
 
 
-cdef class Depends(Effect):
+cdef class CDepends(CEffect):
     async def resume(self, RuntimeEnv env):
-        return Success(env.r)
+        return CSuccess(env.r)
 
     async def apply_continuation(self, object f, RuntimeEnv env):
         return await f(env.r)
 
 
-cdef Effect c_combine(Effect es, Effect e):
+cdef CEffect c_combine(CEffect es, CEffect e):
     async def f(list xs):
         async def g(object x):
             xs.append(x)
-            return Success.__new__(Success, xs)
+            return CSuccess.__new__(CSuccess, xs)
 
         return AndThen.__new__(AndThen, e, g)
     return AndThen.__new__(AndThen, es, f)
@@ -570,31 +587,42 @@ def depend(r_type=None):
         >>> depend(str).run('dependency')
         'dependency'
     Args:
-        r_type: The expected dependency type of the resulting effect. \
+        r_type (R): The expected dependency type of the resulting effect. \
         Used ONLY for type-checking and doesn't impact runtime behaviour in \
         any way
     Return:
-        `Effect` that produces the dependency passed to `run`
+        Effect[R, NoReturn, R]: `Effect` that produces the dependency passed to `run`
     """
-    return Depends()
+    return CDepends()
 
 
-cpdef Effect sequence(effects):
-    cdef Effect result = Success([])
-    cdef Effect effect
+cpdef CEffect sequence(effects):
+    """
+    Evaluate each `Effect` in `iterable`
+    and collect the results
+    Example:
+        >>> sequence([success(v) for v in range(3)]).run(None)
+        (0, 1, 2)
+    Args:
+        iterable (Iterable[Effect[R, E, A]]): The iterable to collect results from
+    Return:
+        Effect[R, E, Iterable[A]]: `Effect` that produces collected results
+    """
+    cdef CEffect result = CSuccess([])
+    cdef CEffect effect
     for effect in effects:
         result = c_combine(result, effect)
     return result.map(tuple)
 
 
-cdef class FromAwaitable(Effect):
+cdef class FromAwaitable(CEffect):
     cdef object awaitable
 
     def __cinit__(self, awaitable):
         self.awaitable = awaitable
     
     async def resume(self, RuntimeEnv env):
-        return Success.__new__(Success, await self.awaitable)
+        return CSuccess.__new__(CSuccess, await self.awaitable)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
         return f(await self.awaitable)
@@ -609,14 +637,14 @@ def from_awaitable(awaitable):
         >>> from_awaitable(f()).run(None)
         'Yay'
     Args:
-        awaitable: Awaitable to await in the resulting `Effect`
+        awaitable (Awaitable[A]): Awaitable to await in the resulting `Effect`
     Return:
-        `Effect` that produces the result of awaiting `awaitable`
+        Success[A]: `Effect` that produces the result of awaiting `awaitable`
     """
     return FromAwaitable(awaitable)
 
 
-cdef class FromCallable(Effect):
+cdef class FromCallable(CEffect):
     cdef object f
 
     def __cinit__(self, f):
@@ -631,11 +659,11 @@ cdef class FromCallable(Effect):
     async def resume(self, RuntimeEnv env):
         either = await self.call_f(env)
         if isinstance(either, Right):
-            return Success(either.get)
+            return CSuccess(either.get)
         return Error(either.get)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef Effect effect = await self.resume(env)
+        cdef CEffect effect = await self.resume(env)
         return effect.c_and_then(f)
 
 
@@ -655,9 +683,9 @@ def from_callable(f):
         >>> effect.run('Hello!')
         Hello!Hello!
     Args:
-        f: the function to turn into an `Effect`
+        f (R -> Either[E, A]): the function to turn into an `Effect`
     Return:
-        `f` as an `Effect`
+        Effect[R, E, A]: `f` as an `Effect`
     """
     return FromCallable(f)
 
@@ -673,6 +701,25 @@ cdef class FromCPUBoundCallable(FromCallable):
 
 
 def from_io_bound_callable(f):
+    """
+    Create an `Effect` from an io bound function that takes a dependency and returns \
+    an `Either`
+    Example:
+        >>> from pfun.either import Either, Left, Right
+        >>> def f(r: str) -> Either[str, str]:
+        ...     if not r:
+        ...         return Left('Empty string')
+        ...     return Right(r * 2)
+        >>> effect = from_io_bound_callable(f)
+        >>> effect.run('')
+        RuntimeError: Empty string
+        >>> effect.run('Hello!')
+        Hello!Hello!
+    Args:
+        f (R -> Either[E, A]): the function to turn into an `Effect`
+    Return:
+        Effect[R, E, A]: `f` as an `Effect`
+    """
     if asyncio.iscoroutinefunction(f):
         raise ValueError(
             f'argument to from_io_bound_callable must not be async, got: {repr(f)}'
@@ -681,6 +728,25 @@ def from_io_bound_callable(f):
 
 
 def from_cpu_bound_callable(f):
+    """
+    Create an `Effect` from a cpu bound function that takes a dependency and returns \
+    an `Either`
+    Example:
+        >>> from pfun.either import Either, Left, Right
+        >>> def f(r: str) -> Either[str, str]:
+        ...     if not r:
+        ...         return Left('Empty string')
+        ...     return Right(r * 2)
+        >>> effect = from_cpu_bound_callable(f)
+        >>> effect.run('')
+        RuntimeError: Empty string
+        >>> effect.run('Hello!')
+        Hello!Hello!
+    Args:
+        f (R -> Either[E, A]): the function to turn into an `Effect`
+    Return:
+        Effect[R, E, A]: `f` as an `Effect`
+    """
     if asyncio.iscoroutinefunction(f):
         raise ValueError(
             f'argument to from_io_bound_callable must not be async, got: {repr(f)}'
@@ -688,7 +754,7 @@ def from_cpu_bound_callable(f):
     return FromCPUBoundCallable(f)
 
 
-cdef class Catch(Effect):
+cdef class Catch(CEffect):
     cdef tuple exceptions
     cdef object f
     cdef tuple args
@@ -709,14 +775,14 @@ cdef class Catch(Effect):
     async def resume(self, RuntimeEnv env):
         try:
             result = await self.call_f(env)
-            return Success(result)
+            return CSuccess(result)
         except Exception as e:
             if any(isinstance(e, e_type) for e_type in self.exceptions):
                 return Error(e)
             raise e
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef Effect effect = self.resume(env)
+        cdef CEffect effect = self.resume(env)
         return effect.c_and_then(f)
 
 
@@ -731,6 +797,12 @@ def catch(exception, *exceptions):
         1.0
         >>> f(0).run(None)
         ZeroDivisionError
+    Args:
+        exception (Exception): The first exception to catch
+        exceptions (Exception): Remaining exceptions to catch
+    Returns:
+        ((*args, **kwargs) -> A) -> Effect[object, Exception, A]: Decorator of functions \
+            that handle expection arguments as an `Effect`.
     """
     def decorator1(f):
         @wraps(f)
@@ -749,6 +821,23 @@ cdef class CatchCPUBound(Catch):
         return await env.run_in_process_executor(self.f, *self.args, **self.kwargs)
 
 def catch_io_bound(exception, *exceptions):
+    """
+    Decorator that catches errors from an io bound function as an `Effect`. If the decorated
+    function performs additional side-effects, they are not carried out
+    until the effect is run.
+    Example:
+        >>> f = catch_io_bound(ZeroDivisionError)(lambda v: 1 / v)
+        >>> f(1).run(None)
+        1.0
+        >>> f(0).run(None)
+        ZeroDivisionError
+    Args:
+        exception (Exception): The first exception to catch
+        exceptions (Exception): Remaining exceptions to catch
+    Returns:
+        ((*args, **kwargs) -> A) -> Effect[object, Exception, A]: Decorator of functions \
+            that handle expection arguments as an `Effect`.
+    """
     def decorator1(f):
         if asyncio.iscoroutinefunction(f):
             raise ValueError(
@@ -762,6 +851,23 @@ def catch_io_bound(exception, *exceptions):
 
 
 def catch_cpu_bound(exception, *exceptions):
+    """
+    Decorator that catches errors from a cpu bound function as an `Effect`. If the decorated
+    function performs additional side-effects, they are not carried out
+    until the effect is run.
+    Example:
+        >>> f = catch_cpu_bound(ZeroDivisionError)(lambda v: 1 / v)
+        >>> f(1).run(None)
+        1.0
+        >>> f(0).run(None)
+        ZeroDivisionError
+    Args:
+        exception (Exception): The first exception to catch
+        exceptions (Exception): Remaining exceptions to catch
+    Returns:
+        ((*args, **kwargs) -> A) -> Effect[object, Exception, A]: Decorator of functions \
+            that handle expection arguments as an `Effect`.
+    """
     def decorator1(f):
         if asyncio.iscoroutinefunction(f):
             raise ValueError(
@@ -774,7 +880,7 @@ def catch_cpu_bound(exception, *exceptions):
     return decorator1
 
 
-cdef class SequenceAsync(Effect):
+cdef class SequenceAsync(CEffect):
     cdef tuple effects
 
     def __cinit__(self, effects):
@@ -782,7 +888,7 @@ cdef class SequenceAsync(Effect):
 
     async def sequence(self, object r):
         async def thunk():
-            cdef Effect effect
+            cdef CEffect effect
             aws = [effect.do(r) for effect in self.effects]
             effects = await asyncio.gather(*aws)
             return sequence(effects)
@@ -792,7 +898,7 @@ cdef class SequenceAsync(Effect):
         return await self.sequence(env)
 
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef Effect sequenced = await self.sequence(env)
+        cdef CEffect sequenced = await self.sequence(env)
         return sequenced.c_and_then(f)
 
 
@@ -804,9 +910,9 @@ def sequence_async(effects):
         >>> sequence_async([success(v) for v in range(3)]).run(None)
         (0, 1, 2)
     Args:
-        iterable: The iterable to collect results from
+        iterable (Iterable[Effect[R, E, A]]): The iterable to collect results from
     Return:
-        `Effect` that produces collected results
+        Effect[R, E, Iterable[A]]: `Effect` that produces collected results
     """
     return SequenceAsync.__new__(SequenceAsync, tuple(effects))
 
@@ -814,12 +920,16 @@ def sequence_async(effects):
 def lift(f):
     """
     Decorator that enables decorated functions to operate on `Effect`
-    instances.
+    instances. Note that the returned function does not accept keyword arguments.
     Example:
         >>> def add(a: int, b: int) -> int:
         ...     return a + b
         >>> lift(add)(success(2), success(2)).run(None)
         4
+    Args:
+        f ( (*A, **B) -> C): The function to decorate
+    Returns:
+        (*Effect[R, E, A] -> Effect[R, E, C]): The decorated function
     """
     @wraps(f)
     def decorator(*effects):
@@ -827,7 +937,7 @@ def lift(f):
         return effect.map(lambda xs: f(*xs))
     return decorator
 
-cdef class LiftIOBound(Effect):
+cdef class LiftIOBound(CEffect):
     cdef object f
     cdef object effects
 
@@ -842,6 +952,19 @@ cdef class LiftIOBound(Effect):
         return effect.map(call_f)
 
 def lift_io_bound(f):
+    """
+    Decorator that enables decorated io bound functions to operate on `Effect`
+    instances. Note that the returned function does not accept keyword arguments.
+    Example:
+        >>> def add(a: int, b: int) -> int:
+        ...     return a + b
+        >>> lift_io_bound(add)(success(2), success(2)).run(None)
+        4
+    Args:
+        f ( (*A, **B) -> C): The function to decorate
+    Returns:
+        (*Effect[R, E, A] -> Effect[R, E, C]): The decorated function
+    """
     if asyncio.iscoroutinefunction(f):
         raise ValueError(
             f'argument to lift_io_bound must not be async, got: {repr(f)}'
@@ -852,7 +975,7 @@ def lift_io_bound(f):
     return decorator
 
 
-cdef class LiftCPUBound(Effect):
+cdef class LiftCPUBound(CEffect):
     cdef object f
     cdef object effects
 
@@ -867,6 +990,19 @@ cdef class LiftCPUBound(Effect):
         return effect.map(call_f)
 
 def lift_cpu_bound(f):
+    """
+    Decorator that enables decorated cpu bound functions to operate on `Effect`
+    instances. Note that the returned function does not accept keyword arguments.
+    Example:
+        >>> def add(a: int, b: int) -> int:
+        ...     return a + b
+        >>> lift_cpu_bound(add)(success(2), success(2)).run(None)
+        4
+    Args:
+        f ( (*A, **B) -> C): The function to decorate
+    Returns:
+        (*Effect[R, E, A] -> Effect[R, E, C]): The decorated function
+    """
     if asyncio.iscoroutinefunction(f):
         raise ValueError(
             f'argument to lift_cpu_bound must not be async, got: {repr(f)}'
@@ -884,10 +1020,10 @@ def combine(*effects):
         >>> combine(success(2), success(2))(lambda a, b: a + b).run(None)
         4
     Args:
-        effects: Effects the results of which to pass to the combiner \
+        effects (Effect[R, E, A]): Effects the results of which to pass to the combiner \
         function
     Return:
-        function that takes a combiner function and returns an \
+        (((*A, **B) -> C) -> *Effect[R, E, A] -> Effect[R, E, C]): function that takes a combiner function and returns an \
         `Effect` that applies the function to the results of `effects`
     """
     def f(g):
@@ -896,12 +1032,38 @@ def combine(*effects):
 
 
 def combine_cpu_bound(*effects):
+    """
+    Create an effect that produces the result of calling the passed cpu bound function \
+    with the results of effects in `effects`
+    Example:
+        >>> combine_cpu_bound(success(2), success(2))(lambda a, b: a + b).run(None)
+        4
+    Args:
+        effects (Effect[R, E, A]): Effects the results of which to pass to the combiner \
+        function
+    Return:
+        (((*A, **B) -> C) -> *args: Effect[R, E, A] -> Effect[R, E, C]): function that takes a combiner function and returns an \
+        `Effect` that applies the function to the results of `effects`
+    """
     def f(g):
         return lift_cpu_bound(g)(*effects)
     return f
 
 
 def combine_io_bound(*effects):
+    """
+    Create an effect that produces the result of calling the passed io bound function \
+    with the results of effects in `effects`
+    Example:
+        >>> combine_io_bound(success(2), success(2))(lambda a, b: a + b).run(None)
+        4
+    Args:
+        effects (Effect[R, E, A]): Effects the results of which to pass to the combiner \
+        function
+    Return:
+        (((*A, **B) -> C) -> *args: Effect[R, E, A] -> Effect[R, E, C]): function that takes a combiner function and returns an \
+        `Effect` that applies the function to the results of `effects`
+    """
     def f(g):
         return lift_io_bound(g)(*effects)
     return f
@@ -917,10 +1079,10 @@ def filter_(f, iterable):
         >>> filter(lambda v: success(v % 2 == 0), range(3)).run(None)
         (0, 2)
     Args:
-        f: Function to map ``iterable`` by
-        iterable: Iterable to map by ``f``
+        f (A -> Effect[R, E, bool]): Function to map ``iterable`` by
+        iterable (Iterable[A]): Iterable to map by ``f``
     Return:
-        `iterable` mapped and filtered by `f`
+        Effect[R, E, Iterable[A]]: `iterable` mapped and filtered by `f`
     """
     iterable = tuple(iterable)
     bools = sequence(f(a) for a in iterable)
@@ -938,10 +1100,10 @@ def for_each(f, iterable):
         >>> for_each(success, range(3)).run(None)
         (0, 1, 2)
     Args:
-        f: Function to map over ``iterable``
-        iterable: Iterable to map ``f`` over
+        f (A -> Effect[R, E, B]): Function to map over ``iterable``
+        iterable (Iterable[A]): Iterable to map ``f`` over
     Return:
-        `f` mapped over `iterable` and combined from left to right.
+        Effect[R, E, Iterable[B]]: `f` mapped over `iterable` and combined from left to right.
     """
     return sequence(f(x) for x in iterable)
 
@@ -958,13 +1120,13 @@ def absolve(effect):
         >>> absolve(effect).run(None)
         'Phew!'
     Args:
-        effect: an `Effect` producing an `Either`
+        effect (Effect[R, NoReturn, Either[E, A]]): an `Effect` producing an `Either`
     Return:
-        an `Effect` failing with `E1` or succeeding with `A1`
+        Effect[R, E, A]: an `Effect` failing with `E` or succeeding with `A`
     """
     def f(either):
         if isinstance(either, Right):
-            return Success(either.get)
+            return CSuccess(either.get)
         return Error(either.get)
     return effect.and_then(f)
 
@@ -975,9 +1137,22 @@ def add_repr(f):
 def add_method_repr(f):
     return f
 
-class Try:
-    pass
 
+R = TypeVar('R', contravariant=True)
+A = TypeVar('A', covariant=True)
+E = TypeVar('E', covariant=True)
+
+
+EffectGen = Generic[R, E, A]
+
+
+class Effect(CEffect, *EffectGen.__mro_entries__((EffectGen,))):
+    __orig_bases__ = (EffectGen,)
+
+
+Success = Effect[object, NoReturn, A]
+Try = Effect[object, E, A]
+Depends = Effect[R, NoReturn, A]
 
 __all__ = [
     'Effect',

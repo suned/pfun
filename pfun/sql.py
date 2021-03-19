@@ -91,7 +91,7 @@ class SQL(Immutable, init=False):
     """
     Module providing postgres sql client capability
     """
-    connection: Resource[asyncpg.PostgresError, PostgresConnection]
+    connection: 'Resource[asyncpg.PostgresError, PostgresConnection]'
 
     def __init__(self, connection_str: str):
         """

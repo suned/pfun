@@ -105,7 +105,6 @@ class Effect(Generic[R, E, A], Immutable, Monad):
     def run(
         self,
         r: R,
-        asyncio_run: Callable[[Awaitable[A]], A] = asyncio.run,
         max_processes: int = None,
         max_threads: int = None
     ) -> A: ...

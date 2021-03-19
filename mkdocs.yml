@@ -41,7 +41,13 @@ markdown_extensions:
 plugins:
     - search
     - mkdocstrings:
+        custom_templates: templates
         handlers:
+            python_extension:
+              rendering:
+                show_source: false
+                show_root_heading: true
+                heading_level: 1 
             python:
               rendering:
                 show_source: false

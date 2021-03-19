@@ -69,7 +69,7 @@ class HTTP(Immutable, init=False):
     """
     Module for making HTTP requests.
     """
-    session: Resource[NoReturn, aiohttp.ClientSession]
+    session: 'Resource[NoReturn, aiohttp.ClientSession]'
 
     def __init__(
         self,

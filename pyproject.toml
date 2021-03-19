@@ -32,7 +32,7 @@ pre-commit-hooks = "^3.1.0"
 main-dec = "^0.1.1"
 asynctest = "^0.13.0"
 mkdocs = "^1.1.2"
-mkdocstrings = "^0.12.1"
+mkdocstrings = "^0.15.0"
 mkdocs-material = "^5.4.0"
 
 [tool.poetry.extras]
