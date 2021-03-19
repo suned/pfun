@@ -328,6 +328,9 @@ cdef class Memoize(CEffect):
     def __cinit__(self, effect):
         self.effect = effect
         self.result = None
+    
+    def __repr__(self):
+        return f'{repr(self.effect)}.memoize()'
 
     async def resume(self, RuntimeEnv env):
         async def thunk():
@@ -349,6 +352,9 @@ cdef class Recover(CEffect):
         self.effect = effect
         self.f = f
     
+    def __repr__(self):
+        return f'{repr(self.effect)}.recover({repr(self.f)})'
+    
     async def resume(self, RuntimeEnv env):
         async def thunk():
             cdef CEffect effect = await self.effect.do(env)
@@ -367,6 +373,9 @@ cdef class Either(CEffect):
 
     def __cinit__(self, effect):
         self.effect = effect
+    
+    def __repr__(self):
+        return f'{repr(self.effect)}.either()'
     
     async def resume(self, RuntimeEnv env):
         async def thunk():
@@ -499,6 +508,9 @@ cdef class Error(CEffect):
 
     def __cinit__(self, reason):
         self.reason = reason
+    
+    def __repr__(self):
+        return f'error({repr(self.reason)})'
 
     async def resume(self, RuntimeEnv env):
         return self
@@ -567,6 +579,9 @@ cdef class CDepends(CEffect):
 
     async def apply_continuation(self, object f, RuntimeEnv env):
         return await f(env.r)
+    
+    def __repr__(self):
+        return 'depend()'
 
 
 cdef CEffect c_combine(CEffect es, CEffect e):
@@ -621,6 +636,9 @@ cdef class FromAwaitable(CEffect):
     def __cinit__(self, awaitable):
         self.awaitable = awaitable
     
+    def __repr__(self):
+        return f'from_awaitable({repr(self.awaitable)})'
+    
     async def resume(self, RuntimeEnv env):
         return CSuccess.__new__(CSuccess, await self.awaitable)
     
@@ -649,6 +667,9 @@ cdef class FromCallable(CEffect):
 
     def __cinit__(self, f):
         self.f = f
+    
+    def __repr__(self):
+        return f'from_callable({repr(self.f)})'
 
     async def call_f(self, RuntimeEnv env):
         either = self.f(env.r)
@@ -693,11 +714,17 @@ def from_callable(f):
 cdef class FromIOBoundCallable(FromCallable):
     async def call_f(self, RuntimeEnv env):
         return await env.run_in_thread_executor(self.f, env.r)
+    
+    def __repr__(self):
+        return f'from_io_bound_callable({repr(self.f)})'
 
 
 cdef class FromCPUBoundCallable(FromCallable):
     async def call_f(self, RuntimeEnv env):
         return await env.run_in_process_executor(self.f, env.r)
+
+    def __repr__(self):
+        return f'from_cpu_bound_callable({repr(self.f)})'
 
 
 def from_io_bound_callable(f):
@@ -765,6 +792,14 @@ cdef class Catch(CEffect):
         self.f = f
         self.args = args
         self.kwargs = kwargs
+    
+    def __repr__(self):
+        es_repr = ', '.join([repr(e) for e in self.exceptions])
+        args_repr = ', '.join([repr(a) for a in self.args])
+        kwargs_repr = ', '.join([f'{repr(name)}={repr(a)}' for name, a in self.kwargs.items()])
+        sig_repr = args_repr
+        sig_repr = sig_repr + ', ' + kwargs_repr if kwargs_repr else sig_repr
+        return f'catch({es_repr})({repr(self.f)})({sig_repr})'
     
     async def call_f(self, RuntimeEnv env):
         result = self.f(*self.args, **self.kwargs)
