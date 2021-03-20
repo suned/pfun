@@ -315,10 +315,10 @@ cdef class WithRepr(CEffect):
         return self.repr_
     
     async def resume(self, RuntimeEnv env):
-        return self.effect.resume(env)
+        return await self.effect.resume(env)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        return self.effect.apply_continuation(f, env)
+        return await self.effect.apply_continuation(f, env)
 
 
 cdef class Memoize(CEffect):
@@ -850,10 +850,27 @@ def catch(exception, *exceptions):
 cdef class CatchIOBound(Catch):
     async def call_f(self, RuntimeEnv env):
         return await env.run_in_thread_executor(self.f, *self.args, **self.kwargs)
+    
+    def __repr__(self):
+        es_repr = ', '.join([repr(e) for e in self.exceptions])
+        args_repr = ', '.join([repr(a) for a in self.args])
+        kwargs_repr = ', '.join([f'{repr(name)}={repr(a)}' for name, a in self.kwargs.items()])
+        sig_repr = args_repr
+        sig_repr = sig_repr + ', ' + kwargs_repr if kwargs_repr else sig_repr
+        return f'catch_io_bound({es_repr})({repr(self.f)})({sig_repr})'
+    
 
 cdef class CatchCPUBound(Catch):
     async def call_f(self, RuntimeEnv env):
         return await env.run_in_process_executor(self.f, *self.args, **self.kwargs)
+    
+    def __repr__(self):
+        es_repr = ', '.join([repr(e) for e in self.exceptions])
+        args_repr = ', '.join([repr(a) for a in self.args])
+        kwargs_repr = ', '.join([f'{repr(name)}={repr(a)}' for name, a in self.kwargs.items()])
+        sig_repr = args_repr
+        sig_repr = sig_repr + ', ' + kwargs_repr if kwargs_repr else sig_repr
+        return f'catch_cpu_bound({es_repr})({repr(self.f)})({sig_repr})'
 
 def catch_io_bound(exception, *exceptions):
     """
@@ -920,6 +937,9 @@ cdef class SequenceAsync(CEffect):
 
     def __cinit__(self, effects):
         self.effects = effects
+    
+    def __repr__(self):
+        return f'sequence_async({repr(self.effects)})'
 
     async def sequence(self, object r):
         async def thunk():
@@ -969,7 +989,8 @@ def lift(f):
     @wraps(f)
     def decorator(*effects):
         effect = sequence(effects)
-        return effect.map(lambda xs: f(*xs))
+        args_repr = ', '.join(repr(e) for e in effects)
+        return effect.map(lambda xs: f(*xs)).with_repr(f'lift({repr(f)})({args_repr})')
     return decorator
 
 cdef class LiftIOBound(CEffect):
@@ -979,6 +1000,10 @@ cdef class LiftIOBound(CEffect):
     def __cinit__(self, f, effects):
         self.f = f
         self.effects = effects
+    
+    def __repr__(self):
+        args_repr = ', '.join(repr(e) for e in self.effects)
+        return f'lift_io_bound({self.f})({args_repr})'
 
     async def resume(self, RuntimeEnv env):
         async def call_f(xs):
@@ -1017,6 +1042,10 @@ cdef class LiftCPUBound(CEffect):
     def __cinit__(self, f, effects):
         self.f = f
         self.effects = effects
+    
+    def __repr__(self):
+        args_repr = ', '.join(repr(e) for e in self.effects)
+        return f'lift_cpu_bound({self.f})({args_repr})'
 
     async def resume(self, RuntimeEnv env):
         async def call_f(xs):
@@ -1062,7 +1091,8 @@ def combine(*effects):
         `Effect` that applies the function to the results of `effects`
     """
     def f(g):
-        return lift(g)(*effects)
+        args_repr = ', '.join(repr(e) for e in effects)
+        return lift(g)(*effects).with_repr(f'combine({args_repr})({repr(f)})')
     return f
 
 
@@ -1081,7 +1111,8 @@ def combine_cpu_bound(*effects):
         `Effect` that applies the function to the results of `effects`
     """
     def f(g):
-        return lift_cpu_bound(g)(*effects)
+        args_repr = ', '.join(repr(e) for e in effects)
+        return lift_cpu_bound(g)(*effects).with_repr(f'combine_cpu_bound({args_repr})({repr(f)})')
     return f
 
 
@@ -1100,7 +1131,8 @@ def combine_io_bound(*effects):
         `Effect` that applies the function to the results of `effects`
     """
     def f(g):
-        return lift_io_bound(g)(*effects)
+        args_repr = ', '.join(repr(e) for e in effects)
+        return lift_io_bound(g)(*effects).with_repr(f'combine_io_bound({args_repr})({repr(f)})')
     return f
 
 
@@ -1121,7 +1153,11 @@ def filter_(f, iterable):
     """
     iterable = tuple(iterable)
     bools = sequence(f(a) for a in iterable)
-    return bools.map(lambda bs: tuple(a for b, a in zip(bs, iterable) if b))
+    return bools.map(
+        lambda bs: tuple(a for b, a in zip(bs, iterable) if b)
+    ).with_repr(
+        f'filter_({repr(f)})({repr(iterable)})'
+    )
 
 
 @curry
@@ -1140,7 +1176,8 @@ def for_each(f, iterable):
     Return:
         Effect[R, E, Iterable[B]]: `f` mapped over `iterable` and combined from left to right.
     """
-    return sequence(f(x) for x in iterable)
+    iterable = tuple(iterable)
+    return sequence(f(x) for x in iterable).with_repr(f'for_each({repr(f)})({repr(iterable)})')
 
 
 def absolve(effect):
@@ -1160,17 +1197,67 @@ def absolve(effect):
         Effect[R, E, A]: an `Effect` failing with `E` or succeeding with `A`
     """
     def f(either):
-        if isinstance(either, Right):
+        if either:
             return CSuccess(either.get)
         return Error(either.get)
     return effect.and_then(f)
 
 
+def _get_sig_repr(args, kwargs):
+    args_repr = ', '.join([repr(arg) for arg in args])
+    kwargs_repr = ', '.join(
+        [f'{name}={repr(value)}' for name, value in kwargs.items()]
+    )
+    return args_repr + ((', ' + kwargs_repr) if kwargs_repr else '')
+
+
 def add_repr(f):
-    return f
+    """
+    Decorator for functions that return effects that adds repr strings
+    based on the function name and args.
+    :example:
+    >>> @add_repr
+    >>> def do_something(value):
+    ...     return success(value)
+    >>> do_something(1)
+    do_something(1)
+    :param f: function to be decorated
+    :return: decorated function
+    """
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        effect = f(*args, **kwargs)
+        sig_repr = _get_sig_repr(args, kwargs)
+        repr_ = f'{f.__name__}({sig_repr})'
+        return effect.with_repr(repr_)
+
+    return decorator
+
 
 def add_method_repr(f):
-    return f
+    """
+    Decorator for methods that return effects that add repr strings based
+    on the class, method and args.
+    :example:
+    >>> from pfun import Immutable
+    >>> class Foo(Immutable):
+    ...     @add_method_repr
+    ...     def do_something(value):
+    ...         return success(value)
+    >>> Foo().do_something(1)
+    Foo().do_something(1)
+    :param f: the method to be decorated
+    :return: decorated method
+    """
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        effect = f(*args, **kwargs)
+        self, *args = args
+        sig_repr = _get_sig_repr(args, kwargs)
+        repr_ = f'{repr(self)}.{f.__name__}({sig_repr})'
+        return effect.with_repr(repr_)
+
+    return decorator  # type: ignore
 
 
 R = TypeVar('R', contravariant=True)
