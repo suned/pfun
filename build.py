@@ -1,10 +1,14 @@
-from Cython.Build import cythonize
+from setuptools.extension import Extension
 
 
 def build(setup_kwargs):
+    try:
+        from Cython.Build import cythonize
+        extensions = cythonize(['pfun/effect.pyx'])
+    except ImportError:
+        extensions = [Extension("pfun.effect", ['pfun/effect.c'])]
     setup_kwargs.update(
         {
-            "package_data": {"pfun": ["py.typed"]},
-            "ext_modules": cythonize(["pfun/effect.pyx"])
+            "ext_modules": extensions
         }
     )
