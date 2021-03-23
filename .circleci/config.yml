@@ -7,7 +7,7 @@ commands:
   install_dependencies:
     description: Install dependencies
     steps:
-      - run: poetry run task compile && poetry install -E http -E sql
+      - run: poetry install -E http -E sql --no-root && poetry run task compile && poetry install
 jobs:
   lint:
     working_directory: ~/pfun
