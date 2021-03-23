@@ -57,6 +57,19 @@ def run_dill_encoded(payload):
     return dill.dumps(fun(*args, **kwargs))
 
 
+cdef class AsyncWrapper:
+    cdef object f
+
+    def __cinit__(self, f):
+        self.f = f
+    
+    def __repr__(self):
+        return repr(self.f)
+    
+    async def __call__(self, *args, **kwargs):
+        return self.f(*args, **kwargs)
+
+
 cdef class CEffect:
     """
     Represents a side-effect
@@ -125,9 +138,7 @@ cdef class CEffect:
         if asyncio.iscoroutinefunction(f):
             return self.c_and_then(f)
         else:
-            @wraps(f)
-            async def g(x):
-                return f(x)
+            g = AsyncWrapper(f)
             return self.c_and_then(g)
 
     cdef CEffect c_and_then(self, object f):
@@ -146,13 +157,7 @@ cdef class CEffect:
             Effect[R, E, B]: new `Effect` with `f` applied to the \
             value produced by this `Effect`.
         """
-        async def g(x):
-            result = f(x)
-            if asyncio.iscoroutine(result):
-                result = await result
-            return CSuccess.__new__(CSuccess, result)
-
-        return self.c_and_then(g)
+        return Map(self, f)
     
     def run(self, env, max_processes=None, max_threads=None):
         """
@@ -204,7 +209,7 @@ cdef class CEffect:
         """
         async def g(x):
             return effect
-        return self.c_and_then(g)
+        return self.c_and_then(g).with_repr(f'{repr(self)}.discard_and_then({repr(effect)})')
     
     def either(self):
         """
@@ -300,7 +305,7 @@ cdef class CEffect:
         ).recover(
             lambda reason: effect.
             discard_and_then(error(reason))
-        )
+        ).with_repr(f'{repr(self)}.ensure({repr(effect)})')
 
 
 cdef class WithRepr(CEffect):
@@ -364,7 +369,7 @@ cdef class Recover(CEffect):
         return Call(thunk)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef CEffect effect = self.resume(env)
+        cdef CEffect effect = await self.resume(env)
         return effect.c_and_then(f)
 
 
@@ -559,6 +564,30 @@ cdef class AndThen(CEffect):
         return AndThen.__new__(AndThen, self.effect, g)
 
 
+cdef class Map(CEffect):
+    cdef CEffect effect
+    cdef object continuation
+
+    def __cinit__(self, effect, continuation):
+        self.effect = effect
+        self.continuation = continuation
+    
+    def __repr__(self):
+        return f'{repr(self.effect)}.map({repr(self.continuation)})'
+    
+    async def resume(self, RuntimeEnv env):
+        async def g(x):
+            result = self.continuation(x)
+            if asyncio.iscoroutine(result):
+                result = await result
+            return CSuccess.__new__(CSuccess, result)
+        return await self.effect.apply_continuation(g, env)
+    
+    async def apply_continuation(self, f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return await effect.apply_continuation(f, env)
+
+
 cdef class Call(CEffect):
     cdef object thunk
 
@@ -623,11 +652,12 @@ cpdef CEffect sequence(effects):
     Return:
         Effect[R, E, Iterable[A]]: `Effect` that produces collected results
     """
+    cdef tuple effects_ = tuple(effects)
     cdef CEffect result = CSuccess([])
     cdef CEffect effect
-    for effect in effects:
+    for effect in effects_:
         result = c_combine(result, effect)
-    return result.map(tuple)
+    return result.map(tuple).with_repr(f'sequence({repr(effects_)})')
 
 
 cdef class FromAwaitable(CEffect):
@@ -1092,7 +1122,7 @@ def combine(*effects):
     """
     def f(g):
         args_repr = ', '.join(repr(e) for e in effects)
-        return lift(g)(*effects).with_repr(f'combine({args_repr})({repr(f)})')
+        return lift(g)(*effects).with_repr(f'combine({args_repr})({repr(g)})')
     return f
 
 
@@ -1112,7 +1142,7 @@ def combine_cpu_bound(*effects):
     """
     def f(g):
         args_repr = ', '.join(repr(e) for e in effects)
-        return lift_cpu_bound(g)(*effects).with_repr(f'combine_cpu_bound({args_repr})({repr(f)})')
+        return lift_cpu_bound(g)(*effects).with_repr(f'combine_cpu_bound({args_repr})({repr(g)})')
     return f
 
 
@@ -1132,7 +1162,7 @@ def combine_io_bound(*effects):
     """
     def f(g):
         args_repr = ', '.join(repr(e) for e in effects)
-        return lift_io_bound(g)(*effects).with_repr(f'combine_io_bound({args_repr})({repr(f)})')
+        return lift_io_bound(g)(*effects).with_repr(f'combine_io_bound({args_repr})({repr(g)})')
     return f
 
 
@@ -1200,7 +1230,7 @@ def absolve(effect):
         if either:
             return CSuccess(either.get)
         return Error(either.get)
-    return effect.and_then(f)
+    return effect.and_then(f).with_repr(f'absolve({repr(effect)})')
 
 
 def _get_sig_repr(args, kwargs):

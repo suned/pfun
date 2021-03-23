@@ -35,10 +35,16 @@ asynctest = "^0.13.0"
 mkdocs = "^1.1.2"
 mkdocstrings = "^0.15.0"
 mkdocs-material = "^5.4.0"
+taskipy = "^1.6.0"
 
 [tool.poetry.extras]
 http = ["aiohttp"]
 sql = ["asyncpg"]
+
+[tool.taskipy.tasks]
+compile = "poetry run cython pfun/*.pyx"
+build = "poetry run task compile && poetry build"
+test = "poetry run task compile && poetry install && poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini"
 
 [build-system]
 requires = ["poetry>=1.1.5", "setuptools>=41.2.0"]
