@@ -386,7 +386,7 @@ cdef class Either(CEffect):
         return Call(thunk)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef CEffect effect = self.resume(env)
+        cdef CEffect effect = await self.resume(env)
         return effect.c_and_then(f)
 
 
