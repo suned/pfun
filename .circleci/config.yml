@@ -24,6 +24,18 @@ jobs:
       - run:
           name: Lint
           command: poetry run pre-commit run --all
+  build_docs:
+    working_directory: ~/pfun
+    docker:
+      - image: readthedocs/build:latest
+    steps:
+      - checkout
+      - run:
+          name: Install doc requiremnts
+          command: pip install -r docs/requirements.txt
+      - run:
+          name: Build docs
+          command: mkdocs build
   test_py37:
     working_directory: ~/pfun
     docker:
@@ -87,6 +99,7 @@ workflows:
   build_and_deploy:
     jobs:
       - lint
+      - build_docs
       - test_py37:
           filters:
             tags:
@@ -98,6 +111,7 @@ workflows:
       - release:
           requires:
             - lint
+            - build_docs
             - test_py37
             - test_py38
           filters:
