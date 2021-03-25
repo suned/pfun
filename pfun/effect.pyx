@@ -184,7 +184,8 @@ cdef class CEffect:
         raise NotImplementedError()
 
     async def apply_continuation(self, object f, RuntimeEnv env):
-        raise NotImplementedError()
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
     
     def discard_and_then(self, CEffect effect):
         """
@@ -640,6 +641,36 @@ def depend(r_type=None):
     return CDepends()
 
 
+cdef class Sequence(CEffect):
+    cdef tuple effects
+
+    def __cinit__(self, effects):
+        self.effects = effects
+    
+    def __repr__(self):
+        return f'sequence({repr(self.effects)})'
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            cdef list result = [None]*len(self.effects)
+            cdef CEffect e
+            cdef CEffect e2
+            cdef int i = 0
+            for e in self.effects:
+                e2 = await e.do(env)
+                if isinstance(e2, CSuccess):
+                    result[i] = e2.result
+                else:
+                    return e2
+                i += 1
+            return CSuccess(tuple(result))
+        return Call(thunk)
+    
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
 cpdef CEffect sequence(effects):
     """
     Evaluate each `Effect` in `iterable`
@@ -652,12 +683,7 @@ cpdef CEffect sequence(effects):
     Return:
         Effect[R, E, Iterable[A]]: `Effect` that produces collected results
     """
-    cdef tuple effects_ = tuple(effects)
-    cdef CEffect result = CSuccess([])
-    cdef CEffect effect
-    for effect in effects_:
-        result = c_combine(result, effect)
-    return result.map(tuple).with_repr(f'sequence({repr(effects_)})')
+    return Sequence(tuple(effects))
 
 
 cdef class FromAwaitable(CEffect):
@@ -847,7 +873,7 @@ cdef class Catch(CEffect):
             raise e
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        cdef CEffect effect = self.resume(env)
+        cdef CEffect effect = await self.resume(env)
         return effect.c_and_then(f)
 
 
@@ -974,7 +1000,11 @@ cdef class SequenceAsync(CEffect):
     async def sequence(self, object r):
         async def thunk():
             cdef CEffect effect
-            aws = [effect.do(r) for effect in self.effects]
+            cdef list aws = [None]*len(self.effects)
+            cdef int i = 0
+            for effect in self.effects:
+                aws[i] = effect.do(r)
+                i += 1
             effects = await asyncio.gather(*aws)
             return sequence(effects)
         return Call.__new__(Call, thunk)

@@ -1,7 +1,9 @@
+from string import printable
+
 from hypothesis.strategies import (booleans, builds, composite, dictionaries,
                                    floats, integers, just)
 from hypothesis.strategies import lists as lists_
-from hypothesis.strategies import none, one_of, text, tuples
+from hypothesis.strategies import none, one_of, recursive, text, tuples
 
 from pfun import Dict, List, aio_trampoline, effect, maybe, trampoline
 from pfun.either import Left, Right
@@ -15,11 +17,10 @@ def anything(allow_nan=False):
     return one_of(*_everything(allow_nan))
 
 
-def unaries(return_strategy=anything()):
-    def _(a):
-        return lambda _: a
-
-    return builds(_, return_strategy)
+@composite
+def unaries(draw, return_strategy=anything()):
+    a = draw(return_strategy)
+    return lambda _: a
 
 
 def maybes(value_strategy=anything()):
@@ -73,6 +74,7 @@ def aio_trampolines(value_strategy=anything()):
 
         async def f():
             return t
+
         return aio_trampoline.Call(f)
 
     @composite
@@ -116,5 +118,97 @@ def monoids():
     )
 
 
-def effects(value_strategy=anything()):
-    return builds(effect.success, value_strategy)
+def effects(value_strategy=anything(), include_errors=False):
+    def extend(children):
+        maps = children.flatmap(lambda e: unaries().map(lambda f: e.map(f)))
+        and_then = children.flatmap(
+            lambda e: unaries(children).map(lambda f: e.and_then(f))
+        )
+        discard_and_then = children.flatmap(
+            lambda e: children.map(lambda e2: e.discard_and_then(e2))
+        )
+        either = children.map(lambda e: e.either())
+        recover = children.flatmap(
+            lambda e: children.map(lambda e2: e.recover(e2))
+        )
+        memoize = children.map(lambda e: e.memoize())
+        ensure = children.flatmap(
+            lambda e: children.map(lambda e2: e.ensure(e2))
+        )
+        with_repr = children.flatmap(
+            lambda e: text(printable).map(lambda s: e.with_repr(s))
+        )
+        sequence = lists_(children).map(effect.sequence)
+        sequence_async = lists_(children).map(effect.sequence_async)
+        lift = unaries(value_strategy).flatmap(
+            lambda f: children.map(lambda e: effect.lift(f)(e))
+        )
+        lift_io_bound = unaries(value_strategy).flatmap(
+            lambda f: children.map(lambda e: effect.lift_io_bound(f)(e))
+        )
+        lift_cpu_bound = unaries(value_strategy).flatmap(
+            lambda f: children.map(lambda e: effect.lift_cpu_bound(f)(e))
+        )
+        combine = unaries(value_strategy).flatmap(
+            lambda f: children.map(lambda e: effect.combine(e)(f))
+        )
+        combine_io_bound = unaries(value_strategy).flatmap(
+            lambda f: children.map(lambda e: effect.combine_io_bound(e)(f))
+        )
+        combine_cpu_bound = unaries(value_strategy).flatmap(
+            lambda f: children.map(lambda e: effect.combine_cpu_bound(e)(f))
+        )
+
+        return one_of(
+            maps,
+            and_then,
+            discard_and_then,
+            either,
+            recover,
+            memoize,
+            ensure,
+            with_repr,
+            sequence,
+            sequence_async,
+            lift,
+            lift_io_bound,
+            lift_cpu_bound,
+            combine,
+            combine_io_bound,
+            combine_cpu_bound
+        )
+
+    success = builds(effect.success, value_strategy)
+    depends = builds(effect.depend)
+    errors = builds(effect.error, value_strategy)
+    from_callable = unaries(rights(value_strategy)).map(effect.from_callable)
+    from_io_bound_callable = unaries(rights(value_strategy)
+                                     ).map(effect.from_io_bound_callable)
+    from_cpu_bound_callable = unaries(rights(value_strategy)
+                                      ).map(effect.from_cpu_bound_callable)
+    catch = unaries(value_strategy).flatmap(
+        lambda f: value_strategy.map(lambda a: effect.catch(Exception)(f)(a))
+    )
+    catch_io_bound = unaries(value_strategy).flatmap(
+        lambda f: value_strategy.
+        map(lambda a: effect.catch_io_bound(Exception)(f)(a))
+    )
+    catch_cpu_bound = unaries(value_strategy).flatmap(
+        lambda f: value_strategy.
+        map(lambda a: effect.catch_cpu_bound(Exception)(f)(a))
+    )
+
+    base = (
+        success |
+        from_callable |
+        from_io_bound_callable |
+        from_cpu_bound_callable |
+        depends |
+        catch |
+        catch_io_bound |
+        catch_cpu_bound
+    )
+    if include_errors:
+        base = base | errors
+
+    return recursive(base, extend, max_leaves=10)
