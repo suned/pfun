@@ -945,7 +945,7 @@ testing = ["filelock"]
 
 [[package]]
 name = "pytkdocs"
-version = "0.11.0"
+version = "0.11.1"
 description = "Load Python objects documentation."
 category = "dev"
 optional = false
@@ -961,7 +961,7 @@ numpy-style = ["docstring_parser (>=0.7.3,<0.8.0)"]
 
 [package.source]
 type = "file"
-url = "pytkdocs-0.11.0-py3-none-any.whl"
+url = "pytkdocs-0.11.1-py3-none-any.whl"
 
 [[package]]
 name = "pyyaml"
@@ -1188,7 +1188,7 @@ sql = ["asyncpg"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "608034cbe2cc4d6f37708fe1469f8e31b766110c5e56d810c168aea5162ccfa4"
+content-hash = "45e0fc2783266a1c9ea5f9b25567b5deed2137a8078b084b973613f024a54481"
 
 [metadata.files]
 aiodns = [
@@ -1840,7 +1840,7 @@ pytest-xdist = [
     {file = "pytest_xdist-1.32.0-py2.py3-none-any.whl", hash = "sha256:ba5ec9fde3410bd9a116ff7e4f26c92e02fa3d27975ef3ad03f330b3d4b54e91"},
 ]
 pytkdocs = [
-    {file = "pytkdocs-0.11.0-py3-none-any.whl", hash = "sha256:3e8551e4bbbbd5acb16ff19c2fbe06e096c905abc38a9084aa3b532c65749509"},
+    {file = "pytkdocs-0.11.1-py3-none-any.whl", hash = "sha256:5d6c06ed48e1b344285534d738507bf2a1297636c60ec6465e23b5214e8cfbc5"},
 ]
 pyyaml = [
     {file = "PyYAML-5.4.1-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:3b2b1824fe7112845700f815ff6a489360226a5609b96ec2190a45e62a9fc922"},

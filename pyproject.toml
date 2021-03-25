@@ -36,7 +36,7 @@ mkdocs = "^1.1.2"
 mkdocstrings = "^0.15.0"
 mkdocs-material = "^5.4.0"
 taskipy = "^1.6.0"
-pytkdocs = { file = "pytkdocs-0.11.0-py3-none-any.whl" }
+pytkdocs = { file = "./pytkdocs-0.11.1-py3-none-any.whl" }
 
 [tool.poetry.extras]
 http = ["aiohttp"]
