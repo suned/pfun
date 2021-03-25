@@ -138,8 +138,9 @@ def effects(value_strategy=anything(), include_errors=False):
         with_repr = children.flatmap(
             lambda e: text(printable).map(lambda s: e.with_repr(s))
         )
-        sequence = lists_(children).map(effect.sequence)
-        sequence_async = lists_(children).map(effect.sequence_async)
+        sequence = lists_(children, max_size=10).map(effect.sequence)
+        sequence_async = lists_(children,
+                                max_size=10).map(effect.sequence_async)
         lift = unaries(value_strategy).flatmap(
             lambda f: children.map(lambda e: effect.lift(f)(e))
         )
@@ -198,16 +199,15 @@ def effects(value_strategy=anything(), include_errors=False):
         map(lambda a: effect.catch_cpu_bound(Exception)(f)(a))
     )
 
-    base = (
-        success |
-        from_callable |
-        from_io_bound_callable |
-        from_cpu_bound_callable |
-        depends |
-        catch |
-        catch_io_bound |
-        catch_cpu_bound
-    )
+    base = ( success
+           | from_callable
+           | from_io_bound_callable
+           | from_cpu_bound_callable
+           | depends
+           | catch
+           | catch_io_bound
+           | catch_cpu_bound )
+
     if include_errors:
         base = base | errors
 
