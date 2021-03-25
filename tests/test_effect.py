@@ -16,6 +16,7 @@ from .utils import recursion_limit
 
 
 class TestEffect(MonadTest):
+    @settings(deadline=None)
     @given(effects(), unaries(effects()), unaries(effects()), anything())
     def test_associativity_law(self, e, f, g, env):
         assert (
@@ -38,6 +39,7 @@ class TestEffect(MonadTest):
             effect.success(value).run(env)
         )
 
+    @settings(deadline=None)
     @given(unaries(effects()), anything(), anything())
     def test_left_identity_law(self, f, value, env):
         assert (
