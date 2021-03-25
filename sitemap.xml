@@ -1,90 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>
-     <loc>https://suned.github.io/pfun/what_is_this/</loc>
+     <loc>https://pfun.dev/what_is_this/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/install/</loc>
+     <loc>https://pfun.dev/install/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/effectful_but_side_effect_free/</loc>
+     <loc>https://pfun.dev/effectful_but_side_effect_free/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/useful_functions/</loc>
+     <loc>https://pfun.dev/useful_functions/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/immutable_objects_and_data/</loc>
+     <loc>https://pfun.dev/immutable_objects_and_data/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/stack_safety/</loc>
+     <loc>https://pfun.dev/stack_safety/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/other_resources/</loc>
+     <loc>https://pfun.dev/other_resources/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/functions_api/</loc>
+     <loc>https://pfun.dev/functions_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/effect_api/</loc>
+     <loc>https://pfun.dev/effect_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/ref_api/</loc>
+     <loc>https://pfun.dev/ref_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/console_api/</loc>
+     <loc>https://pfun.dev/console_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/files_api/</loc>
+     <loc>https://pfun.dev/files_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/logging_api/</loc>
+     <loc>https://pfun.dev/logging_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/subprocess_api/</loc>
+     <loc>https://pfun.dev/subprocess_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/http_api/</loc>
+     <loc>https://pfun.dev/http_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/sql_api/</loc>
+     <loc>https://pfun.dev/sql_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/list_api/</loc>
+     <loc>https://pfun.dev/list_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/dict_api/</loc>
+     <loc>https://pfun.dev/dict_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/maybe_api/</loc>
+     <loc>https://pfun.dev/maybe_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/either_api/</loc>
+     <loc>https://pfun.dev/either_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/immutable_api/</loc>
+     <loc>https://pfun.dev/immutable_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://suned.github.io/pfun/trampoline_api/</loc>
+     <loc>https://pfun.dev/trampoline_api/</loc>
      <lastmod>2021-03-25</lastmod>
      <changefreq>daily</changefreq>
     </url>
