@@ -26,16 +26,19 @@ jobs:
           command: poetry run pre-commit run --all
   build_docs:
     working_directory: ~/pfun
-    docker:
-      - image: readthedocs/build:latest
+    docker: 
+      - image: circleci/python:3.7.5
     steps:
       - checkout
-      - run:
-          name: Install doc requiremnts
-          command: pip3 install -r docs/requirements.txt
+      - restore_cache:
+          keys:
+            - py37-v2-dependency-cache-{{ checksum "poetry.lock" }}
+            - py37-v2-dependency-cache-
+      - install_poetry
+      - install_dependencies
       - run:
           name: Build docs
-          command: mkdocs build
+          command: poetry run task compile && poetry install && poetry run mkdocs build
   test_py37:
     working_directory: ~/pfun
     docker:
@@ -89,17 +92,26 @@ jobs:
           command: poetry run python scripts/check_version.py pyproject.toml $CIRCLE_TAG
       - run:
           name: Build
-          command: poetry build
+          command: poetry run task build
       - run:
-          name: Release
+          name: Release to PyPi
           command: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
+      - run:
+          name: Release docs
+          command: poetry run mkdocs gh-deploy
 
 workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - lint
-      - build_docs
+      - lint:
+          filters:
+            tags:
+              only: /.*/
+      - build_docs:
+          filters:
+            tags:
+              only: /.*/
       - test_py37:
           filters:
             tags:
