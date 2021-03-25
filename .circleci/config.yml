@@ -32,7 +32,7 @@ jobs:
       - checkout
       - run:
           name: Install doc requiremnts
-          command: pip install -r docs/requirements.txt
+          command: pip3 install -r docs/requirements.txt
       - run:
           name: Build docs
           command: mkdocs build
