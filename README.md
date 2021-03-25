@@ -1,6 +1,6 @@
 ## <img src="https://raw.githubusercontent.com/suned/pfun/master/logo/pfun_logo.svg?sanitize=true" style=" width:50px ; height:50px "/> <br> <p align="center">Functional, composable, asynchronous, type-safe Python.</p>
 
-- [Documentation](https://pfun.readthedocs.io/en/stable/)
+- [Documentation](https://pfun.dev)
 - [Known issues](https://github.com/suned/pfun/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 ## Install
@@ -32,7 +32,7 @@ On [ko-fi](https://ko-fi.com/python_pfun)
 
 Requires [poetry](https://poetry.eustace.io/)
 
-- Install dependencies with `poetry install`
-- Build documentation with `poetry run mkdocs serve`
-- Run tests with `poetry run tox`
-- Lint with `poetry run pre-commit run --all`
+- Install dependencies with `poetry install -E http -E sql`
+- Build documentation with `poetry run task serve-docs`
+- Run tests with `poetry run task test`
+- Lint with `poetry run task lint`
