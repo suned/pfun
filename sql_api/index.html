@@ -1,0 +1,1754 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Purely functional, Statically Typed Python">
+      
+      
+        <link rel="canonical" href="https://pfun.readthedocs.io/sql_api/">
+      
+      
+      <link rel="shortcut icon" href="../nav_logo.svg">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.5.14">
+    
+    
+      
+        <title>pfun.sql - pfun</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.d3202873.min.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ff0a5ce4.min.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#2094f3">
+      
+    
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue" data-md-color-accent="">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pfun.sql.Results" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="https://pfun.readthedocs.io" title="pfun" class="md-header-nav__button md-logo" aria-label="pfun">
+      
+  <img src="../nav_logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            pfun
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              pfun.sql
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/suned/pfun" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    suned/pfun
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+        
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://pfun.readthedocs.io" title="pfun" class="md-nav__button md-logo" aria-label="pfun">
+      
+  <img src="../nav_logo.svg" alt="logo">
+
+    </a>
+    pfun
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/suned/pfun" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    suned/pfun
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1">
+    
+    <label class="md-nav__link" for="nav-1">
+      Guide
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Guide" data-md-level="1">
+      <label class="md-nav__title" for="nav-1">
+        <span class="md-nav__icon md-icon"></span>
+        Guide
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../what_is_this/" title="What Is This?" class="md-nav__link">
+      What Is This?
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../install/" title="Install" class="md-nav__link">
+      Install
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link">
+      Effectful (But Side-Effect Free) Programming
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../useful_functions/" title="Useful Functions" class="md-nav__link">
+      Useful Functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
+      Immutable Objects And Data Structures
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../stack_safety/" title="Stack-Safety And Recursion" class="md-nav__link">
+      Stack-Safety And Recursion
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../other_resources/" title="Other Resources" class="md-nav__link">
+      Other Resources
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      API Reference
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="API Reference" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        API Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../functions_api/" title="pfun.functions" class="md-nav__link">
+      pfun.functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../effect_api/" title="pfun.effect" class="md-nav__link">
+      pfun.effect
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ref_api/" title="pfun.ref" class="md-nav__link">
+      pfun.ref
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../console_api/" title="pfun.console" class="md-nav__link">
+      pfun.console
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../files_api/" title="pfun.files" class="md-nav__link">
+      pfun.files
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../logging_api/" title="pfun.logging" class="md-nav__link">
+      pfun.logging
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../subprocess_api/" title="pfun.subprocess" class="md-nav__link">
+      pfun.subprocess
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../http_api/" title="pfun.http" class="md-nav__link">
+      pfun.http
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        pfun.sql
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="pfun.sql" class="md-nav__link md-nav__link--active">
+      pfun.sql
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.Results" class="md-nav__link">
+    Results
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.SQL" class="md-nav__link">
+    SQL
+  </a>
+  
+    <nav class="md-nav" aria-label="SQL">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.execute" class="md-nav__link">
+    execute()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.execute_many" class="md-nav__link">
+    execute_many()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.fetch" class="md-nav__link">
+    fetch()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.fetch_one" class="md-nav__link">
+    fetch_one()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.get_connection" class="md-nav__link">
+    get_connection()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.MalformedConnectionStr" class="md-nav__link">
+    MalformedConnectionStr
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.HasSQL" class="md-nav__link">
+    HasSQL
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.as_type" class="md-nav__link">
+    as_type()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.execute" class="md-nav__link">
+    execute()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.execute_many" class="md-nav__link">
+    execute_many()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.fetch" class="md-nav__link">
+    fetch()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.fetch_one" class="md-nav__link">
+    fetch_one()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../list_api/" title="pfun.list" class="md-nav__link">
+      pfun.list
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../dict_api/" title="pfun.dict" class="md-nav__link">
+      pfun.dict
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../maybe_api/" title="pfun.maybe" class="md-nav__link">
+      pfun.maybe
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../either_api/" title="pfun.either" class="md-nav__link">
+      pfun.either
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../immutable_api/" title="pfun.immutable" class="md-nav__link">
+      pfun.immutable
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../trampoline_api/" title="pfun.trampoline" class="md-nav__link">
+      pfun.trampoline
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.Results" class="md-nav__link">
+    Results
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.SQL" class="md-nav__link">
+    SQL
+  </a>
+  
+    <nav class="md-nav" aria-label="SQL">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.execute" class="md-nav__link">
+    execute()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.execute_many" class="md-nav__link">
+    execute_many()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.fetch" class="md-nav__link">
+    fetch()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.fetch_one" class="md-nav__link">
+    fetch_one()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.sql.SQL.get_connection" class="md-nav__link">
+    get_connection()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.MalformedConnectionStr" class="md-nav__link">
+    MalformedConnectionStr
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.HasSQL" class="md-nav__link">
+    HasSQL
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.as_type" class="md-nav__link">
+    as_type()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.execute" class="md-nav__link">
+    execute()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.execute_many" class="md-nav__link">
+    execute_many()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.fetch" class="md-nav__link">
+    fetch()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.sql.fetch_one" class="md-nav__link">
+    fetch_one()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  
+                
+                
+                <div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This module requires optional dependencies. You can install them together with <code>pfun</code> using <code>pip install pfun[sql]</code></p>
+</div>
+
+
+  <div class="doc doc-object doc-attribute">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.Results">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">Results</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Type-alias for <code>pfun.list.List[pfun.dict.Dict[str, typing.Any]]</code></p>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.SQL">
+        <code>pfun.sql.SQL</code>
+
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Module providing postgres sql client capability</p>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.sql.SQL.__init__">
+<code class="codehilite language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_str</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Create an SQL module</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>connection_str</code></td>
+        <td><code>str</code></td>
+        <td><p>connection string of the format             <code>postgres://&lt;user&gt;:&lt;password&gt;@&lt;host&gt;/&lt;database&gt;</code></p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Exceptions:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>MalformedConnectionStr</code></td>
+        <td><p>if the connection string does not conform             to the postgres scheme</p></td>
+      </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.sql.SQL.execute">
+<code class="codehilite language-python"><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Get an <code>Effect</code> that executes <code>query</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="o">...</span>     <span class="s1">&#39;INSERT INTO users(name, age) VALUES($1, $2)&#39;</span><span class="p">,</span>
+<span class="o">...</span>     <span class="s1">&#39;bob&#39;</span><span class="p">,</span>
+<span class="o">...</span>     <span class="mi">32</span>
+<span class="o">...</span> <span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="s1">&#39;INSERT 1&#39;</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>query</code></td>
+        <td><code>str</code></td>
+        <td><p>query to execute</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>args</code></td>
+        <td><code>Any</code></td>
+        <td><p>arguments for query</p></td>
+        <td><code>()</code></td>
+      </tr>
+      <tr>
+        <td><code>timeout</code></td>
+        <td><code>float</code></td>
+        <td><p>query timeout</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Try[asyncpg.PostgresError, str]</code></td>
+      <td><p><code>Effect</code> that executes <code>query</code> and produces the database response</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.sql.SQL.execute_many">
+<code class="codehilite language-python"><span class="n">execute_many</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Get an <code>Effect</code> that executes <code>query</code> for each argument         in <code>args</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span><span class="o">.</span><span class="n">execute_many</span><span class="p">(</span>
+<span class="o">...</span>     <span class="s1">&#39;INSERT INTO users(name, age) VALUES($1, $2)&#39;</span><span class="p">,</span>
+<span class="o">...</span>     <span class="p">[(</span><span class="s1">&#39;bob&#39;</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;alice&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
+<span class="o">...</span> <span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="s1">&#39;INSERT 2&#39;</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>query</code></td>
+        <td><code>str</code></td>
+        <td><p>query to execute</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>args</code></td>
+        <td><code>Iterable[Any]</code></td>
+        <td><p>arguments for query</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>timeout</code></td>
+        <td><code>float</code></td>
+        <td><p>query timeout</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Try[asyncpg.PostgresError, Iterable[str]]</code></td>
+      <td><p><code>Effect</code> that executes <code>query</code> with all args in <code>args</code> and             produces a database response for each query</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.sql.SQL.fetch">
+<code class="codehilite language-python"><span class="n">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Get an <code>Effect</code> that executes <code>query</code> and returns the results
+as a <code>List</code> of <code>Dict</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s1">&#39;select * from users&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">List</span><span class="p">((</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;bob&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">}),))</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>query</code></td>
+        <td><code>str</code></td>
+        <td><p>query to execute</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>args</code></td>
+        <td><code>Any</code></td>
+        <td><p>arguments for query</p></td>
+        <td><code>()</code></td>
+      </tr>
+      <tr>
+        <td><code>timeout</code></td>
+        <td><code>float</code></td>
+        <td><p>query timeout</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Try[asyncpg.PostgresError, Results]</code></td>
+      <td><p><code>Effect</code> that retrieves rows returned by <code>query</code> as <code>Results</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.sql.SQL.fetch_one">
+<code class="codehilite language-python"><span class="n">fetch_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Get an <code>Effect</code> that executes <code>query</code> and returns the first         result as a <code>Dict or fails with</code>EmptyResultSetError` if the         result set is empty</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span><span class="o">.</span><span class="n">fetch_one</span><span class="p">(</span><span class="s1">&#39;select * from users&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;bob&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">})</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>query</code></td>
+        <td><code>str</code></td>
+        <td><p>query to execute</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>args</code></td>
+        <td><code>Any</code></td>
+        <td><p>arguments for query</p></td>
+        <td><code>()</code></td>
+      </tr>
+      <tr>
+        <td><code>timeout</code></td>
+        <td><code>float</code></td>
+        <td><p>query timeout</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Try[SQLError, Dict[str, Any]]</code></td>
+      <td><p><code>Effect</code> that retrieves the first row returned by <code>query</code> as             <code>pfun.dict.Dict[str, Any]</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.sql.SQL.get_connection">
+<code class="codehilite language-python"><span class="n">get_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Get an <code>Effect</code> that produces a
+<code>asyncpg.Connection</code>. Used to work with <code>asyncpg</code> directly.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sql</span><span class="o">.</span><span class="n">get_connection</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">asyncpg</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">Connection</span> <span class="n">at</span> <span class="o">...&gt;</span>
+</code></pre></div>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Try[asyncpg.PostgresError, asyncpg.Connection]</code></td>
+      <td><p><code>Effect</code> that produces <code>asyncpg.Connection</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.MalformedConnectionStr">
+        <code>pfun.sql.MalformedConnectionStr</code>
+
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Error returned when a malformed connection str is passed to <code>SQL</code></p>
+
+
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.HasSQL">
+        <code>pfun.sql.HasSQL</code>
+
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Module provider for the SQL module</p>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.as_type">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">as_type</span><span class="p">(</span><span class="n">type_</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Convert database results to <code>type_</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">results</span> <span class="o">=</span> <span class="n">pfun</span><span class="o">.</span><span class="n">effect</span><span class="o">.</span><span class="n">success</span><span class="p">(</span>
+<span class="o">...</span>     <span class="n">pfun</span><span class="o">.</span><span class="n">List</span><span class="p">([</span><span class="n">pfun</span><span class="o">.</span><span class="n">Dict</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bob&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">32</span><span class="p">))])</span>
+<span class="o">...</span> <span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">pfun</span><span class="o">.</span><span class="n">Immutable</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="o">...</span>     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">results</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">as_type</span><span class="p">(</span><span class="n">User</span><span class="p">))(</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">List</span><span class="p">((</span><span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bob&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">32</span><span class="p">),))</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>type_</code></td>
+        <td><code>Type[T]</code></td>
+        <td><p>type to convert database results to</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>results</code></td>
+        <td><code>Results</code></td>
+        <td><p>database results to convert</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>      <p>:return: <code>List</code> of database results converted to <code>type_</code></p>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.execute">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Get an <code>Effect</code> that executes <code>query</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">Env</span><span class="p">:</span>
+<span class="o">...</span>     <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">execute</span><span class="p">(</span>
+<span class="o">...</span>     <span class="s1">&#39;INSERT INTO users(name, age) VALUES($1, $2)&#39;</span><span class="p">,</span>
+<span class="o">...</span>     <span class="s1">&#39;bob&#39;</span><span class="p">,</span>
+<span class="o">...</span>     <span class="mi">32</span>
+<span class="o">...</span> <span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Env</span><span class="p">())</span>
+<span class="s1">&#39;INSERT 1&#39;</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>query</code></td>
+        <td><code>str</code></td>
+        <td><p>query to execute</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>args</code></td>
+        <td><code>Any</code></td>
+        <td><p>arguments for query</p></td>
+        <td><code>()</code></td>
+      </tr>
+      <tr>
+        <td><code>timeout</code></td>
+        <td><code>float</code></td>
+        <td><p>query timeout</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Effect[HasSQL, asyncpg.PostgresError, str]</code></td>
+      <td><p><code>Effect</code> that executes <code>query</code> and produces the database response</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.execute_many">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">execute_many</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Get an <code>Effect</code> that executes <code>query</code> for each argument     in <code>args</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">Env</span><span class="p">:</span>
+<span class="o">...</span>     <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">execute_many</span><span class="p">(</span>
+<span class="o">...</span>     <span class="s1">&#39;INSERT INTO users(name, age) VALUES($1, $2)&#39;</span><span class="p">,</span>
+<span class="o">...</span>     <span class="p">[(</span><span class="s1">&#39;bob&#39;</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;alice&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
+<span class="o">...</span> <span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Env</span><span class="p">())</span>
+<span class="s1">&#39;INSERT 2&#39;</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>query</code></td>
+        <td><code>str</code></td>
+        <td><p>query to execute</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>args</code></td>
+        <td><code>Iterable[Any]</code></td>
+        <td><p>arguments for query</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>timeout</code></td>
+        <td><code>float</code></td>
+        <td><p>query timeout</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Effect[HasSQL, asyncpg.PostgresError, Iterable[str]]</code></td>
+      <td><p><code>Effect</code> that executes <code>query</code> with all args in <code>args</code> and         produces a database response for each query</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.fetch">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Get an <code>Effect</code> that executes <code>query</code> and returns the results
+as a <code>List</code> of <code>Dict</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">Env</span><span class="p">:</span>
+<span class="o">...</span>     <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">fetch</span><span class="p">(</span><span class="s1">&#39;select * from users&#39;</span><span class="p">)(</span><span class="n">Env</span><span class="p">())</span>
+<span class="n">List</span><span class="p">((</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;bob&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">}),))</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>query</code></td>
+        <td><code>str</code></td>
+        <td><p>query to execute</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>args</code></td>
+        <td><code>Any</code></td>
+        <td><p>arguments for query</p></td>
+        <td><code>()</code></td>
+      </tr>
+      <tr>
+        <td><code>timeout</code></td>
+        <td><code>float</code></td>
+        <td><p>query timeout</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Effect[HasSQL, asyncpg.PostgresError, Results]</code></td>
+      <td><p><code>Effect</code> that retrieves rows returned by <code>query</code> as <code>Results</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.sql.fetch_one">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">fetch_one</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Get an <code>Effect</code> that executes <code>query</code> and returns the first     result as a <code>Dict</code> or fails with <code>EmptyResultSetError</code> if the     result set is empty</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">Env</span><span class="p">:</span>
+<span class="o">...</span>     <span class="n">sql</span> <span class="o">=</span> <span class="n">SQL</span><span class="p">(</span><span class="s1">&#39;postgres://user@host/database&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">fetch_one</span><span class="p">(</span><span class="s1">&#39;select * from users&#39;</span><span class="p">)(</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;bob&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">})</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>query</code></td>
+        <td><code>str</code></td>
+        <td><p>query to execute</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>args</code></td>
+        <td><code>Any</code></td>
+        <td><p>arguments for query</p></td>
+        <td><code>()</code></td>
+      </tr>
+      <tr>
+        <td><code>timeout</code></td>
+        <td><code>float</code></td>
+        <td><p>query timeout</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Effect[HasSQL, SQLError, Dict[str, Any]]</code></td>
+      <td><p><code>Effect</code> that retrieves the first row returned by <code>query</code> as         <code>pfun.dict.Dict[str, Any]</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href="../http_api/" title="pfun.http" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                pfun.http
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../list_api/" title="pfun.list" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                pfun.list
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/vendor.2d1db4bd.min.js"></script>
+      <script src="../assets/javascripts/bundle.6627ddf3.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      
+      <script>
+        app = initialize({
+          base: "..",
+          features: [],
+          search: Object.assign({
+            worker: "../assets/javascripts/worker/search.5eca75d3.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>

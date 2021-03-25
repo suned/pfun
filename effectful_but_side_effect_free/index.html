@@ -1,0 +1,1421 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Purely functional, Statically Typed Python">
+      
+      
+        <link rel="canonical" href="https://pfun.readthedocs.io/effectful_but_side_effect_free/">
+      
+      
+      <link rel="shortcut icon" href="../nav_logo.svg">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.5.14">
+    
+    
+      
+        <title>Effectful (But Side-Effect Free) Programming - pfun</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.d3202873.min.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ff0a5ce4.min.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#2094f3">
+      
+    
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue" data-md-color-accent="">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#maybe" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="https://pfun.readthedocs.io" title="pfun" class="md-header-nav__button md-logo" aria-label="pfun">
+      
+  <img src="../nav_logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            pfun
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              Effectful (But Side-Effect Free) Programming
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/suned/pfun" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    suned/pfun
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+        
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://pfun.readthedocs.io" title="pfun" class="md-nav__button md-logo" aria-label="pfun">
+      
+  <img src="../nav_logo.svg" alt="logo">
+
+    </a>
+    pfun
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/suned/pfun" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    suned/pfun
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1" checked>
+    
+    <label class="md-nav__link" for="nav-1">
+      Guide
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Guide" data-md-level="1">
+      <label class="md-nav__title" for="nav-1">
+        <span class="md-nav__icon md-icon"></span>
+        Guide
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../what_is_this/" title="What Is This?" class="md-nav__link">
+      What Is This?
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../install/" title="Install" class="md-nav__link">
+      Install
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Effectful (But Side-Effect Free) Programming
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link md-nav__link--active">
+      Effectful (But Side-Effect Free) Programming
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#maybe" class="md-nav__link">
+    Maybe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#either" class="md-nav__link">
+    Either
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#effect" class="md-nav__link">
+    Effect
+  </a>
+  
+    <nav class="md-nav" aria-label="Effect">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-success-type" class="md-nav__link">
+    The Success Type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-error-type" class="md-nav__link">
+    The Error Type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-dependency-type" class="md-nav__link">
+    The Dependency Type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-module-pattern" class="md-nav__link">
+    The Module Pattern
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    Error Handling
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concurrency" class="md-nav__link">
+    Concurrency
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#purely-functional-state" class="md-nav__link">
+    Purely Functional State
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-your-own-effects" class="md-nav__link">
+    Creating Your Own Effects
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-aliases" class="md-nav__link">
+    Type Aliases
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-effects" class="md-nav__link">
+    Combining effects
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../useful_functions/" title="Useful Functions" class="md-nav__link">
+      Useful Functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
+      Immutable Objects And Data Structures
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../stack_safety/" title="Stack-Safety And Recursion" class="md-nav__link">
+      Stack-Safety And Recursion
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../other_resources/" title="Other Resources" class="md-nav__link">
+      Other Resources
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      API Reference
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="API Reference" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        API Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../functions_api/" title="pfun.functions" class="md-nav__link">
+      pfun.functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../effect_api/" title="pfun.effect" class="md-nav__link">
+      pfun.effect
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ref_api/" title="pfun.ref" class="md-nav__link">
+      pfun.ref
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../console_api/" title="pfun.console" class="md-nav__link">
+      pfun.console
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../files_api/" title="pfun.files" class="md-nav__link">
+      pfun.files
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../logging_api/" title="pfun.logging" class="md-nav__link">
+      pfun.logging
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../subprocess_api/" title="pfun.subprocess" class="md-nav__link">
+      pfun.subprocess
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../http_api/" title="pfun.http" class="md-nav__link">
+      pfun.http
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../sql_api/" title="pfun.sql" class="md-nav__link">
+      pfun.sql
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../list_api/" title="pfun.list" class="md-nav__link">
+      pfun.list
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../dict_api/" title="pfun.dict" class="md-nav__link">
+      pfun.dict
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../maybe_api/" title="pfun.maybe" class="md-nav__link">
+      pfun.maybe
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../either_api/" title="pfun.either" class="md-nav__link">
+      pfun.either
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../immutable_api/" title="pfun.immutable" class="md-nav__link">
+      pfun.immutable
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../trampoline_api/" title="pfun.trampoline" class="md-nav__link">
+      pfun.trampoline
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#maybe" class="md-nav__link">
+    Maybe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#either" class="md-nav__link">
+    Either
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#effect" class="md-nav__link">
+    Effect
+  </a>
+  
+    <nav class="md-nav" aria-label="Effect">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-success-type" class="md-nav__link">
+    The Success Type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-error-type" class="md-nav__link">
+    The Error Type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-dependency-type" class="md-nav__link">
+    The Dependency Type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-module-pattern" class="md-nav__link">
+    The Module Pattern
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    Error Handling
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concurrency" class="md-nav__link">
+    Concurrency
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#purely-functional-state" class="md-nav__link">
+    Purely Functional State
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-your-own-effects" class="md-nav__link">
+    Creating Your Own Effects
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-aliases" class="md-nav__link">
+    Type Aliases
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-effects" class="md-nav__link">
+    Combining effects
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  
+                
+                
+                  <h1>Effectful (But Side-Effect Free) Programming</h1>
+                
+                <p>In functional programming, programs are built by composing functions that have no <a href="https://en.wikipedia.org/wiki/Side_effect_(computer_science)">side-effects</a>. This means that problems that we normally solve using side-effects in imperative programming, such as performing io or raising exceptions, are solved differently. In this section we study the three modules <code>pfun</code> provides for working with side-effects in purely functional style.</p>
+<ul>
+<li><code>pfun.maybe</code> helps you deal with missing values without exceptions.</li>
+<li><code>pfun.either</code> helps you deal with errors without exceptions.</li>
+<li><code>pfun.effect</code> helps you work with side-effects in functional style.</li>
+</ul>
+<p>If you have some experience with functionl programming, you can probably skip ahead to the section on <code>pfun.effect.Effect</code>.</p>
+<h2 id="maybe">Maybe</h2>
+<p>The job of the <code>pfun.maybe.Maybe</code> type is to help you work with missing values, in much the same way that the built-in <code>None</code> type is used. One of the main disadvantages of the <code>None</code> type is that you end up with logic for dealing with missing values all over the place, using code like <code>if foo is not None</code>.</p>
+<p><code>pfun.maybe.Maybe</code> makes things a bit easier by generalising the <code>if foo is not None</code> part as a function called <code>map</code>. Imagine that you have function that looks up values in a <code>dict</code> and returns <code>None</code> if the key isn't found:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+
+<span class="k">def</span> <span class="nf">lookup</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+
+<p>When using <code>pfun.maybe</code> to do the same thing, you will wrap the result of the lookup in a <code>pfun.maybe.Just</code> instance, and return a <code>pfun.maybe.Nothing</code> instance if the key wasn't found. In other words, it would look like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+
+<span class="kn">from</span> <span class="nn">pfun.maybe</span> <span class="kn">import</span> <span class="n">Maybe</span><span class="p">,</span> <span class="n">Just</span><span class="p">,</span> <span class="n">Nothing</span>
+
+
+<span class="k">def</span> <span class="nf">lookup</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Maybe</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Just</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Nothing</span><span class="p">()</span>
+</code></pre></div>
+
+<p>Now when using the <code>lookup</code> function, instead of checking if the return value is <code>None</code> everytime you call it, you can apply a function to the wrapped value if its not <code>Nothing</code> using <code>map</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">lookup</span><span class="p">({</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;value&#39;</span><span class="p">},</span> <span class="s1">&#39;key&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;found </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>But what happens if you <code>map</code> a function that returns a new <code>Just</code> or <code>Nothing</code>? e.g:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">maybe_is_42</span><span class="p">(</span><span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Maybe</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="s1">&#39;42&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Just</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Nothing</span><span class="p">()</span>
+
+<span class="n">lookup</span><span class="p">({</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;42&#39;</span><span class="p">},</span> <span class="s1">&#39;key&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">maybe_is_42</span><span class="p">)</span>
+</code></pre></div>
+
+<p>You end up with <code>Just(Just(42))</code>! Thats probably not what you wanted.</p>
+<p>When you want to apply a function that returns <code>Just</code> or <code>Nothing</code>, you should probably use <code>and_then</code>, which knows how to "unwrap" the result:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">lookup</span><span class="p">({</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;42&#39;</span><span class="p">},</span> <span class="s1">&#39;key&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">maybe_is_42</span><span class="p">)</span>  <span class="c1"># Just(&#39;42&#39;)</span>
+</code></pre></div>
+
+<p>(For those with previous functional programming experience, <code>and_then</code> is the <a href="https://en.wikipedia.org/wiki/Monad_(functional_programming)#Overview">bind</a> operation of <code>Maybe</code>)</p>
+<p><code>pfun.maybe.Maybe</code> is in fact just a <a href="https://docs.python.org/3/library/typing.html#type-aliases">type-alias</a> for <code>Union[Just[TypeVar('A'), Nothing]]</code>. This means that your type checker can figure out when you're dealing with one or the other using either <code>__bool__</code> or <code>isinstance</code>, just like when using <code>Optional</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">value</span> <span class="o">=</span> <span class="n">lookup</span><span class="p">(</span><span class="n">some_dict</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+    <span class="o">...</span>  <span class="c1"># type checker knows that value is a Just</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="o">...</span>  <span class="c1"># type checker knows that value is a Nothing</span>
+</code></pre></div>
+
+<h2 id="either">Either</h2>
+<p>One downside of the <code>pfun.maybe.Maybe</code> type is that it's not great for dealing with errors because <code>pfun.maybe.Nothing</code> can't provide any information about what went wrong. <code>pfun.either.Either</code> is a type that's used very similarly to <code>Maybe</code>, but unlike <code>Maybe</code> it can wrap an error value, as well as a success value.</p>
+<p>Just like when working with <code>Maybe</code> there are two types involved: <code>pfun.either.Right</code> and <code>pfun.either.Left</code>. The <code>Right</code> type is used to wrap successful results by convention. <code>Left</code> is used to wrap errors. Using the <code>lookup</code> function from before as an example, it would like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+
+<span class="kn">from</span> <span class="nn">pfun.either</span> <span class="kn">import</span> <span class="n">Either</span><span class="p">,</span> <span class="n">Right</span><span class="p">,</span> <span class="n">Left</span>
+
+
+<span class="k">def</span> <span class="nf">lookup</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Either</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Right</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Left</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Just like with <code>Maybe</code> you can apply functions to values wrapped by <code>Right</code> using the <code>map</code> function, and you can transform results into new <code>Either</code> values with <code>and_then</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">lookup</span><span class="p">({</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;value&#39;</span><span class="p">},</span> <span class="s1">&#39;key&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;found </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1">!&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">is_42</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Either</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span> 
+    <span class="k">return</span> <span class="n">Right</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;42&#39;</span> <span class="k">else</span> <span class="n">Left</span><span class="p">(</span><span class="s1">&#39;Wasn</span><span class="se">\&#39;</span><span class="s1">t 42&#39;</span><span class="p">)</span>
+
+
+<span class="n">lookup</span><span class="p">({</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;42&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">is_42</span><span class="p">)</span>  <span class="c1"># Right(&#39;42&#39;)</span>
+</code></pre></div>
+
+<p>Just like with <code>Maybe</code>, <code>Either</code> is actually a type-alias for <code>Union[Left[TypeVar('L')], Right[TypeVar('R')]]</code>, which allows the type-checker to narrow the type to one or the other using<code>__bool__</code> or <code>isinstance</code> checks.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">value</span> <span class="o">=</span> <span class="n">lookup</span><span class="p">(</span><span class="n">some_dict</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+    <span class="o">...</span>  <span class="c1"># type checker knows that value is a Right</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="o">...</span>  <span class="c1"># type checker knows that value is a Left</span>
+</code></pre></div>
+
+<h2 id="effect">Effect</h2>
+<p>The <code>pfun.effect.Effect</code> type lets you express side-effects in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "<a href="https://en.wikipedia.org/wiki/Effect_system">functional effect system</a>", which is precisely what <code>pfun.effect.Effect</code> is. The core type you will use when expressing side-effects with <code>pfun</code> is <code>pfun.effect.Effect</code>. <code>Effect</code> has a function <code>run</code> that perfoms the side-effect it represents. <code>run</code> is a function that:</p>
+<ul>
+<li>Takes exactly one argument</li>
+<li>May or may not perform side-effects when called (including raising exceptions)</li>
+</ul>
+<p>You can think of <code>Effect</code> defined as:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Generic</span>
+<span class="kn">from</span> <span class="nn">pfun.either</span> <span class="kn">import</span> <span class="n">Either</span>
+
+
+<span class="n">R</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="n">contravariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">E</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="n">covariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="n">covariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Effect</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">R</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">A</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">R</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">A</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        May raise E</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="o">...</span>
+</code></pre></div>
+
+<p>In other words, <code>Effect</code> takes three type paramaters: <code>R</code>, <code>E</code> and <code>A</code>. We'll study them one at a time.</p>
+<h3 id="the-success-type">The Success Type</h3>
+<p>The <code>A</code> in <code>Effect[R, E, A]</code> is the <em>success type</em>. This is the type that the effect function will return if no error occurs. For example, in an <code>Effect</code> instance that reads a file as a <code>str</code>, <code>A</code> would be parameterized with <code>str</code>. You can create an <code>Effect</code> instance that succeeds with the value <code>a</code> using <code>pfun.effect.success(a)</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NoReturn</span>
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">success</span><span class="p">,</span> <span class="n">Effect</span>
+
+
+<span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">success</span><span class="p">(</span><span class="s1">&#39;Success!&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">e</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Success!&#39;</span>
+</code></pre></div>
+
+<p>(You don't actually have to write the type of <code>e</code> explicitly, as it can be inferred by your type checker. We do it here simply because it's instructive to look at the types). Don't worry about the meaning of <code>object</code> and <code>NoReturn</code> for now, we'll explain that later. For now, just understand that when <code>e</code> has the type <code>Effect[object, NoReturn, str]</code>, it means that when you call <code>e.run</code> with any parameter, it will return a <code>str</code> (the value <code>Success!</code>).</p>
+<p>You can work with the success value of an effect using instance methods of <code>Effect</code>. If you want to transform the result of an <code>Effect</code> with a function without side-effects you can use <code>map</code>, which takes a function of the type <code>Callable[[A], B]</code> as an argument, where <code>A</code> is the success type of your effect:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">success</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">e</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;1&quot;</span>
+</code></pre></div>
+
+<p>If you want to transform the result of an <code>Effect</code> with a function that produces other side effects (that is, returns an <code>Effect</code> instance), you use <code>and_then</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">add_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">success</span><span class="p">(</span><span class="n">v</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">success</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">add_1</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">e</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+</code></pre></div>
+
+<p>(for those with previous functional programming experince, <code>and_then</code> is the "<a href="https://en.wikipedia.org/wiki/Monad_(functional_programming)#Overview">bind</a>" operation of <code>Effect</code>).</p>
+<h3 id="the-error-type">The Error Type</h3>
+<p>The <code>E</code> in <code>Effect[R, E, A]</code> is the <em>error type</em>. This is type that the <code>run</code> function will raise if it fails. You can create an effect that does nothing but fail using <code>pfun.effect.error</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NoReturn</span>
+
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">Effect</span><span class="p">,</span> <span class="n">error</span>
+
+
+<span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">]</span> <span class="o">=</span> <span class="n">error</span><span class="p">(</span><span class="s1">&#39;Whoops!&#39;</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># raises: RuntimeError(&#39;Whoops!&#39;)</span>
+</code></pre></div>
+
+<p>For a concrete example, take a look at the <code>pfun.files</code> module that helps you read from files:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">Effect</span>
+<span class="kn">from</span> <span class="nn">pfun.files</span> <span class="kn">import</span> <span class="n">Files</span>
+
+
+<span class="n">files</span> <span class="o">=</span> <span class="n">Files</span><span class="p">()</span>
+<span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;doesnt_exist.txt&#39;</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># raises OSError</span>
+</code></pre></div>
+
+<p>Don't worry about the api of <code>files</code> for now, simply notice that when <code>e</code> has the type <code>Effect[object, OSError, str]</code>, it means that when you execute <code>e</code> it can produce a <code>str</code> or fail with <code>OSError</code>. Having the the error type explicitly modelled in the type signature of <code>e</code> allows type safe error handling as we'll see later.</p>
+<h3 id="the-dependency-type">The Dependency Type</h3>
+<p>Finally, let's look at <code>R</code> in <code>Effect[R, E, A]</code>: the <em>dependency type</em>. <code>R</code> is the argument that <code>run</code> requires to produce its result. It allows you to parameterize the side-effect that your <code>Effect</code> implements which improves re-useability and testability. For example, imagine that you want to use <code>Effect</code> to model the side-effect of reading from a database. The function that reads from the database requires a connection string as an argument to connect. If <code>Effect</code> did not take a parameter you would have to pass around the connection string as a parameter through function calls, all the way down to where the connection string was needed.</p>
+<p>The dependency type allows you to pass in the connection string at the edge of your program, rather than threading it through a potentially deep stack of function calls:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+
+
+<span class="n">DBRow</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">DBRow</span><span class="p">]]:</span>
+    <span class="o">...</span>
+
+<span class="k">def</span> <span class="nf">find_row</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DBRow</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">DBRow</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">,</span> <span class="n">DBRow</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="n">execute</span><span class="p">(</span><span class="s1">&#39;select * from users;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">find_row</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">program</span> <span class="o">=</span> <span class="n">main</span><span class="p">()</span>
+
+    <span class="c1"># run in production</span>
+    <span class="n">program</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;user@prod_db&#39;</span><span class="p">)</span>
+
+    <span class="c1"># run in development</span>
+    <span class="n">program</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;user@dev_db&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>In the next section, we will discuss this <em>dependency injection</em> capability of <code>Effect</code> in detail.</p>
+<h3 id="the-module-pattern">The Module Pattern</h3>
+<p>This section is dedicated to the dependency type <code>R</code>. In most examples we have looked at so far, <code>R</code> is parameterized with <code>object</code>. This means that it can safely be called with any value (since all Python values are sub-types of <code>object</code>). This is mostly useful when you're working with effects that don't use the dependency argument for anything, in which case any value will do.</p>
+<p>In the previous section we saw how the <code>R</code> parameter of <code>Effect</code> can be used for dependency injection. But what happens when we try to combine two effects with different dependency types with <code>and_then</code>? The <code>Effect</code> instance returned by <code>and_then</code> must have a dependency type that is a combination of the dependency types of both the combined effects, since the dependency passed to the combined effect is also passed to the other effects.</p>
+<p>Consider for example this effect, that uses the <code>execute</code> function from above to get database results, and combines it with a function <code>make_request</code> that calls an api, and requires a <code>Credentials</code> instance as the dependency type:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">Credentials</span><span class="p">:</span>
+    <span class="o">...</span>
+
+
+<span class="k">def</span> <span class="nf">make_request</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DBRow</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="n">Credentials</span><span class="p">,</span> <span class="n">HTTPError</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="o">...</span>
+
+<span class="n">results</span><span class="p">:</span> <span class="n">effect</span><span class="o">.</span><span class="n">Effect</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">DBRow</span><span class="p">]]</span> <span class="o">=</span> <span class="n">execute</span><span class="p">(</span><span class="s1">&#39;select * from users;&#39;</span><span class="p">)</span>
+<span class="n">response</span><span class="p">:</span> <span class="n">effect</span><span class="o">.</span><span class="n">Effect</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="ne">IOError</span><span class="p">,</span> <span class="n">HTTPError</span><span class="p">],</span> <span class="n">HTTPResponse</span><span class="p">]</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">make_request</span><span class="p">)</span>
+<span class="n">response</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>  <span class="c1"># What could this argument be?</span>
+</code></pre></div>
+
+<p>To call the <code>response.run</code> function, we need an instance of a type that is a <code>str</code> and a <code>Credentials</code> instance <em>at the same time</em>, because that argument must be passed to both the effect returned by <code>execute</code> and by <code>make_request</code>. Ideally, we want <code>response</code> to have the type <code>Effect[Intersection[Credentials, str], IOError, bytes]</code>, where <code>Intersection[Credentials, str]</code> indicates that the dependency type must be both of type <code>Credentials</code> and of type <code>str</code>.</p>
+<p>In theory such an object could exist (defined as <code>class MyEnv(Credentials, str): ...</code>), but there are no straight-forward way of expressing that type dynamically in the Python type system. As a consequence, <code>pfun</code> infers the resulting effect with the <code>R</code> parameterized as <code>typing.Any</code>, which in this case means that <code>pfun</code> could not assign a meaningful type to <code>R</code>.</p>
+<p>If you use the <code>pfun</code> MyPy plugin, you can however redesign the program to follow a pattern that enables <code>pfun</code> to infer a meaningful combined type
+in much the same way that the error type resulting from combining two effects using <code>and_then</code> can be inferred. This pattern is called <em>the module pattern</em>.</p>
+<p>In its most basic form, the module pattern simply involves defining a <a href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a> that serves as the dependency type of an <code>Effect</code>. <code>pfun</code> can combine dependency types of two effects whose dependency types are both protocols, because the combined dependency type is simply a new protocol that inherits from both. This combined protocol is called <code>pfun.Intersection</code>.</p>
+<p>In many cases the api for effects involved in the module pattern is split into three parts:</p>
+<ul>
+<li>A <em>module</em> class that provides the actual implementation</li>
+<li>A <em>module provider</em> that is a <code>typing.Protocol</code> that provides the module class as an attribute</li>
+<li>Functions that return effects with the module provider class as the dependency type.</li>
+</ul>
+<p>Lets rewrite our example from before to follow the module pattern:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Protocol</span>
+<span class="kn">from</span> <span class="nn">http.client</span> <span class="kn">import</span> <span class="n">HTTPError</span>
+
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">Effect</span><span class="p">,</span> <span class="n">depend</span>
+
+
+<span class="k">class</span> <span class="nc">Requests</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Requests implementation module</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">credentials</span><span class="p">:</span> <span class="n">Credentials</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">credentials</span> <span class="o">=</span> <span class="n">credentials</span>
+
+    <span class="k">def</span> <span class="nf">make_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DBRow</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">HTTPError</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+
+<span class="k">class</span> <span class="nc">HasRequests</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Module provider class for the requests module</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">requests</span><span class="p">:</span> <span class="n">Requests</span>
+
+
+<span class="k">def</span> <span class="nf">make_request</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DBRow</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="n">HasRequests</span><span class="p">,</span> <span class="n">HTTPError</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that returns an effect with the HasRequest module provider as the dependency type</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">depend</span><span class="p">(</span><span class="n">HasRequests</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="k">lambda</span> <span class="n">env</span><span class="p">:</span> <span class="n">env</span><span class="o">.</span><span class="n">requests</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">Database</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Database implementation module</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection_str</span> <span class="o">=</span> <span class="n">connection_str</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">DBRow</span><span class="p">]]:</span>
+        <span class="o">...</span>
+
+
+<span class="k">class</span> <span class="nc">HasDatabase</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Module provider class for the database module</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">database</span><span class="p">:</span> <span class="n">Database</span>
+
+
+<span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="n">HasDatabase</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">DBRow</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that returns an effect with the HasDatabase module provider as the dependency type</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">depend</span><span class="p">(</span><span class="n">HasDatabase</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="k">lambda</span> <span class="n">env</span><span class="p">:</span> <span class="n">env</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+</code></pre></div>
+
+<p>There are two <em>modules</em>: <code>Requests</code> and <code>Database</code> that provide implementations. There are two corresponding <em>module providers</em>: <code>HasRequests</code> and <code>HasDatabase</code>. Finally there are two functions <code>execute</code> and <code>make_request</code> that puts it all together.</p>
+<p>Pay attention to the fact that <code>execute</code> and <code>make_request</code> look quite similar: they both start by calling <code>pfun.effect.depend</code>. This function returns an effect that succeeds with the dependency value that will eventually be passed as the argument to the final effect (in this example the effect produced by <code>execute(...).and_then(make_request)</code>). The optional parameter passed to <code>depend</code> is merely for type-checking purposes, and doesn't change the result in any way.</p>
+<p>If we combine the new functions <code>execute</code> and <code>make_request</code> that both has protocols as the dependency types, <code>pfun</code> can infer a meaningful type, and make sure that the dependency type that is eventually passed to the whole program provides both the <code>requests</code> and the <code>database</code> attributes:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">effect</span> <span class="o">=</span> <span class="n">execute</span><span class="p">(</span><span class="s1">&#39;select * from users;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">make_request</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The type of <code>effect</code> in this case will be</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Effect</span><span class="p">[</span>
+    <span class="n">pfun</span><span class="o">.</span><span class="n">Intersection</span><span class="p">[</span><span class="n">HasRequests</span><span class="p">,</span> <span class="n">HasDatabase</span><span class="p">],</span>
+    <span class="n">Union</span><span class="p">[</span><span class="n">HTTPError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">],</span>
+    <span class="nb">bytes</span>
+<span class="p">]</span>
+</code></pre></div>
+
+<p>Quite a mouthful, but what it tells us is that <code>effect</code> must be run with an instance of a type that has both the <code>requests</code> and <code>database</code> attributes with appropriate types. In other words, if you accidentally defined your dependency as:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">Env</span><span class="p">:</span>
+    <span class="n">database</span> <span class="o">=</span> <span class="n">Database</span><span class="p">(</span><span class="s1">&#39;user@prod_db&#39;</span><span class="p">)</span>
+
+
+<span class="n">effect</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Env</span><span class="p">())</span>
+</code></pre></div>
+
+<p>MyPy would tell you the call <code>effect.run(Env())</code> is a type error since <code>Env</code> doesn't have a <code>requests</code> attribute. It's worth understanding the module pattern, since <code>pfun</code> uses it pervasively in its api, e.g in <code>pfun.files</code> and <code>pfun.console</code>, in order that <code>pfun</code> can infer the dependency type of effects resulting from combining functions from <code>pfun</code> with user defined functions that also follow the module pattern.</p>
+<p>A very attractive added bonus of the module pattern is that mocking out particular dependencies of your program becomes extremely simple, and by extension that unit testing becomes easier:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">success</span>
+<span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="kn">import</span> <span class="n">Mock</span>
+
+
+<span class="n">mock_env</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+<span class="n">mock_env</span><span class="o">.</span><span class="n">requests</span><span class="o">.</span><span class="n">make_request</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">success</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;Mocked!&#39;</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">make_request</span><span class="p">([])(</span><span class="n">mock_env</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;Mocked!&#39;</span>
+</code></pre></div>
+
+<h3 id="error-handling">Error Handling</h3>
+<p>In this section, we'll look at how to handle errors of effects with type safety. In previous sections we have already spent some time looking at the <code>Effect</code> error type. In many of the examples so far, the error type was <code>typing.NoReturn</code>. An <code>Effect</code> with this error type can never return a value for an error, or in other words, it can never fail (as those effects returned by <code>pfun.effect.success</code>). In the rest of this section we'll of course be pre-occupied with effects that <em>can</em> fail.</p>
+<p>When you combine side effects using <code>Effect.and_then</code>, <code>pfun</code> uses <code>typing.Union</code> to combine error types, in order that the resulting effect captures all potential errors in its error type:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pfun.files</span> <span class="kn">import</span> <span class="n">Files</span>
+
+
+<span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">effect</span><span class="o">.</span><span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+    <span class="o">...</span>
+
+
+<span class="n">files</span> <span class="o">=</span> <span class="n">Files</span><span class="p">()</span>
+<span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;foo.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">parse</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>e</code> has <code>Union[OSError, ZeroDivisionError]</code> as its error type because it can fail if <code>files.read</code> fails, <em>or</em> if <code>parse</code> fails. This compositional aspect of the error type of <code>Effect</code> means that accurate and complex error types are built up from combining simple error types. Moreover, it makes reasoning about error handling easy because errors disappear from the type when they are handled, as we shall see next.</p>
+<p>The most low level function you can use to handle errors is <code>Effect.either</code>, which surfaces any errors that may have occurred as a <code>pfun.either.Either</code>, where a <code>pfun.either.Right</code> signifies a successful computation and a <code>pfun.either.Left</code> a failed computation:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NoReturn</span>
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">Effect</span><span class="p">,</span> <span class="n">files</span>
+<span class="kn">from</span> <span class="nn">pfun.either</span> <span class="kn">import</span> <span class="n">Either</span><span class="p">,</span> <span class="n">Left</span>
+
+
+<span class="c1"># files.read can fail with OSError</span>
+<span class="n">may_have_failed</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="n">files</span><span class="o">.</span><span class="n">HasFiles</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;foo.txt&#39;</span><span class="p">)</span>
+<span class="c1"># calling either() surfaces the OSError in the success type as a pfun.either.Either</span>
+<span class="n">as_either</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="n">files</span><span class="o">.</span><span class="n">HasFiles</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">Either</span><span class="p">[</span><span class="ne">OSError</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">may_have_failed</span><span class="o">.</span><span class="n">either</span><span class="p">()</span>
+<span class="c1"># we can use map or and_then to handle the error</span>
+<span class="n">cant_fail</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="n">files</span><span class="o">.</span><span class="n">HasFiles</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">as_either</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">either</span><span class="p">:</span> <span class="s1">&#39;backup content&#39;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">either</span><span class="p">,</span> <span class="n">Left</span><span class="p">)</span> <span class="k">else</span> <span class="n">either</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Once you've handled whatever errors you want, you can push the error back into error type of the effect using <code>pfun.effect.absolve</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">Effect</span><span class="p">,</span> <span class="n">absolve</span><span class="p">,</span> <span class="n">files</span>
+<span class="kn">from</span> <span class="nn">pfun.either</span> <span class="kn">import</span> <span class="n">Either</span>
+
+
+<span class="c1"># function to handle error</span>
+<span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="n">either</span><span class="p">:</span> <span class="n">Either</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Either</span><span class="p">[</span><span class="ne">ZeroDivisionError</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="o">...</span>
+
+<span class="c1"># define an effect that can fail</span>
+<span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;foo.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">parse</span><span class="p">)</span>
+<span class="c1"># handle errors using e.either.map</span>
+<span class="n">without_os_error</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">Either</span><span class="p">[</span><span class="ne">OSError</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">either</span><span class="p">()</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="c1"># push the remaining error into the error type using absolve</span>
+<span class="n">e2</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">absolve</span><span class="p">(</span><span class="n">without_os_error</span><span class="p">)</span>
+</code></pre></div>
+
+<p>At a slightly higher level, you can use <code>Effect.recover</code>, which takes a function that can inspect the error and handle it.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">success</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">Effect</span>
+
+
+<span class="k">def</span> <span class="nf">handle_errors</span><span class="p">(</span><span class="n">reason</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reason</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">success</span><span class="p">(</span><span class="s1">&#39;default value&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">error</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+
+
+<span class="n">recovered</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">recover</span><span class="p">(</span><span class="n">handle_errors</span><span class="p">)</span>
+</code></pre></div>
+
+<p>You will frequently handle errors by using <code>isinstance</code> to compare errors with types, so defining your own error types becomes even more important when using <code>pfun</code> to distinguish one error source from another.</p>
+<h3 id="concurrency">Concurrency</h3>
+<p><code>Effect</code> uses <code>asyncio</code> under the hood to run effects asynchronously.
+This can lead to significant speed ups.</p>
+<p>Consider for example this program that calls <code>curl http://www.google.com</code> in a subprocess 50 times:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># call_google_sync.py</span>
+<span class="kn">import</span> <span class="nn">timeit</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+
+<span class="p">[</span><span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s1">&#39;curl&#39;</span><span class="p">,</span> <span class="s1">&#39;http://www.google.com&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">)]</span>
+</code></pre></div>
+
+<p>Timing the execution using the unix <code>time</code> informs me this takes 5.15 seconds on a normal consumer laptop. Compare this to the program below which does more or less the same thing, but using <code>pfun.subprocess</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># call_google_async.py</span>
+<span class="kn">from</span> <span class="nn">pfun.subprocess</span> <span class="kn">import</span> <span class="n">Subprocess</span>
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">sequence_async</span>
+
+
+<span class="n">sp</span> <span class="o">=</span> <span class="n">Subprocess</span><span class="p">()</span>
+<span class="n">effect</span> <span class="o">=</span> <span class="n">sequence_async</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">run_in_shell</span><span class="p">(</span><span class="s1">&#39;curl http://www.google.com&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">effect</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+<p>This program finishes in 0.78 seconds, according to <code>time</code>. The crucial difference is the function <code>pfun.effect.sequence_async</code> which returns a new effect that runs its argument effects asynchronously using <code>asyncio</code>. This means that one effect can yield to other effects while waiting for input from the <code>curl</code> subprocess. This ultimately saves a lot of time compared to the synchronous implementation where each call to <code>subprocess.run</code> can only start when the preceeding one has returned.</p>
+<p>You can create an effect from a Python awaitable using <code>pfun.effect.from_awaitable</code>, allowing you to integrate with <code>asyncio</code> directly in your own code:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NoReturn</span>
+
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">from_awaitable</span><span class="p">,</span> <span class="n">Effect</span>
+
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">sleep</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s1">&#39;success!&#39;</span>
+
+
+<span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">from_awaitable</span><span class="p">(</span><span class="n">sleep</span><span class="p">())</span>
+<span class="k">assert</span> <span class="n">e</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;success!&#39;</span>
+</code></pre></div>
+
+<p>You can also pass <code>async</code> functions directly to <code>map</code> and <code>and_then</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NoReturn</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">success</span>
+
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">sleep_and_add_1</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+
+
+<span class="k">assert</span> <span class="n">success</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">sleep_and_add_1</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+</code></pre></div>
+
+<p>When using <code>pfun</code> with async frameworks such as <a href="https://asgi.readthedocs.io/en/latest/">ASGI web servers</a>, you can await the the result of effects using <code>Effect.__call__</code> (which is really what <code>Effect.run</code> calls using the supplied event-loop):</p>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">f</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">e</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="k">return</span> <span class="k">await</span> <span class="n">e</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="purely-functional-state">Purely Functional State</h3>
+<p>Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. <code>pfun.ref</code> provides exactly this. <code>pfun.ref</code> works by mutating state only by calling <code>Effect</code> instances.</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">NoReturn</span>
+
+<span class="kn">from</span> <span class="nn">pfun.ref</span> <span class="kn">import</span> <span class="n">Ref</span>
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">Effect</span>
+
+
+<span class="n">ref</span><span class="p">:</span> <span class="n">Ref</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="n">Ref</span><span class="p">(())</span>
+<span class="n">add_1</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="k">lambda</span> <span class="n">old</span><span class="p">:</span> <span class="k">return</span> <span class="n">old</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+<span class="c1"># calling modify doesn&#39;t modify the state directly</span>
+<span class="k">assert</span> <span class="n">ref</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="p">()</span>
+<span class="c1"># The state is modified only when the effect is called</span>
+<span class="n">add_1</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">ref</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
+</code></pre></div>
+
+<p><code>pfun.ref.Ref</code> protects access to the state using an <code>asyncio.Lock</code>, meaning that updating the state can be done atomically with the following methods:</p>
+<ul>
+<li><code>Ref.get()</code> read the current value of the state</li>
+<li><code>Ref.set(new_state)</code> update the state to <code>new_value</code> atomically, meaning no other effect can read the value of the state while the update is in progress. Note that if you first read the state using <code>Ref.get</code> and then set it with <code>Ref.set</code>, other effects may read the value in between which may lead to lost updates. <em>For this use case you should use <code>modify</code> or <code>try_modify</code></em></li>
+<li><code>Ref.modify(update_function)</code> read and update the state with <code>update_function</code> atomically, meaning no other effect can read or write the state before the effect produced by <code>modify</code> returns</li>
+<li><code>Ref.try_modify(update_function)</code> read and update the state with <code>update_function</code> atomically, if <code>update_funciton</code> succeeds. Success is signaled by the <code>update_function</code> by returning a <code>pfun.either.Right</code> instance, and error by returning a <code>pfun.either.Left</code> instance.</li>
+</ul>
+<p><code>pfun.ref</code> can of course be combined with the module pattern:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">Protocol</span>
+
+<span class="kn">from</span> <span class="nn">pfun.ref</span> <span class="kn">import</span> <span class="n">Ref</span>
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">depend</span><span class="p">,</span> <span class="n">Effect</span>
+
+
+<span class="k">class</span> <span class="nc">HasState</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">Ref</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
+
+
+<span class="k">def</span> <span class="nf">set_state</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="n">HasState</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="n">depend</span><span class="p">()</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="k">lambda</span> <span class="n">env</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+</code></pre></div>
+
+<h3 id="creating-your-own-effects">Creating Your Own Effects</h3>
+<p><code>pfun.effect</code> has a number of decorators and helper functions to help you create
+your own effects.</p>
+<p><code>pfun.effect.from_callable</code> is the most flexible option. It takes a function
+that takes a dependency type and returns a <code>pfun.either.Either</code> and turns it into an effect:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">from_callable</span><span class="p">,</span> <span class="n">Effect</span>
+<span class="kn">from</span> <span class="nn">pfun.either</span> <span class="kn">import</span> <span class="n">Either</span>
+
+
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">r</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Either</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="o">...</span>
+
+
+<span class="n">effect</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">from_callable</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>from_callable</code> may also be used to create effects from async functions:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">asyncio</span>
+
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">r</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Either</span><span class="p">[</span><span class="ne">Exception</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="o">...</span>
+
+
+<span class="n">effect</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">from_callable</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>pfun.effect.catch</code> is used to decorate sync and async functions that may raise exceptions. If the decorated function performs side effects, they are not carried out until the effect is run</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">catch</span><span class="p">,</span> <span class="n">Effect</span>
+
+
+<span class="nd">@catch</span><span class="p">(</span><span class="ne">ZeroDivisionError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;v is not allowed to be &gt; 5 for some reason&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">v</span>
+
+
+<span class="n">effect</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="ne">ZeroDivisionError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Since <code>Effect</code> uses <code>asyncio</code> you should be careful not to create effects that block the main thread. Blocking happens in two ways:</p>
+<ul>
+<li>Performing IO</li>
+<li>Calling functions that take a long time to return</li>
+</ul>
+<p>To avoid blocking the main thread, synchronous IO should be performed in a separate thread, and CPU bound functions should be called in a separate process. <code>pfun.effect</code> handles this for you, but when creating your own effects you should take care to use api functions that run your cpu or io bound code in separate processes or threads. Functions for creating effects that run your function in other threads generally have <code>io_bound</code> in their name, and functions for creating effects that run your functions in other processes generally have <code>cpu_bound</code> in their name, for example <code>lift_cpu_bound</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">lift_cpu_bound</span><span class="p">,</span> <span class="n">success</span>
+
+
+<span class="k">def</span> <span class="nf">slow_function</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="c1"># simulate doing something slow</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">2</span>
+
+<span class="n">lift_cpu_bound</span><span class="p">(</span><span class="n">slow_function</span><span class="p">)(</span><span class="n">success</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+</code></pre></div>
+
+<p>Take a look at the api documentation for details.</p>
+<h3 id="type-aliases">Type Aliases</h3>
+<p>Since the dependency type of <code>Effect</code> is often parameterized with <code>object</code>, and the error type is often parameterized with <code>typing.NoReturn</code>, a number of type aliases for <code>Effect</code> are provided to save you from typing out <code>object</code> and <code>NoReturn</code> over and over. Specifically:</p>
+<ul>
+<li><code>pfun.effect.Success[A]</code> is a type-alias for <code>Effect[object, typing.NoReturn, A]</code>, which is useful for effects that can't fail and doesn't have dependencies</li>
+<li><code>pfun.effect.Try[E, A]</code> is a type-alias for <code>Effect[object, E, A]</code>, which is useful for effects that can fail but doesn't have dependencies</li>
+<li><code>pfun.effect.Depends[R, A]</code> is a type-alias for <code>Effect[R, typing.NoReturn, A]</code> which is useful for effects that can't fail but needs dependency <code>R</code></li>
+</ul>
+<h3 id="combining-effects">Combining effects</h3>
+<p>Sometimes you need to keep the the result of two or more effects in scope to work with
+both at the same time. This can lead to code like the following:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">success</span>
+
+
+<span class="n">two</span> <span class="o">=</span> <span class="n">success</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">four</span> <span class="o">=</span> <span class="n">two</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">two</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">))</span>
+</code></pre></div>
+
+<p>In these cases, consider using <code>pfun.effect.lift</code> or <code>pfun.effect.combine</code>.</p>
+<p><code>lift</code> is a decorator that enables any function to work with effects</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">lift</span>
+
+
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+<span class="n">four</span> <span class="o">=</span> <span class="n">lift</span><span class="p">(</span><span class="n">add</span><span class="p">)(</span><span class="n">two</span><span class="p">,</span> <span class="n">two</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>combine</code> is like <code>lift</code> but with its arguments flipped:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">combine</span>
+
+<span class="n">four</span> <span class="o">=</span> <span class="n">combine</span><span class="p">(</span><span class="n">two</span><span class="p">,</span> <span class="n">two</span><span class="p">)(</span><span class="n">add</span><span class="p">)</span>
+</code></pre></div>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href="../install/" title="Install" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Install
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../useful_functions/" title="Useful Functions" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Useful Functions
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/vendor.2d1db4bd.min.js"></script>
+      <script src="../assets/javascripts/bundle.6627ddf3.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      
+      <script>
+        app = initialize({
+          base: "..",
+          features: [],
+          search: Object.assign({
+            worker: "../assets/javascripts/worker/search.5eca75d3.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>
