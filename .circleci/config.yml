@@ -39,46 +39,28 @@ jobs:
       - run:
           name: Build docs
           command: poetry run task compile && poetry install && poetry run mkdocs build
-  test_py37:
+  test_linux:
+    parameters:
+      python_version:
+        type: string
     working_directory: ~/pfun
     docker:
-      - image: circleci/python:3.7.5
+      - image: circleci/python:<< parameters.python_version >>
     steps:
       - checkout
       - restore_cache:
           keys:
-            - py37-v2-dependency-cache-{{ checksum "poetry.lock" }}
-            - py37-v2-dependency-cache-
+            - py-<< parameters.python_version >>-linux-v2-dependency-cache-{{ checksum "poetry.lock" }}
+            - py-<< parameters.python_version >>-linux-v2-dependency-cache-
       - install_poetry
       - install_dependencies
-      - run:
-          name: Test
-          command: poetry run tox -e py37
       - save_cache:
-          key: py37-v2-dependency-cache-{{ checksum "poetry.lock" }}
+          key: py-<< parameters.python_version >>-linux-v2-dependency-cache-{{ checksum "poetry.lock" }}
           paths:
             - ".venv"
-            - ".tox"
-  test_py38:
-    working_directory: ~/pfun
-    docker:
-      - image: circleci/python:3.8.0
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - py38-v2-dependency-cache-{{ checksum "poetry.lock" }}
-            - py38-v2-dependency-cache-
-      - install_poetry
-      - install_dependencies
       - run:
           name: Test
-          command: poetry run tox -e py38
-      - save_cache:
-          key: py38-v2-dependency-cache-{{ checksum "poetry.lock" }}
-          paths:
-            - ".venv"
-            - ".tox"
+          command: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
   release:
     working_directory: ~/pfun
     docker:
@@ -112,11 +94,10 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - test_py37:
-          filters:
-            tags:
-              only: /.*/
-      - test_py38:
+      - test_linux:
+          matrix:
+            parameters:
+              python_version: ["3.7", "3.8"]
           filters:
             tags:
               only: /.*/
