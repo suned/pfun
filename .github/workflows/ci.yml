@@ -76,10 +76,16 @@ jobs:
         pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
-        poetry install -E http -E sql --no-root && poetry run task compile && poetry install
+        poetry install -E http -E sql --no-root && poetry run task compile && poetry build -f wheel && poetry run pip install dist/*
     - name: Run tests
       run: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.os }}-${{ matrix.python-version }}-wheel
+        path: dist/*.whl
   release:
+    needs: [lint, build_docs, test]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
@@ -100,9 +106,14 @@ jobs:
     - name: Install dependencies
       run: |
         poetry install -E http -E sql --no-root
+    - name: Check version
+      run: poetry run python scripts/check_version.py pyproject.toml ${{ github.ref }}
     - name: Build
-      run: poetry run task build
+      run: poetry run task compile && poetry build -f sdist
     # - name: Release pfun
-    #   run: poetry release
+    #   env:
+    #     PYPI_USERNAME: ${{ secrets.PYPI_USER }}
+    #     PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+    #   run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
     # - name: Release docs
     #   run: poetry run mkdocs gh-deploy
