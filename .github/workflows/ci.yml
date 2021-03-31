@@ -22,7 +22,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: .venv
-        key: py37-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
         pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
@@ -44,7 +44,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: .venv
-        key: py37-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
         pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
