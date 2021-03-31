@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  pull_request:
+    branches:
+      - master
+  release:
+    types: ["published"]
+
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Restore cache
+      uses: actions/cache@v1
+      with:
+        path: .venv
+        key: py37-venv-cache
+    - name: Install poetry
+      run: |
+        pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+    - name: Install dependencies
+      run: |
+        poetry install -E http -E sql --no-root && poetry run task compile && poetry install
+    - name: Lint
+      run: poetry run task lint
