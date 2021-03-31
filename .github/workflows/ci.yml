@@ -79,3 +79,30 @@ jobs:
         poetry install -E http -E sql --no-root && poetry run task compile && poetry install
     - name: Run tests
       run: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
+  release:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Restore cache
+      uses: actions/cache@v1
+      with:
+        path: .venv
+        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+    - name: Install poetry
+      run: |
+        pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+    - name: Install dependencies
+      run: |
+        poetry install -E http -E sql --no-root
+    - name: Build
+      run: poetry run task build
+    # - name: Release pfun
+    #   run: poetry release
+    # - name: Release docs
+    #   run: poetry run mkdocs gh-deploy
