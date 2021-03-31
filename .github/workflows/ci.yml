@@ -112,7 +112,7 @@ jobs:
         name: ${{ matrix.os }}-py${{ matrix.python-version }}-wheel
         path: dist/*.whl
   release:
-    needs: [lint, build_docs, test]
+    needs: [lint, build_docs, test, test_sdist]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
