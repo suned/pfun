@@ -53,7 +53,34 @@ jobs:
         poetry install -E http -E sql --no-root && poetry run task compile && poetry install
     - name: Build docs
       run: poetry run mkdocs build
-  test:
+  test_sdist:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Restore cache
+      uses: actions/cache@v1
+      with:
+        path: .venv
+        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+    - name: Install poetry
+      run: |
+        pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+    - name: Install dependencies
+      run: |
+        poetry install -E http -E sql --no-root && poetry run task compile && poetry build -f sdist && poetry run pip install dist/*
+    - name: Run tests
+      run: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: sdist
+        path: dist/*.tar.gz
+  test_wheel:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -78,11 +105,11 @@ jobs:
       run: |
         poetry install -E http -E sql --no-root && poetry run task compile && poetry build -f wheel && poetry run pip install dist/*
     - name: Run tests
-      run: .venv/bin/pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
+      run: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
     - name: Upload wheel
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.os }}-${{ matrix.python-version }}-wheel
+        name: ${{ matrix.os }}-py${{ matrix.python-version }}-wheel
         path: dist/*.whl
   release:
     needs: [lint, build_docs, test]
