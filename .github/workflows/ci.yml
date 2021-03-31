@@ -78,7 +78,7 @@ jobs:
       run: |
         poetry install -E http -E sql --no-root && poetry run task compile && poetry build -f wheel && poetry run pip install dist/*
     - name: Run tests
-      run: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
+      run: .venv/bin/pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
     - name: Upload wheel
       uses: actions/upload-artifact@v2
       with:
