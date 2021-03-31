@@ -135,8 +135,6 @@ jobs:
         poetry install -E http -E sql --no-root
     - name: Check version
       run: poetry run python scripts/check_version.py pyproject.toml ${{ github.ref }}
-    - name: Build
-      run: poetry run task compile && poetry build -f sdist
     # - name: Release pfun
     #   env:
     #     PYPI_USERNAME: ${{ secrets.PYPI_USER }}
