@@ -72,10 +72,10 @@ jobs:
         pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
-        poetry install -E http -E sql --no-root && poetry run task compile && poetry build -f sdist && poetry run pip install dist/*
+        poetry install -E http -E sql --no-root && poetry run task compile && poetry build -f sdist && poetry run pip install dist/* && rm -rf pfun
     - name: Run tests
       run: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
-    - name: Upload wheel
+    - name: Upload sdist
       uses: actions/upload-artifact@v2
       with:
         name: sdist
