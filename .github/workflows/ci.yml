@@ -25,10 +25,13 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
-        poetry install -E http -E sql --no-root && poetry run task compile && poetry install
+        poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry install
     - name: Lint
       run: poetry run task lint
   build_docs:
@@ -47,10 +50,13 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
-        poetry install -E http -E sql --no-root && poetry run task compile && poetry install
+        poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry install
     - name: Build docs
       run: poetry run mkdocs build
   test_sdist:
@@ -69,12 +75,16 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
-        poetry install -E http -E sql --no-root && poetry run task compile && poetry build -f sdist && poetry run pip install dist/* && rm -rf pfun
+        poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry build -f sdist
+        poetry run pip install --ignore-installed dist/*
     - name: Run tests
-      run: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
+      run: poetry run pytest --pyargs pfun -rsx -n 4 --mypy-ini-file=tests/mypy.ini
     - name: Upload sdist
       uses: actions/upload-artifact@v2
       with:
@@ -100,16 +110,20 @@ jobs:
         key: py${{ matrix.python-version }}-${{ matrix.os }}-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
-        poetry install -E http -E sql --no-root && poetry run task compile && poetry build -f wheel && poetry run pip install dist/* && rm -rf pfun
+        poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry build -f wheel
+        poetry run pip install --ignore-installed dist/*
     - name: Run tests
-      run: poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
+      run: poetry run pytest --pyargs pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini
     - name: Upload wheel
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.os }}-py${{ matrix.python-version }}-wheel
+        name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
         path: dist/*.whl
   release:
     needs: [lint, build_docs, test_wheel, test_sdist]
@@ -129,11 +143,16 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
     - name: Download wheels and sdist
       uses: actions/download-artifact@v2
-    - name: Show artifacts
-      run: ls dist || ls
+    - name: Gather artifacts
+      run: |
+        mkdir dist
+        mv sdist/*.tar.gz dist
+        mv wheel-*/*.whl dist
+        ls dist
     - name: Install dependencies
       run: |
         poetry install -E http -E sql --no-root
