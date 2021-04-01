@@ -113,7 +113,7 @@ jobs:
         path: dist/*.whl
   release:
     needs: [lint, build_docs, test_wheel, test_sdist]
-    if: github.event_name == 'release'
+    #if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -130,6 +130,10 @@ jobs:
     - name: Install poetry
       run: |
         pip install poetry==1.1.5 && poetry config virtualenvs.in-project true
+    - name: Download wheels and sdist
+      uses: actions/download-artifact@v2
+    - name: Show artifacts
+      run: ls dist || ls
     - name: Install dependencies
       run: |
         poetry install -E http -E sql --no-root
