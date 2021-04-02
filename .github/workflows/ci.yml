@@ -158,7 +158,9 @@ jobs:
         poetry run task compile
         poetry install
     - name: Check version
-      run: poetry run python scripts/check_version.py pyproject.toml ${{ github.ref }}
+      run: |
+        tag=$(echo ${{ github.ref }} | cut -d / -f 3)
+        poetry run python scripts/check_version.py pyproject.toml $tag
     - name: Release pfun
       env:
         PYPI_USERNAME: ${{ secrets.PYPI_USER }}
