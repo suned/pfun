@@ -5,6 +5,7 @@ import aiohttp
 import asynctest
 import pytest
 from hypothesis import assume, given, settings
+
 from pfun import (Dict, Immutable, List, compose, console, effect, either,
                   files, http, identity, logging, ref, sql, subprocess)
 from pfun.effect import Resource

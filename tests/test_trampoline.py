@@ -1,4 +1,5 @@
 from hypothesis import assume, given
+
 from pfun import compose, identity
 from pfun.trampoline import Done, filter_, for_each, sequence
 

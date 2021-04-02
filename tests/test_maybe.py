@@ -1,6 +1,7 @@
 from typing import Any
 
 from hypothesis import assume, given
+
 from pfun import List, Unary, compose, identity
 from pfun.maybe import (Just, Maybe, Nothing, filter_, flatten, for_each,
                         maybe, sequence)

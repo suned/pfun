@@ -1,10 +1,10 @@
 from typing import Any
 
 from hypothesis import assume, given
+
 from pfun import Unary, compose, identity
 from pfun.either import (Either, Left, Right, either, filter_, for_each,
                          sequence)
-
 from tests.monad_test import MonadTest
 from tests.strategies import anything, eithers, unaries
 

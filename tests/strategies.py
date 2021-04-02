@@ -4,6 +4,7 @@ from hypothesis.strategies import (booleans, builds, composite, dictionaries,
                                    floats, integers, just)
 from hypothesis.strategies import lists as lists_
 from hypothesis.strategies import none, one_of, recursive, text, tuples
+
 from pfun import Dict, List, aio_trampoline, effect, maybe, trampoline
 from pfun.either import Left, Right
 

@@ -1,5 +1,6 @@
 import pytest
 from hypothesis import assume, given
+
 from pfun import compose, identity
 from pfun.aio_trampoline import Done
 
