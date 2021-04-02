@@ -1,8 +1,8 @@
 import pytest
 from hypothesis import assume, given
-
 from pfun import Dict
 from pfun.maybe import Just, Nothing
+
 from tests.strategies import dicts
 
 

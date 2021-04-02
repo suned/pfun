@@ -1,8 +1,8 @@
 from unittest.mock import Mock
 
 import pytest
-
 from pfun.effect import success
+
 from scripts.check_version import NoVersionMatchError, check_version
 
 

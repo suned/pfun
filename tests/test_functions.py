@@ -1,6 +1,6 @@
 from hypothesis import given
-
 from pfun import functions
+
 from tests.strategies import anything, dicts, lists, unaries
 
 

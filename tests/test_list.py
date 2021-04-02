@@ -5,7 +5,6 @@ import pytest
 from hypothesis import assume, given
 from hypothesis.strategies import integers
 from hypothesis.strategies import lists as lists_
-
 from pfun import List, compose, identity
 from pfun.list import filter_, for_each, sequence, value
 

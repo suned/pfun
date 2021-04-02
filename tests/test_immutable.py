@@ -3,8 +3,8 @@ from typing import Any
 
 import pytest
 from hypothesis import given
-
 from pfun import Immutable
+
 from tests.strategies import anything
 
 
