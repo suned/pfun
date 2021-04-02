@@ -1,10 +1,7 @@
-from __future__ import annotations
-
 import re
 from typing import Union
 
 from main_dec import main
-
 from pfun import Effect, Try, curry, error, files, success
 
 
