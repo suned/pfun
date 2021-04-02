@@ -5,8 +5,7 @@ from typing import NoReturn
 
 from typing_extensions import Protocol
 
-from pfun.effect import Effect, Success, add_repr, depend, from_callable
-
+from .effect import Effect, Success, add_repr, depend, from_callable
 from .either import Either, Right
 from .immutable import Immutable
 
