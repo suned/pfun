@@ -42,7 +42,7 @@ http = ["aiohttp"]
 sql = ["asyncpg"]
 
 [tool.taskipy.tasks]
-compile = "poetry run cython --3str pfun/*.pyx"
+compile = "poetry run cython --3str src/pfun/*.pyx"
 install = "poetry run task compile && poetry install"
 build = "poetry run task compile && poetry build"
 test = "poetry run task install && poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini"
