@@ -84,7 +84,7 @@ jobs:
         poetry build -f sdist
         poetry run pip install --ignore-installed dist/*
     - name: Run tests
-      run: poetry run pytest --pyargs pfun -rsx -n 4 --mypy-ini-file=tests/mypy.ini tests
+      run: poetry run pytest --import-mode append -rsx -n 4 --mypy-ini-file=tests/mypy.ini
     - name: Upload sdist
       uses: actions/upload-artifact@v2
       with:
@@ -119,7 +119,7 @@ jobs:
         poetry build -f wheel
         poetry run pip install --ignore-installed dist/*
     - name: Run tests
-      run: poetry run pytest --pyargs pfun -rsx -n 4 --mypy-ini-file=tests/mypy.ini tests
+      run: poetry run pytest --import-mode append -rsx -n 4 --mypy-ini-file=tests/mypy.ini
     - name: Upload wheel
       uses: actions/upload-artifact@v2
       with:
@@ -156,6 +156,8 @@ jobs:
     - name: Install dependencies
       run: |
         poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry install
     - name: Check version
       run: poetry run python scripts/check_version.py pyproject.toml ${{ github.ref }}
     # - name: Release pfun
