@@ -614,16 +614,6 @@ cdef class CDepends(CEffect):
         return 'depend()'
 
 
-cdef CEffect c_combine(CEffect es, CEffect e):
-    async def f(list xs):
-        async def g(object x):
-            xs.append(x)
-            return CSuccess.__new__(CSuccess, xs)
-
-        return AndThen.__new__(AndThen, e, g)
-    return AndThen.__new__(AndThen, es, f)
-
-
 def depend(r_type=None):
     """
     Get an `Effect` that produces the dependency passed to `run` \
