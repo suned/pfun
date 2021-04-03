@@ -1164,7 +1164,7 @@ sql = ["asyncpg"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "1aded2c364985fd2a83a5faf5dab3c879b123d40e8237f70daa5a5a12016758b"
+content-hash = "44c92a97aca9b86412357ad41a92dca05cea12b24e922f8410515c05847d33d0"
 
 [metadata.files]
 aiodns = [
