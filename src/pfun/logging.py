@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import logging
 from types import TracebackType
 from typing import Optional, Tuple, Type, Union
 
 from typing_extensions import Protocol
 
-from .effect import Depends, Success, add_repr, depend, from_callable, io_bound
+from .effect import Depends, Success, add_repr, depend, from_io_bound_callable
 from .either import Right
 from .functions import curry
 from .immutable import Immutable
@@ -42,12 +44,11 @@ class Logger(Immutable):
         Return:
             `Effect` that calls `logging.debug` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             self.logger.debug(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def info(
         self,
@@ -72,12 +73,11 @@ class Logger(Immutable):
         Return:
             `Effect` that calls `logging.info` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             self.logger.info(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def warning(
         self,
@@ -102,12 +102,11 @@ class Logger(Immutable):
         Return:
             `Effect` that calls `logging.warning` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             self.logger.warning(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def error(
         self,
@@ -132,12 +131,11 @@ class Logger(Immutable):
         Return:
             `Effect` that calls `logging.error` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             self.logger.error(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def critical(
         self,
@@ -162,12 +160,11 @@ class Logger(Immutable):
         Return:
         `Effect` that calls `logging.critical` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             self.logger.critical(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def exception(
         self,
@@ -192,14 +189,13 @@ class Logger(Immutable):
         Return:
             `Effect` that calls `logging.exception` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             self.logger.exception(
                 msg, stack_info=stack_info, exc_info=exc_info
             )
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
 
 class Logging:
@@ -247,12 +243,11 @@ class Logging:
         Return:
             `Effect` that calls `logging.debug` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             logging.debug(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def info(
         self,
@@ -276,12 +271,11 @@ class Logging:
         Return:
             `Effect` that calls `logging.info` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             logging.info(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def warning(
         self,
@@ -305,12 +299,11 @@ class Logging:
         Return:
             `Effect` that calls `logging.warning` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             logging.warning(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def error(
         self,
@@ -334,12 +327,11 @@ class Logging:
         Return:
             `Effect` that calls `logging.error` with `msg`
         """
-        @io_bound
         def f(_: object):
             logging.error(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def critical(
         self,
@@ -363,12 +355,11 @@ class Logging:
         Return:
             `Effect` that calls `logging.critical` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             logging.critical(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
     def exception(
         self,
@@ -392,12 +383,11 @@ class Logging:
         Return:
             `Effect` that calls `logging.exception` with `msg`
         """
-        @io_bound
         def f(_: object) -> Right[None]:
             logging.exception(msg, stack_info=stack_info, exc_info=exc_info)
             return Right(None)
 
-        return from_callable(f)
+        return from_io_bound_callable(f)
 
 
 class HasLogging(Protocol):

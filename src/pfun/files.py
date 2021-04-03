@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from typing_extensions import Protocol
 
-from .effect import Effect, Try, add_repr, catch, depend, io_bound
+from .effect import Effect, Try, add_repr, catch_io_bound, depend
 from .functions import curry
 from .immutable import Immutable
 
@@ -22,12 +24,12 @@ class Files(Immutable):
         Return:
             `Effect` that reads file located at `path`
         """
-        @io_bound
+        @catch_io_bound(OSError)
         def f() -> str:
             with open(path) as f:
                 return f.read()
 
-        return catch(OSError)(f)()
+        return f()
 
     def read_bytes(self, path: str) -> Try[OSError, bytes]:
         """
@@ -42,12 +44,12 @@ class Files(Immutable):
         Return:
             `Effect` that reads file located at `path`
         """
-        @io_bound
+        @catch_io_bound(OSError)
         def f() -> bytes:
             with open(path, 'rb') as f:
                 return f.read()
 
-        return catch(OSError)(f)()
+        return f()
 
     def write(self, path: str, content: str) -> Try[OSError, None]:
         """
@@ -67,12 +69,12 @@ class Files(Immutable):
         Return:
             `Effect` that that writes `content` to file at `path`
         """
-        @io_bound
+        @catch_io_bound(OSError)
         def f() -> None:
             with open(path, 'w') as f:
                 f.write(content)
 
-        return catch(OSError)(f)()
+        return f()
 
     def write_bytes(self, path: str, content: bytes) -> Try[OSError, None]:
         """
@@ -92,12 +94,12 @@ class Files(Immutable):
         Return:
             `Effect` that that writes `content` to file at `path`
         """
-        @io_bound
+        @catch_io_bound(OSError)
         def f() -> None:
             with open(path, 'wb') as f:
                 f.write(content)
 
-        return catch(OSError)(f)()
+        return f()
 
     def append(self, path: str, content: str) -> Try[OSError, None]:
         """
@@ -117,12 +119,12 @@ class Files(Immutable):
         Return:
             `Effect` that that appends `content` to file at `path`
         """
-        @io_bound
+        @catch_io_bound(OSError)
         def f() -> None:
             with open(path, 'a+') as f:
                 f.write(content)
 
-        return catch(OSError)(f)()
+        return f()
 
     def append_bytes(self, path: str, content: bytes) -> Try[OSError, None]:
         """
@@ -142,12 +144,12 @@ class Files(Immutable):
         Return:
             `Effect` that that appends `content` to file at `path`
         """
-        @io_bound
+        @catch_io_bound(OSError)
         def f() -> None:
             with open(path, 'ab+') as f:
                 f.write(content)
 
-        return catch(OSError)(f)()
+        return f()
 
 
 class HasFiles(Protocol):

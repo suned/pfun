@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from asyncio import Lock
 from typing import Callable, Generic, NoReturn, Optional, TypeVar, cast
 
-from .aio_trampoline import Done, Trampoline
-from .effect import Effect, Success, Try, add_method_repr
+from .effect import Success, Try, add_method_repr, from_callable
 from .either import Either, Left, Right
 from .immutable import Immutable
 
@@ -50,11 +51,11 @@ class Ref(Immutable, Generic[A], init=False):
         Return:
             `Effect` that reads the current state
         """
-        async def run_e(_) -> Trampoline[Either[NoReturn, A]]:
+        async def f(_) -> Either[NoReturn, A]:
             async with self.__lock:
-                return Done(Right(self.value))
+                return Right(self.value)
 
-        return Effect(run_e, f'pfun.ref.{repr(self)}.get()')
+        return from_callable(f)
 
     def __repr__(self):
         return f'Ref({repr(self.value)})'
@@ -77,13 +78,13 @@ class Ref(Immutable, Generic[A], init=False):
         Return:
             `Effect` that updates the state
         """
-        async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
+        async def f(_) -> Either[NoReturn, None]:
             async with self.__lock:
                 # purists avert your eyes
                 object.__setattr__(self, 'value', value)
-            return Done(Right(None))
+            return Right(None)
 
-        return Effect(run_e)
+        return from_callable(f)
 
     @add_method_repr
     def modify(self, f: Callable[[A], A]) -> Success[None]:
@@ -104,13 +105,13 @@ class Ref(Immutable, Generic[A], init=False):
         Return:
             `Effect` that updates the state to the result of `f`
         """
-        async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
+        async def c(_) -> Either[NoReturn, None]:
             async with self.__lock:
                 new = f(self.value)
                 object.__setattr__(self, 'value', new)
-            return Done(Right(None))
+            return Right(None)
 
-        return Effect(run_e)
+        return from_callable(c)
 
     @add_method_repr
     def try_modify(self,
@@ -140,13 +141,13 @@ class Ref(Immutable, Generic[A], init=False):
         Return:
             an `Effect` that updates the state if `f` succeeds
         """
-        async def run_e(_) -> Trampoline[Either[E, None]]:
+        async def c(_) -> Either[E, None]:
             async with self.__lock:
                 either = f(self.value)
                 if isinstance(either, Left):
-                    return Done(either)
+                    return either
                 else:
                     object.__setattr__(self, 'value', either.get)
-                return Done(Right(None))
+                return Right(None)
 
-        return Effect(run_e)
+        return from_callable(c)

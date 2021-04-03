@@ -127,3 +127,4 @@ docs/build
 .idea
 .vscode
 .DS_Store
+*.c

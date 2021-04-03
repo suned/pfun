@@ -282,18 +282,20 @@
   disable_cache: true
   main: |
     from typing import Any, NoReturn
-    from pfun.effect import success, combine, Effect
+    from pfun.effect import success, combine, combine_cpu_bound, combine_io_bound, Effect
 
     def f(a: int, b: int) -> str:
       pass
 
     combine(success(''), success(''))(f)  # E: Argument 1 has incompatible type "Callable[[int, int], str]"; expected "Callable[[str, str], str]"
+    combine_cpu_bound(success(''), success(''))(f)  # E: Argument 1 has incompatible type "Callable[[int, int], str]"; expected "Callable[[str, str], str]"
+    combine_io_bound(success(''), success(''))(f)  # E: Argument 1 has incompatible type "Callable[[int, int], str]"; expected "Callable[[str, str], str]"
 - case: effect_combine_combines_protocols
   disable_cache: true
   main: |
     from typing_extensions import Protocol
     from typing import NoReturn
-    from pfun.effect import Effect, combine
+    from pfun.effect import Effect, combine, combine_cpu_bound, combine_io_bound
 
 
     class P1(Protocol):
@@ -309,11 +311,13 @@
       pass
 
     reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
+    reveal_type(combine_cpu_bound(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
+    reveal_type(combine_io_bound(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
 - case: effect_combine_unions_errors
   disable_cache: true
   main: |
     from typing import Any
-    from pfun.effect import Effect, combine
+    from pfun.effect import Effect, combine, combine_cpu_bound, combine_io_bound
 
     e1: Effect[Any, ValueError, str]
     e2: Effect[Any, IOError, str]
@@ -322,20 +326,24 @@
       pass
 
     reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'
+    reveal_type(combine_cpu_bound(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'
+    reveal_type(combine_io_bound(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'
 - case: effect_lift_checks_arguments
   disable_cache: true
   main: |
-    from pfun.effect import lift, success
+    from pfun.effect import lift, lift_cpu_bound, lift_io_bound, success
 
     def add(a: int, b: int) -> int:
       return a + b
 
     lift(add)(success(''), success(''))  # E: Argument 1 to "success" has incompatible type "str"; expected "int"
+    lift_cpu_bound(add)(success(''), success(''))  # E: Argument 1 to "success" has incompatible type "str"; expected "int"
+    lift_io_bound(add)(success(''), success(''))  # E: Argument 1 to "success" has incompatible type "str"; expected "int"
 - case: effect_lift_handles_generics
   disable_cache: true
   main: |
     from typing import TypeVar
-    from pfun.effect import lift, success
+    from pfun.effect import lift, lift_cpu_bound, lift_io_bound, success
 
     A = TypeVar('A')
 
@@ -343,11 +351,13 @@
       ...
 
     reveal_type(lift(f)(success('')))  # N: Revealed type is 'pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]'
+    reveal_type(lift_cpu_bound(f)(success('')))  # N: Revealed type is 'pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]'
+    reveal_type(lift_io_bound(f)(success('')))  # N: Revealed type is 'pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]'
 - case: effect_lift_infers_return_type
   disable_cache: true
   main: |
     from typing_extensions import Protocol
-    from pfun.effect import lift, Effect
+    from pfun.effect import lift, lift_cpu_bound, lift_io_bound, Effect
 
     class P1(Protocol):
       p1_attr: str
@@ -361,6 +371,8 @@
     e1: Effect[P1, ZeroDivisionError, int]
     e2: Effect[P2, KeyError, int]
     reveal_type(lift(f)(e1, e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]'
+    reveal_type(lift_cpu_bound(f)(e1, e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]'
+    reveal_type(lift_io_bound(f)(e1, e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]'
 - case: effect_catch_one_error
   disable_cache: true
   main: |
@@ -381,21 +393,25 @@
 
 
     reveal_type(catch(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'
-- case: effect_cpu_bound_fails_with_async_function
+- case: effect_catch_io_bound_unions_errors
   disable_cache: true
   main: |
-    from pfun.effect import cpu_bound
+    from pfun.effect import catch_io_bound
 
-    async def f() -> int:
-      ...
 
-    cpu_bound(f)  # E: Function arguments to 'pfun.effect.cpu_bound' can't be async
-- case: effect_io_bound_fails_with_async_function
+    def f(a: str) -> int:
+      pass
+
+
+    reveal_type(catch_io_bound(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'
+- case: effect_catch_cpu_bound_unions_errors
   disable_cache: true
   main: |
-    from pfun.effect import io_bound
+    from pfun.effect import catch_cpu_bound
 
-    async def f() -> int:
-      ...
 
-    io_bound(f)  # E: Function arguments to 'pfun.effect.io_bound' can't be async
+    def f(a: str) -> int:
+      pass
+
+
+    reveal_type(catch_cpu_bound(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'

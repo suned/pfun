@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "pfun"
-version = "0.11.5"
+version = "0.12.0"
 description = ""
 authors = ["Sune Debel <sad@archii.ai>"]
 readme = "README.md"
+build = "build.py"
+include = ["src/pfun/py.typed", "src/pfun/*.c"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -13,16 +15,16 @@ asyncpg = {version = "^0.20.1", optional = true}
 dill = "^0.3.2"
 
 [tool.poetry.dev-dependencies]
+Cython = "3.0a6"
 pytest-mypy-plugins = "^1.3"
 pytest-asyncio = "^0.11.0"
-pytest = "^5.4.1"
+pytest = "^6.2.2"
 hypothesis = "^5.10.4"
 ipython = "^7.7"
 ipdb = "^0.12.2"
 flake8 = "^3.7"
-pytest-xdist = "1.32"
+pytest-xdist = "2.2.1"
 yapf = "^0.28.0"
-tox = "^3.14"
 mypy = "0.800"
 isort = "^4.3.21"
 pre-commit = "^2.5.1"
@@ -30,13 +32,23 @@ pre-commit-hooks = "^3.1.0"
 main-dec = "^0.1.1"
 asynctest = "^0.13.0"
 mkdocs = "^1.1.2"
-mkdocstrings = "^0.12.1"
+mkdocstrings = "^0.15.0"
 mkdocs-material = "^5.4.0"
+taskipy = "^1.6.0"
+pytkdocs = { file = "./pytkdocs-0.11.1-py3-none-any.whl" }
 
 [tool.poetry.extras]
 http = ["aiohttp"]
 sql = ["asyncpg"]
 
+[tool.taskipy.tasks]
+compile = "poetry run cython --3str src/pfun/*.pyx"
+install = "poetry run task compile && poetry install"
+build = "poetry run task compile && poetry build"
+test = "poetry run task install && poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini"
+serve-docs = "poetry run task install && poetry run mkdocs serve"
+lint = "poetry run pre-commit run --all"
+
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry>=1.1.5", "setuptools>=41.2.0"]
+build-backend = "poetry.core.masonry.api"

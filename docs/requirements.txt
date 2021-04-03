@@ -1,7 +1,0 @@
-typing-extensions==3.7.4
-aiohttp==3.6.2
-asyncpg==0.20.1
-mkdocs==1.1.2
-mkdocstrings==0.12.1
-mkdocs-material==5.4.0
-dill==0.3.2

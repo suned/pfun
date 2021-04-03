@@ -14,6 +14,7 @@ repos:
           language: system
           entry: end-of-file-fixer
           types: [text]
+          exclude: docs/CNAME
 
         - id: isort
           name: isort
@@ -40,6 +41,6 @@ repos:
           name: mypy
           stages: [commit]
           language: system
-          entry: mypy pfun
+          entry: mypy src/pfun
           types: [python]
           pass_filenames: false

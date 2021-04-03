@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import urllib.parse
 from typing import Any, Iterable, Type, TypeVar, Union
 
@@ -89,7 +91,7 @@ class SQL(Immutable, init=False):
     """
     Module providing postgres sql client capability
     """
-    connection: Resource[asyncpg.PostgresError, PostgresConnection]
+    connection: 'Resource[asyncpg.PostgresError, PostgresConnection]'
 
     def __init__(self, connection_str: str):
         """

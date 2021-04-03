@@ -1,6 +1,6 @@
 site_name: pfun
 site_description: Purely functional, Statically Typed Python
-site_url: https://pfun.readthedocs.io
+site_url: https://pfun.dev
 repo_name: suned/pfun
 repo_url: https://github.com/suned/pfun
 edit_uri: ''
@@ -41,6 +41,7 @@ markdown_extensions:
 plugins:
     - search
     - mkdocstrings:
+        custom_templates: templates
         handlers:
             python:
               rendering:

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from typing import NoReturn
 
 from typing_extensions import Protocol
 
-from .aio_trampoline import Done, Trampoline
-from .effect import Effect, Success, add_repr, depend
+from .effect import Effect, Success, add_repr, depend, from_callable
 from .either import Either, Right
 from .immutable import Immutable
 
@@ -27,12 +28,12 @@ class Console(Immutable):
         Return:
             `Effect` that prints `msg` to stdout
         """
-        async def run_e(_) -> Trampoline[Either[NoReturn, None]]:
+        async def f(_) -> Either[NoReturn, None]:
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, print, msg)
-            return Done(Right(None))
+            return Right(None)
 
-        return Effect(run_e)
+        return from_callable(f)
 
     def input(self, prompt: str = '') -> Success[str]:
         """
@@ -50,12 +51,12 @@ class Console(Immutable):
         Return:
             `Effect` that reads from stdin
         """
-        async def run_e(_):
+        async def f(_):
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(None, input, prompt)
-            return Done(Right(result))
+            return Right(result)
 
-        return Effect(run_e)
+        return from_callable(f)
 
 
 class HasConsole(Protocol):

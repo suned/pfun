@@ -16,6 +16,7 @@ from .utils import recursion_limit
 
 
 class TestEffect(MonadTest):
+    @settings(deadline=None)
     @given(effects(), unaries(effects()), unaries(effects()), anything())
     def test_associativity_law(self, e, f, g, env):
         assert (
@@ -38,6 +39,7 @@ class TestEffect(MonadTest):
             effect.success(value).run(env)
         )
 
+    @settings(deadline=None)
     @given(unaries(effects()), anything(), anything())
     def test_left_identity_law(self, f, value, env):
         assert (
@@ -186,79 +188,174 @@ class TestEffect(MonadTest):
 
     @settings(deadline=None)
     @given(effects(), effects())
-    def test_and_then_cpu_bound(self, e1, e2):
-        e1.and_then(effect.cpu_bound(lambda _: e2)).run(None) == e2.run(None)
-
-    @settings(deadline=None)
-    @given(effects(), effects())
-    def test_and_then_io_bound(self, e1, e2):
-        e1.and_then(effect.io_bound(lambda _: e2)).run(None) == e2.run(None)
-
-    @settings(deadline=None)
-    @given(effects())
-    def test_recover_cpu_bound(self, e):
-        effect.error('').recover(effect.cpu_bound(lambda _: e)
-                                 ).run(None) == e.run(None)
-
-    @given(effects())
-    def test_recover_io_bound(self, e):
-        effect.error('').recover(effect.io_bound(lambda _: e)
-                                 ).run(None) == e.run(None)
-
-    @settings(deadline=None)
-    @given(effects(), anything())
-    def test_map_cpu_bound(self, e, value):
-        e.map(effect.cpu_bound(lambda _: value)).run(None) == value
-
-    @settings(deadline=None)
-    @given(effects(), anything())
-    def test_map_io_bound(self, e, value):
-        e.map(effect.io_bound(lambda _: value)).run(None) == value
-
-    @settings(deadline=None)
-    @given(effects(), effects())
-    def test_combine_cpu_bound(self, e1, e2):
-        effect.combine(e1, e2)(effect.cpu_bound(lambda v1, v2: (v1, v2))
-                               ).run(None) == (e1.run(None), e2.run(None))
-
-    @given(effects(), effects())
-    def test_combine_io_bound(self, e1, e2):
-        effect.combine(e1, e2)(effect.io_bound(lambda v1, v2: (v1, v2))
-                               ).run(None) == (e1.run(None), e2.run(None))
-
-    @settings(deadline=None)
-    @given(effects(), effects())
     def test_lift_cpu_bound(self, e1, e2):
-        effect.lift(effect.cpu_bound(lambda v1, v2: (v1, v2))
-                    )(e1, e2).run(None) == (e1.run(None), e2.run(None))
+        effect.lift_cpu_bound(
+            lambda v1, v2: (v1, v2)
+        )(e1, e2).run(None) == (e1.run(None), e2.run(None))
 
     @settings(deadline=None)
     @given(effects(), effects())
     def test_lift_io_bound(self, e1, e2):
-        effect.lift(effect.io_bound(lambda v1, v2: (v1, v2))
-                    )(e1, e2).run(None) == (e1.run(None), e2.run(None))
+        effect.lift_io_bound(
+            lambda v1, v2: (v1, v2)
+        )(e1, e2).run(None) == (e1.run(None), e2.run(None))
+
+    @settings(deadline=None)
+    @given(effects(), effects())
+    def test_combine_cpu_bound(self, e1, e2):
+        effect.combine_cpu_bound(
+            e1, e2
+        )(lambda v1, v2: (v1, v2)).run(None) == (e1.run(None), e2.run(None))
+
+    @settings(deadline=None)
+    @given(effects(), effects())
+    def test_combine_io_bound(self, e1, e2):
+        effect.combine_io_bound(
+            e1, e2
+        )(lambda v1, v2: (v1, v2)).run(None) == (e1.run(None), e2.run(None))
 
     @settings(deadline=None)
     @given(unaries(rights()))
     def test_from_callable_cpu_bound(self, f):
-        assert effect.from_callable(effect.cpu_bound(f)
-                                    ).run(None) == f(None).get
+        assert effect.from_cpu_bound_callable(f).run(None) == f(None).get
 
     @given(unaries(rights()))
     def test_from_callable_io_bound(self, f):
-        assert effect.from_callable(effect.io_bound(f)
-                                    ).run(None) == f(None).get
+        assert effect.from_io_bound_callable(f).run(None) == f(None).get
 
     @settings(deadline=None)
     @given(unaries())
     def test_catch_cpu_bound(self, f):
-        assert effect.catch(Exception)(effect.cpu_bound(f)
-                                       )(None).run(None) == f(None)
+        assert effect.catch_cpu_bound(Exception)(f)(None).run(None) == f(None)
 
     @given(unaries())
     def test_catch_io_bound(self, f):
-        assert effect.catch(Exception)(effect.io_bound(f)
-                                       )(None).run(None) == f(None)
+        assert effect.catch_io_bound(Exception)(f)(None).run(None) == f(None)
+
+    def test_success_repr(self):
+        assert repr(effect.success('value')) == 'success(\'value\')'
+
+    def test_error_repr(self):
+        assert repr(effect.error('reason')) == 'error(\'reason\')'
+
+    def test_and_then_repr(self):
+        f = lambda _: _
+        assert (repr(effect.success('value').and_then(f)) ==
+                f'success(\'value\').and_then({repr(f)})')
+
+    def test_map_repr(self):
+        f = lambda _: _
+        assert (repr(effect.success('value').map(f)) ==
+                f'success(\'value\').map({repr(f)})')
+
+    def test_discard_and_then_repr(self):
+        e = effect.success('value')
+        assert (repr(e.discard_and_then(e)) ==
+                'success(\'value\').discard_and_then(success(\'value\'))')
+
+    def test_either_repr(self):
+        e = effect.success(0)
+        assert repr(e.either()) == 'success(0).either()'
+
+    def test_recover_repr(self):
+        e = effect.success(0)
+        f = lambda _: _
+        assert repr(e.recover(f)) == f'success(0).recover({repr(f)})'
+
+    def test_memoize_repr(self):
+        e = effect.success(0)
+        assert repr(e.memoize()) == 'success(0).memoize()'
+
+    def test_ensure_repr(self):
+        e = effect.success(0)
+        assert repr(e.ensure(e)) == 'success(0).ensure(success(0))'
+
+    def test_depend_repr(self):
+        assert repr(effect.depend()) == 'depend()'
+
+    def test_from_awaitable_repr(self):
+        async def f():
+            pass
+        a = f()
+        assert repr(effect.from_awaitable(a)) == f'from_awaitable({repr(a)})'
+
+    def test_from_callable_repr(self):
+        f = lambda _: _
+        assert repr(effect.from_callable(f)) == f'from_callable({repr(f)})'
+
+    def test_from_io_bound_callable_repr(self):
+        f = lambda _: _
+        assert (repr(effect.from_io_bound_callable(f)) ==
+                f'from_io_bound_callable({repr(f)})')
+
+    def test_from_cpu_bound_callable_repr(self):
+        f = lambda _: _
+        assert (repr(effect.from_cpu_bound_callable(f)) ==
+                f'from_cpu_bound_callable({repr(f)})')
+
+    def test_catch_repr(self):
+        f = lambda _: _
+        assert (repr(effect.catch(Exception)(f)(0)) ==
+                f'catch(<class \'Exception\'>)({repr(f)})(0)')
+
+    def test_catch_io_bound_repr(self):
+        f = lambda _: _
+        assert (repr(effect.catch_io_bound(Exception)(f)(0)) ==
+                f'catch_io_bound(<class \'Exception\'>)({repr(f)})(0)')
+
+    def test_catch_cpu_bound_repr(self):
+        f = lambda _: _
+        assert (repr(effect.catch_cpu_bound(Exception)(f)(0)) ==
+                f'catch_cpu_bound(<class \'Exception\'>)({repr(f)})(0)')
+
+    def test_sequence_async_repr(self):
+        e = effect.sequence_async([effect.success(0)])
+        assert(repr(e)) == 'sequence_async((success(0),))'
+
+    def test_sequence_repr(self):
+        e = effect.sequence([effect.success(0)])
+        assert(repr(e)) == 'sequence((success(0),))'
+
+    def test_lift_repr(self):
+        f = lambda _: _
+        assert (repr(effect.lift(f)(effect.success(0))) ==
+                f'lift({repr(f)})(success(0))')
+
+    def test_lift_io_bound_repr(self):
+        f = lambda _: _
+        assert (repr(effect.lift_io_bound(f)(effect.success(0))) ==
+                f'lift_io_bound({repr(f)})(success(0))')
+
+    def test_lift_cpu_bound_repr(self):
+        f = lambda _: _
+        assert (repr(effect.lift_cpu_bound(f)(effect.success(0))) ==
+                f'lift_cpu_bound({repr(f)})(success(0))')
+
+    def test_combine_repr(self):
+        f = lambda _: _
+        assert (repr(effect.combine(effect.success(0))(f)) ==
+                f'combine(success(0))({repr(f)})')
+
+    def test_combine_cpu_bound_repr(self):
+        f = lambda _: _
+        assert (repr(effect.combine_io_bound(effect.success(0))(f)) ==
+                f'combine_io_bound(success(0))({repr(f)})')
+
+    def test_combine_cpu_bound_repr(self):
+        f = lambda _: _
+        assert (repr(effect.combine_cpu_bound(effect.success(0))(f)) ==
+                f'combine_cpu_bound(success(0))({repr(f)})')
+
+    def test_filter_repr(self):
+        f = lambda _: effect.success(True)
+        assert repr(effect.filter_(f, [0])) == f'filter_({repr(f)})((0,))'
+
+    def test_for_each_repr(self):
+        f = lambda _: effect.success(True)
+        assert repr(effect.for_each(f, [0])) == f'for_each({repr(f)})((0,))'
+
+    def test_absolve_repr(self):
+        assert repr(effect.absolve(effect.success(0))) == 'absolve(success(0))'
 
 
 class TestResource:
