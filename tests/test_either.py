@@ -5,22 +5,26 @@ from hypothesis import assume, given
 from pfun import Unary, compose, identity
 from pfun.either import (Either, Left, Right, either, filter_, for_each,
                          sequence)
+from pfun.hypothesis_strategies import anything, eithers, unaries
 from tests.monad_test import MonadTest
-from tests.strategies import anything, eithers, unaries
 
 from .utils import recursion_limit
 
 
 class TestEither(MonadTest):
-    @given(eithers())
+    @given(eithers(anything()))
     def test_right_identity_law(self, either: Either):
         assert either.and_then(Right) == either
 
-    @given(anything(), unaries(eithers()))
+    @given(anything(), unaries(eithers(anything())))
     def test_left_identity_law(self, value, f: Unary[Any, Either]):
         assert Right(value).and_then(f) == f(value)
 
-    @given(eithers(), unaries(eithers()), unaries(eithers()))
+    @given(
+        eithers(anything()),
+        unaries(eithers(anything())),
+        unaries(eithers(anything()))
+    )
     def test_associativity_law(
         self, either: Either, f: Unary[Any, Either], g: Unary[Any, Either]
     ):
@@ -48,7 +52,7 @@ class TestEither(MonadTest):
         assert Left(value).map(identity) == Left(value)
         assert Right(value).map(identity) == Right(value)
 
-    @given(unaries(), unaries(), anything())
+    @given(unaries(anything()), unaries(anything()), anything())
     def test_composition_law(self, f: Unary, g: Unary, value):
         h = compose(f, g)
         assert Left(value).map(h) == Left(value).map(g).map(f)

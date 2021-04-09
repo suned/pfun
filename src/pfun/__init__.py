@@ -8,6 +8,6 @@ from .list import List  # noqa
 from .maybe import Just, Maybe, Nothing  # noqa
 
 try:
-    from . import http, sql  # noqa
+    from . import http, sql, hypothesis_strategies  # noqa
 except ImportError:
     pass

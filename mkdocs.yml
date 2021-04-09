@@ -12,6 +12,7 @@ nav:
         - Useful Functions: useful_functions.md
         - Immutable Objects And Data Structures: immutable_objects_and_data.md
         - Stack-Safety And Recursion: stack_safety.md
+        - Property-Based Testing: property_based_testing.md
     - Other Resources: other_resources.md
     - 'API Reference':
         - 'pfun.functions': functions_api.md
@@ -29,6 +30,7 @@ nav:
         - 'pfun.either': either_api.md
         - 'pfun.immutable': immutable_api.md
         - 'pfun.trampoline': trampoline_api.md
+        - 'pfun.hypothesis_strategies': hypothesis_strategies_api.md
 theme:
     name: material
     palette:

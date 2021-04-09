@@ -1,23 +1,27 @@
 from hypothesis import assume, given
 
 from pfun import compose, identity
+from pfun.hypothesis_strategies import anything, trampolines, unaries
 from pfun.trampoline import Done, filter_, for_each, sequence
 
 from .monad_test import MonadTest
-from .strategies import anything, trampolines, unaries
 from .utils import recursion_limit
 
 
 class TestTrampoline(MonadTest):
-    @given(trampolines())
+    @given(trampolines(anything()))
     def test_right_identity_law(self, trampoline):
         assert trampoline.and_then(Done).run() == trampoline.run()
 
-    @given(anything(), unaries(trampolines()))
+    @given(anything(), unaries(trampolines(anything())))
     def test_left_identity_law(self, value, f):
         assert Done(value).and_then(f).run() == f(value).run()
 
-    @given(trampolines(), unaries(trampolines()), unaries(trampolines()))
+    @given(
+        trampolines(anything()),
+        unaries(trampolines(anything())),
+        unaries(trampolines(anything()))
+    )
     def test_associativity_law(self, trampoline, f, g):
         assert trampoline.and_then(f).and_then(g).run(
         ) == trampoline.and_then(lambda x: f(x).and_then(g)).run()
@@ -35,7 +39,7 @@ class TestTrampoline(MonadTest):
     def test_identity_law(self, value):
         assert Done(value).map(identity).run() == Done(value).run()
 
-    @given(unaries(), unaries(), anything())
+    @given(unaries(anything()), unaries(anything()), anything())
     def test_composition_law(self, f, g, value):
         h = compose(f, g)
         assert Done(value).map(g).map(f).run() == Done(value).map(h).run()

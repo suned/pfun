@@ -5,7 +5,7 @@ import pytest
 from hypothesis import given
 
 from pfun import Immutable
-from tests.strategies import anything
+from pfun.hypothesis_strategies import anything
 
 
 class C(Immutable):
