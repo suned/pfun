@@ -7,22 +7,22 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import lists as lists_
 
 from pfun import List, compose, identity
+from pfun.hypothesis_strategies import anything, lists, unaries
 from pfun.list import filter_, for_each, sequence, value
 
 from .monad_test import MonadTest
-from .strategies import anything, lists, unaries
 from .utils import recursion_limit
 
 
 class TestList(MonadTest):
-    @given(lists(), anything())
+    @given(lists(anything()), anything())
     def test_append(self, l1, l2):
-        assert l1.append(l2) == l1 + (l2,)
+        assert l1.append(l2) == l1 + (l2, )
 
     def test_empty(self):
         assert List().empty() == List()
 
-    @given(lists())
+    @given(lists(anything()))
     def test_left_append_identity_law(self, l):
         assert List() + l == l
 
@@ -31,15 +31,19 @@ class TestList(MonadTest):
         assume(l != [])
         assert l[0] == l[0]
 
-    @given(lists())
+    @given(lists(anything()))
     def test_right_append_identity_law(self, l):
         assert l + List() == l
 
-    @given(lists(), lists(), lists())
+    @given(lists(anything()), lists(anything()), lists(anything()))
     def test_append_associativity_law(self, x, y, z):
         assert (x + y) + z == x + (y + z)
 
-    @given(lists(), unaries(lists()), unaries(lists()))
+    @given(
+        lists(anything()),
+        unaries(lists(anything())),
+        unaries(lists(anything()))
+    )
     def test_associativity_law(self, l: List, f, g):
         assert l.and_then(f).and_then(g) == l.and_then(
             lambda x: f(x).and_then(g)
@@ -49,12 +53,12 @@ class TestList(MonadTest):
     def test_equality(self, t):
         assert List(t) == List(t)
 
-    @given(unaries(), unaries(), lists())
+    @given(unaries(anything()), unaries(anything()), lists(anything()))
     def test_composition_law(self, f, g, l):
         h = compose(f, g)
         assert l.map(h) == l.map(g).map(f)
 
-    @given(lists())
+    @given(lists(anything()))
     def test_identity_law(self, l):
         assert l.map(identity) == l
 
@@ -63,11 +67,11 @@ class TestList(MonadTest):
         assume(first != second)
         assert List(first) != List(second)
 
-    @given(anything(), unaries(lists()))
+    @given(anything(), unaries(lists(anything())))
     def test_left_identity_law(self, v, f):
         assert List([v]).and_then(f) == f(v)
 
-    @given(lists())
+    @given(lists(anything()))
     def test_right_identity_law(self, l):
         assert l.and_then(lambda v: List([v])) == l
 
@@ -87,23 +91,23 @@ class TestList(MonadTest):
         i = sum(l)
         assert List(l).reduce(lambda a, b: a + b, 0) == i
 
-    @given(lists(min_size=1), anything())
+    @given(lists(anything(), min_size=1), anything())
     def test_setitem(self, l, value):
         index = random.choice(range(len(l)))
         with pytest.raises(TypeError):
             l[index] = value
 
-    @given(lists(min_size=1))
+    @given(lists(anything(), min_size=1))
     def test_delitem(self, l):
         index = random.choice(range(len(l)))
         with pytest.raises(TypeError):
             del l[index]
 
-    @given(lists(), lists_(anything()))
+    @given(lists(anything()), lists_(anything()))
     def test_extend(self, l1, l2):
         assert l1.extend(l2) == l1 + l2
 
-    @given(lists(), lists())
+    @given(lists(anything()), lists(anything()))
     def test_zip(self, l1, l2):
         assert List(l1.zip(l2)) == List(zip(l1, l2))
 

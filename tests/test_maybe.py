@@ -3,11 +3,11 @@ from typing import Any
 from hypothesis import assume, given
 
 from pfun import List, Unary, compose, identity
+from pfun.hypothesis_strategies import anything, lists, maybes, unaries
 from pfun.maybe import (Just, Maybe, Nothing, filter_, flatten, for_each,
                         maybe, sequence)
 
 from .monad_test import MonadTest
-from .strategies import anything, lists, maybes, unaries
 from .utils import recursion_limit
 
 
@@ -24,19 +24,25 @@ class TestMaybe(MonadTest):
         self._test_just_identity_law()
         self._test_nothing_identity_law()
 
-    @given(maybes())
+    @given(maybes(anything()))
     def test_right_identity_law(self, maybe: Maybe):
         assert maybe.and_then(Just) == maybe
 
-    @given(anything(), unaries(maybes()))
+    @given(anything(), unaries(maybes(anything())))
     def test_left_identity_law(self, value, f: Unary[Any, Maybe]):
         assert Just(value).and_then(f) == f(value)
 
-    @given(maybes(), unaries(maybes()), unaries(maybes()))
+    @given(
+        maybes(anything()),
+        unaries(maybes(anything())),
+        unaries(maybes(anything()))
+    )
     def test_associativity_law(
         self, maybe: Maybe, f: Unary[Any, Maybe], g: Unary[Any, Maybe]
     ):
-        assert maybe.and_then(f).and_then(g) == maybe.and_then(  # type: ignore
+        assert maybe.and_then(f).and_then(
+            g
+        ) == maybe.and_then(  # type: ignore
             lambda x: f(x).and_then(g)
         )
 
@@ -63,7 +69,7 @@ class TestMaybe(MonadTest):
     def _test_nothing_identity_law(self):
         assert Nothing().map(identity) == Nothing()
 
-    @given(unaries(), unaries(), anything())
+    @given(unaries(anything()), unaries(anything()), anything())
     def test_composition_law(self, f: Unary, g: Unary, value):
         h = compose(f, g)
         assert Just(value).map(h) == Just(value).map(g).map(f)
@@ -89,7 +95,7 @@ class TestMaybe(MonadTest):
     def test_nothing_bool(self):
         assert not bool(Nothing())
 
-    @given(lists([maybes()]))
+    @given(lists(maybes(anything())))
     def test_flatten(self, maybe_list):
         assert flatten(maybe_list) == List(m.get for m in maybe_list if m)
 

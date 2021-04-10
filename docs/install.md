@@ -9,7 +9,7 @@ $ pip install pfun
 Some modules such as `pfun.sql` and `pfun.http` require optional dependencies. These can be installed with:
 
 ```console
-$ pip install pfun[sql,http]
+$ pip install pfun[sql,http,test]
 ```
 
 ## MyPy Plugin
