@@ -52,6 +52,12 @@ def unaries(return_strategy: SearchStrategy[A]
     """
     Create a search strategy that produces functions of 1 argument
 
+    Example:
+        >>> f = unaries(integers()).example()
+        >>> f
+        <function ...>
+        >>> f(None)
+        2
     Args:
         return_strategy: strategy used to draw return values
     Return:
@@ -70,6 +76,9 @@ def maybes(value_strategy: SearchStrategy[A]
     """
     Create a search strategy that produces `pfun.maybe.Maybe` values
 
+    Example:
+        >>> maybes(integers()).example()
+        Just(1)
     Args:
         value_strategy: search strategy to draw values from
     Return:
@@ -87,6 +96,9 @@ def rights(value_strategy: SearchStrategy[A]
 
     Args:
         value_strategy: search strategy to draw values from
+    Example:
+        >>> rights(integers()).example()
+        Right(0)
     Return:
         search strategy that produces `pfun.either.Right` values
     """
@@ -99,6 +111,9 @@ def lefts(value_strategy: SearchStrategy[A]) -> SearchStrategy[either.Left[A]]:
 
     Args:
         value_strategy: search strategy to draw values from
+    Example:
+        >>> lefts(integers()).example()
+        Left(0)
     Return:
         search strategy that produces `pfun.either.Left` values
     """
@@ -112,6 +127,12 @@ def eithers(value_strategy: SearchStrategy[A]
 
     Args:
         value_strategy: search strategy to draw values from
+    Example:
+        >>> s = eithers(integers())
+        >>> s.example()
+        Right(0)
+        >>> s.example()
+        Left(0)
     Return:
         search strategy that produces `pfun.either.Either` values
     """
@@ -125,6 +146,12 @@ def nullaries(return_strategy: SearchStrategy[A]
 
     Args:
         return_strategy: strategy used to draw return values
+    Example:
+        >>> f = unaries(integers()).example()
+        >>> f
+        <function ...>
+        >>> f()
+        2
     Return:
         Search strategy that produces callables of 0 arguments
     """
@@ -141,6 +168,9 @@ def trampolines(value_strategy: SearchStrategy[A]
 
     Args:
         value_strategy: strategy used to draw result values
+    Example:
+        >>> trampolines(integers()).example()
+        Call(thunk=<function ... at 0x1083d2d40>)
     Return:
         search strategy that produces `pfun.trampoline.Trampoline` instances
     """
@@ -167,6 +197,9 @@ def aio_trampolines(value_strategy: SearchStrategy[A]
 
     Args:
         value_strategy: strategy used to draw result values
+    Example:
+        >>> aio_trampolines(integers()).example()
+        Call(thunk=<function ... at 0x1083d2d40>)
     Return:
         search strategy that produces \
             `pfun.aio_trampoline.Trampoline` instances
@@ -200,6 +233,9 @@ def lists(elements: SearchStrategy[A], min_size=0):
     Args:
         elements: strategy used to draw elements of the list
         min_size: minimum size of the lists
+    Example:
+        >>> lists(integers()).example()
+        List((0,))
     Return:
         search strategy that produces `pfun.list.List` instances
     """
@@ -223,6 +259,9 @@ def dicts(
         values: search strategy used to draw values for the Dict instances
         min_size: minimum size of the Dicts
         max_size: max size of the Dicts
+    Example:
+        >>> dicts(text(), integers()).example()
+        Dict({'0': 0})
     Return:
         search strategy that produces `pfun.dict.Dict` instances
     """
@@ -251,6 +290,12 @@ def effects(
         max_leaves: max number of leaf effects \
             (`pfun.effect.success`, `pfun.effect.from_callable` etc) \
             to be drawn
+    Example:
+        >>> e = effects(integers()).example()
+        >>> e
+        success(0)
+        >>> e.run(None)
+        0
     Return:
         search strategy that produces `pfun.effect.Effect` instances
     """

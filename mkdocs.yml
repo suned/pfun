@@ -51,4 +51,4 @@ plugins:
                 show_root_heading: true
                 heading_level: 1
         watch:
-            - pfun
+            - src/pfun
