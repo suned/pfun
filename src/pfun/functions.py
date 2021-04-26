@@ -154,7 +154,15 @@ class Curry:
         parameters = {p for p in signature.parameters.keys()}
         if parameters - arg_names == set():
             return self._f(*args, **kwargs)
-        partial = functools.partial(self._f, *args, **kwargs)
+        if isinstance(self._f, functools.partial):
+            partial = functools.partial(
+                self._f.func,
+                *(self._f.args + args),
+                **self._f.keywords,
+                **kwargs
+            )
+        else:
+            partial = functools.partial(self._f, *args, **kwargs)
         return Curry(partial)
 
 
