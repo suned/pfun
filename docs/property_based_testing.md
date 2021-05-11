@@ -20,4 +20,4 @@ def test_increment_all(l: List[int]) -> None:
 ```
 To see all search strategies that comes with `pfun` check out the [API reference](hypothesis_strategies_api.md).
 
-To use the version of hypothesis that `pfun` is tested against, you can install `pfun` along with `hypothesis` using `pip install pfun[test]
+To use the version of hypothesis that `pfun` is tested against, you can install `pfun` along with `hypothesis` using `pip install pfun[test]`

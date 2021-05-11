@@ -32,6 +32,7 @@ nav:
         - 'pfun.immutable': immutable_api.md
         - 'pfun.trampoline': trampoline_api.md
         - 'pfun.hypothesis_strategies': hypothesis_strategies_api.md
+        - 'pfun.operator': operator_api.md
 theme:
     name: material
     palette:

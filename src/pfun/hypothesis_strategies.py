@@ -282,7 +282,7 @@ def effects(
     """
     Create a search strategy that produces `pfun.effect.Effect` instances
 
-    Args
+    Args:
         value_strategy: search strategy used to draw success values
         include_errors: whether to include effects that fail
         max_size: max size of effects that produces iterables \
