@@ -1,91 +1,107 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>
      <loc>https://pfun.dev/what_is_this/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/install/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/effectful_but_side_effect_free/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/useful_functions/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
+     <changefreq>daily</changefreq>
+    </url><url>
+     <loc>https://pfun.dev/curried_and_typesafe_operators/</loc>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/immutable_objects_and_data/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/stack_safety/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
+     <changefreq>daily</changefreq>
+    </url><url>
+     <loc>https://pfun.dev/property_based_testing/</loc>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/other_resources/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/functions_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/effect_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/ref_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/console_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/files_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/logging_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/subprocess_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/http_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/sql_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/list_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/dict_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/maybe_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/either_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/immutable_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://pfun.dev/trampoline_api/</loc>
-     <lastmod>2021-04-03</lastmod>
+     <lastmod>2021-05-12</lastmod>
+     <changefreq>daily</changefreq>
+    </url><url>
+     <loc>https://pfun.dev/hypothesis_strategies_api/</loc>
+     <lastmod>2021-05-12</lastmod>
+     <changefreq>daily</changefreq>
+    </url><url>
+     <loc>https://pfun.dev/operator_api/</loc>
+     <lastmod>2021-05-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>

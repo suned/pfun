@@ -264,6 +264,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
+      Curried And Type-Safe Operators
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
       Immutable Objects And Data Structures
     </a>
@@ -278,6 +290,18 @@
   <li class="md-nav__item">
     <a href="../stack_safety/" title="Stack-Safety And Recursion" class="md-nav__link">
       Stack-Safety And Recursion
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../property_based_testing/" title="Property-Based Testing" class="md-nav__link">
+      Property-Based Testing
     </a>
   </li>
 
@@ -500,6 +524,30 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../hypothesis_strategies_api/" title="pfun.hypothesis_strategies" class="md-nav__link">
+      pfun.hypothesis_strategies
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../operator_api/" title="pfun.operator" class="md-nav__link">
+      pfun.operator
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -526,7 +574,7 @@
                 <p><code>pfun</code> is a Python library that aims to make <a href="https://en.wikipedia.org/wiki/Functional_programming">functional programming</a> in Python fun and easy. On its own, Python has all the features necessary to write code in functional style. However, many programmers find functional programming in Python difficult and tedious because it lacks features supporting common functional design patterns. <code>pfun</code> supplies the last few puzzle pieces that make functional programming in Python ergonomical. Specifically:</p>
 <ul>
 <li><code>pfun</code> provides a simple, unified api for working with any side-effect in functional style through a full-fledged <a href="https://en.wikipedia.org/wiki/Effect_system">functional effect system</a> that doesn't rely on complex solutions such as <a href="https://en.wikipedia.org/wiki/Monad_transformer">monad transformers</a>.</li>
-<li>Python doesn't perform <a href="https://en.wikipedia.org/wiki/Tail_call">tail call optimization</a> which is a problem for many functional design patterns that rely on recursion. <code>pfun</code> solves this by building <a href="https://en.wikipedia.org/wiki/Trampoline_(computing)">trampolining</a> into all relevant types and functions</li>
+<li>Python doesn't perform <a href="https://en.wikipedia.org/wiki/Tail_call">tail call optimization</a> which is a problem for many functional design patterns that rely on recursion. <code>pfun</code> solves this by building <a href="https://cython.readthedocs.io/en/latest/">Cython</a> optimized <a href="https://en.wikipedia.org/wiki/Trampoline_(computing)">trampolining</a> into its effect system.</li>
 <li><code>pfun</code> provides immutable data structures with a functional api, as well as tools for building your own immutable data types.</li>
 <li>The Python type annotations are often too limited to accurately type common functional design patterns. <code>pfun</code> solves this by including a <a href="http://mypy-lang.org/">MyPy</a> plugin that provides very precise typing.</li>
 <li><code>pfun</code> integrates functional patterns for async programming with the <code>asyncio</code> module.</li>

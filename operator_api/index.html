@@ -1,0 +1,3073 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Purely functional, Statically Typed Python">
+      
+      
+        <link rel="canonical" href="https://pfun.dev/operator_api/">
+      
+      
+      <link rel="shortcut icon" href="../nav_logo.svg">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.5.14">
+    
+    
+      
+        <title>pfun.operator - pfun</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.d3202873.min.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ff0a5ce4.min.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#2094f3">
+      
+    
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue" data-md-color-accent="">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pfun.operator.lt" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="https://pfun.dev" title="pfun" class="md-header-nav__button md-logo" aria-label="pfun">
+      
+  <img src="../nav_logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            pfun
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              pfun.operator
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/suned/pfun" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    suned/pfun
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+        
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://pfun.dev" title="pfun" class="md-nav__button md-logo" aria-label="pfun">
+      
+  <img src="../nav_logo.svg" alt="logo">
+
+    </a>
+    pfun
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/suned/pfun" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    suned/pfun
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1">
+    
+    <label class="md-nav__link" for="nav-1">
+      Guide
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Guide" data-md-level="1">
+      <label class="md-nav__title" for="nav-1">
+        <span class="md-nav__icon md-icon"></span>
+        Guide
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../what_is_this/" title="What Is This?" class="md-nav__link">
+      What Is This?
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../install/" title="Install" class="md-nav__link">
+      Install
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link">
+      Effectful (But Side-Effect Free) Programming
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../useful_functions/" title="Useful Functions" class="md-nav__link">
+      Useful Functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
+      Curried And Type-Safe Operators
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
+      Immutable Objects And Data Structures
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../stack_safety/" title="Stack-Safety And Recursion" class="md-nav__link">
+      Stack-Safety And Recursion
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../property_based_testing/" title="Property-Based Testing" class="md-nav__link">
+      Property-Based Testing
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../other_resources/" title="Other Resources" class="md-nav__link">
+      Other Resources
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      API Reference
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="API Reference" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        API Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../functions_api/" title="pfun.functions" class="md-nav__link">
+      pfun.functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../effect_api/" title="pfun.effect" class="md-nav__link">
+      pfun.effect
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ref_api/" title="pfun.ref" class="md-nav__link">
+      pfun.ref
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../console_api/" title="pfun.console" class="md-nav__link">
+      pfun.console
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../files_api/" title="pfun.files" class="md-nav__link">
+      pfun.files
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../logging_api/" title="pfun.logging" class="md-nav__link">
+      pfun.logging
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../subprocess_api/" title="pfun.subprocess" class="md-nav__link">
+      pfun.subprocess
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../http_api/" title="pfun.http" class="md-nav__link">
+      pfun.http
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../sql_api/" title="pfun.sql" class="md-nav__link">
+      pfun.sql
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../list_api/" title="pfun.list" class="md-nav__link">
+      pfun.list
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../dict_api/" title="pfun.dict" class="md-nav__link">
+      pfun.dict
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../maybe_api/" title="pfun.maybe" class="md-nav__link">
+      pfun.maybe
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../either_api/" title="pfun.either" class="md-nav__link">
+      pfun.either
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../immutable_api/" title="pfun.immutable" class="md-nav__link">
+      pfun.immutable
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../trampoline_api/" title="pfun.trampoline" class="md-nav__link">
+      pfun.trampoline
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../hypothesis_strategies_api/" title="pfun.hypothesis_strategies" class="md-nav__link">
+      pfun.hypothesis_strategies
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        pfun.operator
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="pfun.operator" class="md-nav__link md-nav__link--active">
+      pfun.operator
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.lt" class="md-nav__link">
+    lt()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.le" class="md-nav__link">
+    le()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.eq" class="md-nav__link">
+    eq()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.ne" class="md-nav__link">
+    ne()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.gt" class="md-nav__link">
+    gt()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.not_" class="md-nav__link">
+    not_()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.truth" class="md-nav__link">
+    truth()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.is_" class="md-nav__link">
+    is_()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.is_not" class="md-nav__link">
+    is_not()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.add" class="md-nav__link">
+    add()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.abs" class="md-nav__link">
+    abs()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.and_" class="md-nav__link">
+    and_()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.floordiv" class="md-nav__link">
+    floordiv()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.index" class="md-nav__link">
+    index()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.invert" class="md-nav__link">
+    invert()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.lshift" class="md-nav__link">
+    lshift()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.mod" class="md-nav__link">
+    mod()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.mul" class="md-nav__link">
+    mul()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.matmul" class="md-nav__link">
+    matmul()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.neg" class="md-nav__link">
+    neg()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.or_" class="md-nav__link">
+    or_()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.pos" class="md-nav__link">
+    pos()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.pow" class="md-nav__link">
+    pow()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.rshift" class="md-nav__link">
+    rshift()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.sub" class="md-nav__link">
+    sub()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.truediv" class="md-nav__link">
+    truediv()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.xor" class="md-nav__link">
+    xor()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.contains" class="md-nav__link">
+    contains()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.count_of" class="md-nav__link">
+    count_of()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.get_item" class="md-nav__link">
+    get_item()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.length_hint" class="md-nav__link">
+    length_hint()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.lt" class="md-nav__link">
+    lt()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.le" class="md-nav__link">
+    le()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.eq" class="md-nav__link">
+    eq()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.ne" class="md-nav__link">
+    ne()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.gt" class="md-nav__link">
+    gt()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.not_" class="md-nav__link">
+    not_()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.truth" class="md-nav__link">
+    truth()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.is_" class="md-nav__link">
+    is_()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.is_not" class="md-nav__link">
+    is_not()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.add" class="md-nav__link">
+    add()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.abs" class="md-nav__link">
+    abs()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.and_" class="md-nav__link">
+    and_()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.floordiv" class="md-nav__link">
+    floordiv()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.index" class="md-nav__link">
+    index()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.invert" class="md-nav__link">
+    invert()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.lshift" class="md-nav__link">
+    lshift()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.mod" class="md-nav__link">
+    mod()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.mul" class="md-nav__link">
+    mul()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.matmul" class="md-nav__link">
+    matmul()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.neg" class="md-nav__link">
+    neg()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.or_" class="md-nav__link">
+    or_()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.pos" class="md-nav__link">
+    pos()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.pow" class="md-nav__link">
+    pow()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.rshift" class="md-nav__link">
+    rshift()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.sub" class="md-nav__link">
+    sub()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.truediv" class="md-nav__link">
+    truediv()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.xor" class="md-nav__link">
+    xor()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.contains" class="md-nav__link">
+    contains()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.count_of" class="md-nav__link">
+    count_of()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.get_item" class="md-nav__link">
+    get_item()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.operator.length_hint" class="md-nav__link">
+    length_hint()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  
+                
+                
+                <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.lt">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a &lt; b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">lt</span><span class="p">(</span><span class="mi">1</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="kc">True</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsLt[~A, ~B]</code></td>
+        <td><p>left element of lt expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of lt expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>True</code> if <code>a &lt; b</code>, <code>False</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.le">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">le</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a &lt;= b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">le</span><span class="p">(</span><span class="mi">1</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="kc">True</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsLe[~A, ~B]</code></td>
+        <td><p>left element of le expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of le expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>True</code> if <code>a &lt;= b</code>, <code>False</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.eq">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a == b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">eq</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="kc">True</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>object</code></td>
+        <td><p>left element of eq expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>object</code></td>
+        <td><p>right element of eq expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>bool</code></td>
+      <td><p><code>True</code> if <code>a == b</code>, <code>False</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.ne">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a != b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">ne</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="kc">False</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>object</code></td>
+        <td><p>left element of ne expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>object</code></td>
+        <td><p>right element of ne expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>bool</code></td>
+      <td><p><code>True</code> if <code>a != b</code>, <code>False</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.gt">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a &gt; b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">gt</span><span class="p">(</span><span class="mi">1</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="kc">False</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsGt[~A, ~B]</code></td>
+        <td><p>left element of gt expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of gt expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>True</code> if <code>a &gt; b</code>, <code>False</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.not_">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">not_</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>not a</code>, for <em>a</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">not_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="kc">False</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>object</code></td>
+        <td><p>argument of <code>not</code> expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>bool</code></td>
+      <td><p><code>False</code> if <code>a</code>, <code>True</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.truth">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">truth</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>bool(a)</code>, for <em>a</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">truth</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="kc">True</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>object</code></td>
+        <td><p>argument of <code>bool</code> expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>bool</code></td>
+      <td><p><code>True</code> if <code>a</code>, <code>False</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.is_">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">is_</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a is b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">is_</span><span class="p">(</span><span class="nb">object</span><span class="p">())(</span><span class="nb">object</span><span class="p">())</span>
+<span class="kc">False</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>object</code></td>
+        <td><p>left element of is expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>object</code></td>
+        <td><p>right element of is expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>bool</code></td>
+      <td><p><code>True</code> if <code>a is b</code>, <code>False</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.is_not">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">is_not</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a is not b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">is_not</span><span class="p">(</span><span class="nb">object</span><span class="p">())(</span><span class="nb">object</span><span class="p">())</span>
+<span class="kc">True</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>object</code></td>
+        <td><p>left element of is not expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>object</code></td>
+        <td><p>right element of is not expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>bool</code></td>
+      <td><p><code>False</code> if <code>a is b</code>, <code>True</code> otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.add">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a + b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="mi">4</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsAdd[~A, ~B]</code></td>
+        <td><p>left element of add expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of add expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p>b added to a</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.abs">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return builtin <code>abs(a)</code>, for <em>a</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+<span class="mi">2</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsAbs[~A]</code></td>
+        <td><p>element of abs expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~A</code></td>
+      <td><p>b added to a</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.and_">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a and b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">and_</span><span class="p">(</span><span class="kc">True</span><span class="p">)(</span><span class="kc">False</span><span class="p">)</span>
+<span class="kc">False</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code></code></td>
+        <td><p>left element of and_ expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code></code></td>
+        <td><p>right element of and_ expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Callable[[~A], ~B]</code></td>
+      <td><p>True if both <code>a</code> and <code>b</code>, False otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.floordiv">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">floordiv</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a // b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">floordiv</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">3</span><span class="p">)</span>
+<span class="mi">0</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsFloorDiv[~A, ~B]</code></td>
+        <td><p>left element of // expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of // expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p>b added to a</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.index">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <em>a</em> converted to an integer. Equivalent to a.<strong>index</strong>().</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">Index</span><span class="p">:</span>
+<span class="o">...</span>     <span class="k">def</span> <span class="fm">__index__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="o">...</span>         <span class="k">return</span> <span class="mi">0</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">Index</span><span class="p">()]</span>
+<span class="mi">1</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>SupportsIndex</code></td>
+        <td></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.invert">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>~a</code> for <em>a</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">invert</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">-</span><span class="mi">3</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsInvert[~A]</code></td>
+        <td><p>value to invert</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~A</code></td>
+      <td><p><code>~a</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.lshift">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">lshift</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a &lt;&lt; b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">lshift</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">3</span><span class="p">)</span>
+<span class="mi">0</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsLShift[~A, ~B]</code></td>
+        <td><p>left element of &lt;&lt; expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of &lt;&lt; expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>a</code> lshifted by <code>b</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.mod">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a % b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">mod</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">3</span><span class="p">)</span>
+<span class="mi">2</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsMod[~A, ~B]</code></td>
+        <td><p>left element of % expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of % expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p>a modulo b</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.mul">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a * b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">mul</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">3</span><span class="p">)</span>
+<span class="mi">6</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsMul[~A, ~B]</code></td>
+        <td><p>left element of * expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of * expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p>a multiplied by b</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.matmul">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a @ b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">matmul</span><span class="p">(</span><span class="n">m</span><span class="p">)(</span><span class="n">m</span><span class="p">)</span>
+<span class="mi">5</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsMatMul[~A, ~B]</code></td>
+        <td><p>left element of @ expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of @ expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>a @ b</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.neg">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">neg</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>-a</code>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">neg</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="o">-</span><span class="mi">5</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsNeg[~A]</code></td>
+        <td><p>element of negation expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~A</code></td>
+      <td><p><code>-a</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.or_">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">or_</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a or b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">or_</span><span class="p">(</span><span class="kc">True</span><span class="p">)(</span><span class="kc">False</span><span class="p">)</span>
+<span class="kc">True</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code></code></td>
+        <td><p>left element of or expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code></code></td>
+        <td><p>right element of or expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Callable[[~A], ~B]</code></td>
+      <td><p>True if either <code>a</code> or <code>b</code>, False otherwise</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.pos">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">pos</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>+a</code>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">pos</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">)</span>
+<span class="o">-</span><span class="mi">5</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsPos[~A]</code></td>
+        <td><p>element of pos expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~A</code></td>
+      <td><p><code>+a</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.pow">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a ** b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="mi">4</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsPow[~A, ~B]</code></td>
+        <td><p>left element of ** expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of ** expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>a ** b</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.rshift">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">rshift</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a &gt;&gt; b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">rshift</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">3</span><span class="p">)</span>
+<span class="mi">0</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsRShift[~A, ~B]</code></td>
+        <td><p>left element of &gt;&gt; expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of &gt;&gt; expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>a</code> rshifted by <code>b</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.sub">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a - b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">sub</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="mi">0</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsSub[~A, ~B]</code></td>
+        <td><p>left element of - expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of - expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>a - b</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.truediv">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a / b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">truediv</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="mf">1.0</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsTrueDiv[~A, ~B]</code></td>
+        <td><p>left element of / expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of / expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>a / b</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.xor">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">xor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>a ^ b</code>, for <em>a</em> and <em>b</em>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">xor</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="mi">0</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>pfun.protocols.SupportsXor[~A, ~B]</code></td>
+        <td><p>left element of ^ expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>b</code></td>
+        <td><code>~A</code></td>
+        <td><p>right element of ^ expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>a ^ b</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.contains">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">container</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return <code>elem in container</code>, for <em>elem</em> and <em>container</em>.     Note that the order of arguments are flipped comparet to the builtins     <code>operator</code> module</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">contains</span><span class="p">(</span><span class="mi">2</span><span class="p">)([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="kc">True</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>elem</code></td>
+        <td><code>~A</code></td>
+        <td><p>left element of <code>in</code> expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>container</code></td>
+        <td><code>Container[~A]</code></td>
+        <td><p>right element of <code>in</code> expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>bool</code></td>
+      <td><p><code>elem in container</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.count_of">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">count_of</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">container</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return count of how many times <code>elem</code> appears in <code>container</code>.     Note that the order of arguments are flipped comparet to the builtins     <code>operator</code> module</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">count_of</span><span class="p">(</span><span class="mi">2</span><span class="p">)([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="mi">1</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>elem</code></td>
+        <td><code>~A</code></td>
+        <td><p>left element of <code>in</code> expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>container</code></td>
+        <td><code>Container[~A]</code></td>
+        <td><p>right element of <code>in</code> expression</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>int</code></td>
+      <td><p><code>elem in container</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.get_item">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">container</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return element at <code>index</code> in <code>container</code>. Note that the order     of arguments are flipped comparet to the builtins <code>operator</code> module</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">get_item</span><span class="p">(</span><span class="mi">1</span><span class="p">)([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="mi">2</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>index</code></td>
+        <td><code>~A</code></td>
+        <td><p>value to use as index</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>container</code></td>
+        <td><code>pfun.protocols.SupportsGetItem[~A, ~B]</code></td>
+        <td><p>container to index with <code>index</code></p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~B</code></td>
+      <td><p><code>container[index]</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.operator.length_hint">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">length_hint</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Return an estimated length for the object o.     First try to return its actual length, then an estimate     using <code>a.__length_hint__()</code>, and finally return the default value.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">length_hint</span><span class="p">([])</span>
+<span class="mi">0</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>a</code></td>
+        <td><code>SupportsLengthHint</code></td>
+        <td><p>value to compute length hint from</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>int</code></td>
+      <td><p>Length hint as an int</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href="../hypothesis_strategies_api/" title="pfun.hypothesis_strategies" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                pfun.hypothesis_strategies
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/vendor.2d1db4bd.min.js"></script>
+      <script src="../assets/javascripts/bundle.6627ddf3.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      
+      <script>
+        app = initialize({
+          base: "..",
+          features: [],
+          search: Object.assign({
+            worker: "../assets/javascripts/worker/search.5eca75d3.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>
