@@ -74,6 +74,10 @@ def always(value: A) -> Callable[..., A]:
 class Composition(Immutable):
     functions: Tuple[Callable, ...]
 
+    def __repr__(self) -> str:
+        functions_repr = ', '.join(repr(f) for f in self.functions)
+        return f'compose({functions_repr})'
+
     def __call__(self, *args, **kwargs):
         fs = reversed(self.functions)
         first, *rest = fs
@@ -106,7 +110,13 @@ def compose(
     Return:
         `f` composed with `g` composed with `functions` from left to right
     """
-    return Composition((f, g) + functions)
+    fs: Tuple[Callable, ...] = ()
+    for h in (f, g) + functions:
+        if isinstance(h, Composition):
+            fs += h.functions
+        else:
+            fs += (h,)
+    return Composition(fs)
 
 
 def pipeline(
@@ -154,7 +164,15 @@ class Curry:
         parameters = {p for p in signature.parameters.keys()}
         if parameters - arg_names == set():
             return self._f(*args, **kwargs)
-        partial = functools.partial(self._f, *args, **kwargs)
+        if isinstance(self._f, functools.partial):
+            partial = functools.partial(
+                self._f.func,
+                *(self._f.args + args),
+                **self._f.keywords,
+                **kwargs
+            )
+        else:
+            partial = functools.partial(self._f, *args, **kwargs)
         return Curry(partial)
 
 
