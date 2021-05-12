@@ -167,4 +167,6 @@ jobs:
         PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
     - name: Release docs
-      run: poetry run mkdocs gh-deploy
+      run: |
+        git fetch origin gh-pages
+        poetry run mkdocs gh-deploy
