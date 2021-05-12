@@ -9,125 +9,7 @@ on:
 
 
 jobs:
-  # lint:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v2
-  #   - name: Set up Python
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: 3.7
-  #   - name: Restore cache
-  #     uses: actions/cache@v1
-  #     with:
-  #       path: .venv
-  #       key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
-  #   - name: Install poetry
-  #     run: |
-  #       pip install poetry==1.1.5
-  #       poetry config virtualenvs.in-project true
-  #   - name: Install dependencies
-  #     run: |
-  #       poetry install -E http -E sql --no-root
-  #       poetry run task compile
-  #       poetry install
-  #   - name: Lint
-  #     run: poetry run task lint
-  # build_docs:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v2
-  #   - name: Set up Python
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: 3.7
-  #   - name: Restore cache
-  #     uses: actions/cache@v1
-  #     with:
-  #       path: .venv
-  #       key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
-  #   - name: Install poetry
-  #     run: |
-  #       pip install poetry==1.1.5
-  #       poetry config virtualenvs.in-project true
-  #   - name: Install dependencies
-  #     run: |
-  #       poetry install -E http -E sql --no-root
-  #       poetry run task compile
-  #       poetry install
-  #   - name: Build docs
-  #     run: poetry run mkdocs build
-  # test_sdist:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v2
-  #   - name: Set up Python
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: 3.7
-  #   - name: Restore cache
-  #     uses: actions/cache@v1
-  #     with:
-  #       path: .venv
-  #       key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
-  #   - name: Install poetry
-  #     run: |
-  #       pip install poetry==1.1.5
-  #       poetry config virtualenvs.in-project true
-  #   - name: Install dependencies
-  #     run: |
-  #       poetry install -E http -E sql --no-root
-  #       poetry run task compile
-  #       poetry build -f sdist
-  #       poetry run pip install --ignore-installed dist/*
-  #   - name: Run tests
-  #     run: poetry run pytest -n 4 --mypy-ini-file=tests/mypy.ini
-  #   - name: Upload sdist
-  #     uses: actions/upload-artifact@v2
-  #     with:
-  #       name: sdist
-  #       path: dist/*.tar.gz
-  # test_wheel:
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, macos-latest]
-  #       python-version: [3.7, 3.8]
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v2
-  #   - name: Set up Python ${{ matrix.python-version }}
-  #     uses: actions/setup-python@v2
-  #     with:
-  #       python-version: ${{ matrix.python-version }}
-  #   - name: Restore cache
-  #     uses: actions/cache@v1
-  #     with:
-  #       path: .venv
-  #       key: py${{ matrix.python-version }}-${{ matrix.os }}-venv-cache-${{ hashFiles('**/poetry.lock') }}
-  #   - name: Install poetry
-  #     run: |
-  #       pip install poetry==1.1.5
-  #       poetry config virtualenvs.in-project true
-  #   - name: Install dependencies
-  #     run: |
-  #       poetry install -E http -E sql --no-root
-  #       poetry run task compile
-  #       poetry build -f wheel
-  #       poetry run pip install --ignore-installed dist/*
-  #   - name: Run tests
-  #     run: poetry run pytest -n 4 --mypy-ini-file=tests/mypy.ini
-  #   - name: Upload wheel
-  #     uses: actions/upload-artifact@v2
-  #     with:
-  #       name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
-  #       path: dist/*.whl
-  release:
-    #needs: [lint, build_docs, test_wheel, test_sdist]
-    #if: github.event_name == 'release'
+  lint:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -145,27 +27,145 @@ jobs:
       run: |
         pip install poetry==1.1.5
         poetry config virtualenvs.in-project true
-    # - name: Download wheels and sdist
-    #   uses: actions/download-artifact@v2
-    # - name: Gather artifacts
-    #   run: |
-    #     mkdir dist
-    #     mv sdist/*.tar.gz dist
-    #     mv wheel-*/*.whl dist
     - name: Install dependencies
       run: |
         poetry install -E http -E sql --no-root
         poetry run task compile
         poetry install
-    # - name: Check version
-    #   run: |
-    #     tag=$(echo ${{ github.ref }} | cut -d / -f 3)
-    #     poetry run python scripts/check_version.py pyproject.toml $tag
-    # - name: Release pfun
-    #   env:
-    #     PYPI_USERNAME: ${{ secrets.PYPI_USER }}
-    #     PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-    #   run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
+    - name: Lint
+      run: poetry run task lint
+  build_docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Restore cache
+      uses: actions/cache@v1
+      with:
+        path: .venv
+        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+    - name: Install poetry
+      run: |
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
+    - name: Install dependencies
+      run: |
+        poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry install
+    - name: Build docs
+      run: poetry run mkdocs build
+  test_sdist:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Restore cache
+      uses: actions/cache@v1
+      with:
+        path: .venv
+        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+    - name: Install poetry
+      run: |
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
+    - name: Install dependencies
+      run: |
+        poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry build -f sdist
+        poetry run pip install --ignore-installed dist/*
+    - name: Run tests
+      run: poetry run pytest -n 4 --mypy-ini-file=tests/mypy.ini
+    - name: Upload sdist
+      uses: actions/upload-artifact@v2
+      with:
+        name: sdist
+        path: dist/*.tar.gz
+  test_wheel:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7, 3.8]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Restore cache
+      uses: actions/cache@v1
+      with:
+        path: .venv
+        key: py${{ matrix.python-version }}-${{ matrix.os }}-venv-cache-${{ hashFiles('**/poetry.lock') }}
+    - name: Install poetry
+      run: |
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
+    - name: Install dependencies
+      run: |
+        poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry build -f wheel
+        poetry run pip install --ignore-installed dist/*
+    - name: Run tests
+      run: poetry run pytest -n 4 --mypy-ini-file=tests/mypy.ini
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: dist/*.whl
+  release:
+    needs: [lint, build_docs, test_wheel, test_sdist]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Restore cache
+      uses: actions/cache@v1
+      with:
+        path: .venv
+        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+    - name: Install poetry
+      run: |
+        pip install poetry==1.1.5
+        poetry config virtualenvs.in-project true
+    - name: Download wheels and sdist
+      uses: actions/download-artifact@v2
+    - name: Gather artifacts
+      run: |
+        mkdir dist
+        mv sdist/*.tar.gz dist
+        mv wheel-*/*.whl dist
+    - name: Install dependencies
+      run: |
+        poetry install -E http -E sql --no-root
+        poetry run task compile
+        poetry install
+    - name: Check version
+      run: |
+        tag=$(echo ${{ github.ref }} | cut -d / -f 3)
+        poetry run python scripts/check_version.py pyproject.toml $tag
+    - name: Release pfun
+      env:
+        PYPI_USERNAME: ${{ secrets.PYPI_USER }}
+        PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
     - name: Release docs
       run: |
         git fetch origin gh-pages
