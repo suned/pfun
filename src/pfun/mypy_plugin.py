@@ -7,13 +7,17 @@ from mypy import checkmember, infer
 from mypy.checker import TypeChecker
 from mypy.mro import calculate_mro
 from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
-                        ARG_STAR2, Block, ClassDef, NameExpr, TypeInfo)
-from mypy.plugin import (ClassDefContext, FunctionContext, MethodContext,
-                         MethodSigContext, Plugin)
+                        ARG_STAR2, MDEF, AssignmentStmt, Block, ClassDef,
+                        Expression, NameExpr, Statement, SymbolTable,
+                        SymbolTableNode, TempNode, TypeInfo, Var)
+from mypy.plugin import (AttributeContext, ClassDefContext, FunctionContext,
+                         MethodContext, MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
                         TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
                         UnionType, get_proper_type)
+
+from .functions import curry
 
 _CURRY = 'pfun.functions.curry'
 _COMPOSE = 'pfun.functions.compose'
@@ -168,8 +172,7 @@ def _curry_hook(context: FunctionContext) -> Type:
                 variables=list(
                     sorted(set(f.variables) - opt_variables, key=str)
                 )
-            )
-            for f in functions
+            ) for f in functions
         ]
         mod_merged = merge(mod_functions)
         with_opts = CallableType(
@@ -293,6 +296,29 @@ def _immutable_hook(context: ClassDefContext):
     transformer.transform()
     attributes = transformer.collect_attributes()
     transformer._freeze(attributes)
+
+
+def _create_protocol_type(
+    name: str,
+    base_types: t.List[Expression] = None,
+    type_vars: t.List[TypeVarDef] = None,
+    args=(),
+    body: t.List[Statement] = (),
+    names: SymbolTable = None,
+    abstract_attributes: t.List[str] = ()
+):
+    defn = ClassDef(name, Block(list(body)), type_vars, base_types, None, [])
+    defn.fullname = f'pfun.{name}'
+    info = TypeInfo(names, defn, '')
+    info.bases = base_types
+    info.is_protocol = True
+    info.is_abstract = True
+    info.abstract_attributes = list(abstract_attributes)
+    calculate_mro(info)
+    for node in names.values():
+        node.node.info = info
+    instance = Instance(info, args)
+    return defn, info, instance
 
 
 def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
@@ -601,12 +627,138 @@ def _effect_io_bound_hook(context: FunctionContext) -> Type:
         return context.default_return_type
 
 
+@curry
+def _lens_getattr_hook(fullname: str, context: AttributeContext) -> Type:
+    attr_name = fullname.split('.')[-1]
+    protocol_name = f'Has<{attr_name}>'
+    body = [
+        AssignmentStmt(
+            lvalues=[NameExpr(attr_name)],
+            rvalue=TempNode(AnyType(TypeOfAny.special_form)),
+            type=AnyType(TypeOfAny.special_form),
+            new_syntax=True
+        )
+    ]
+    var = Var(attr_name, AnyType(TypeOfAny.special_form))
+    names = {attr_name: SymbolTableNode(MDEF, var)}
+    _, _, protocol = _create_protocol_type(
+        protocol_name,
+        body=body,
+        names=names,
+        abstract_attributes=[attr_name],
+        base_types=[context.api.named_type('builtins.object')]
+    )
+    lens = context.type
+    if not lens.args:
+        return context.default_attr_type.copy_modified(args=(protocol, ))
+    old_protocol = lens.args[0]
+    old_names = old_protocol.type.names
+    old_attr_name = list(old_names.keys())[0]
+    new_node = SymbolTableNode(
+        MDEF, Var(attr_name, protocol), plugin_generated=True
+    )
+    new_names = {old_attr_name: new_node}
+    new_assign = AssignmentStmt(
+        lvalues=[NameExpr(old_attr_name)],
+        rvalue=TempNode(AnyType(TypeOfAny.special_form)),
+        type=protocol,
+        new_syntax=True
+    )
+    new_body = [new_assign]
+    new_name = f'Has<{old_attr_name}.{attr_name}>'
+    _, _, new_protocol = _create_protocol_type(
+        new_name,
+        body=new_body,
+        names=new_names,
+        abstract_attributes=[old_attr_name],
+        base_types=[context.api.named_type('builtins.object')]
+    )
+    return context.default_attr_type.copy_modified(args=(new_protocol, ))
+
+
+def _lens_lshift_hook(context: MethodContext) -> Type:
+    lens = context.type
+    arg_type = context.arg_types[0][0]
+    if not lens.args:
+        return context.default_return_type
+    last_protocol = lens.args[0]
+    protocol_stack = [last_protocol]
+    names = last_protocol.type.names
+    attr, *_ = names.keys()
+    while not isinstance(names[attr].node.type, AnyType):
+        last_protocol = names[attr].type
+        names = last_protocol.type.names
+        attr, *_ = names.keys()
+        protocol_stack.append(last_protocol)
+    protocol_stack.pop()
+    new_node = SymbolTableNode(
+        MDEF, Var(attr, arg_type), plugin_generated=True
+    )
+    new_names = {attr: new_node}
+    new_assign = AssignmentStmt(
+        lvalues=[NameExpr(attr)],
+        rvalue=TempNode(AnyType(TypeOfAny.special_form)),
+        type=arg_type,
+        new_syntax=True
+    )
+    new_body = [new_assign]
+    new_name = f'Has<{attr}: {arg_type.type.fullname}>'
+    _, _, last_protocol = _create_protocol_type(
+        new_name,
+        body=new_body,
+        names=new_names,
+        abstract_attributes=[attr],
+        base_types=[context.api.named_type('builtins.object')]
+    )
+    last_attr = attr
+    for protocol in reversed(protocol_stack):
+        attr, *_ = protocol.type.names.keys()
+        new_node = SymbolTableNode(
+            MDEF, Var(attr, last_protocol), plugin_generated=True
+        )
+        new_names = {attr: new_node}
+        new_assign = AssignmentStmt(
+            lvalues=[NameExpr(attr)],
+            rvalue=TempNode(AnyType(TypeOfAny.special_form)),
+            type=last_protocol,
+            new_syntax=True
+        )
+        new_body = [new_assign]
+        new_name = f'Has<{attr}.{last_attr}: {arg_type.type.fullname}>'
+        _, _, last_protocol = _create_protocol_type(new_name,
+            body=new_body,
+            names=new_names,
+            abstract_attributes=[attr],
+            base_types=[context.api.named_type('builtins.object')]
+        )
+        last_attr = attr
+    return context.default_return_type.copy_modified(args=(last_protocol, ))
+
+
+def _lens_transform_call_hook(context: MethodContext) -> Type:
+    return context.arg_types[0][0]
+
+
+def _lens_transform_and_hook(context: MethodContext) -> Type:
+    first_protocol = context.type.args[0]
+    second_protocol = context.arg_types[0][0].args[0]
+    intersection = _combine_protocols(first_protocol, second_protocol)
+    return context.default_return_type.copy_modified(args=(intersection, ))
+
+
+def _identity_hook(context: FunctionContext) -> Type:
+    import ipdb
+    ipdb.set_trace()
+
+
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
-        if fullname in ('pfun.effect.catch',
-                        'pfun.effect.catch_cpu_bound',
-                        'pfun.effect.catch_io_bound'):
+        if fullname in (
+            'pfun.effect.catch',
+            'pfun.effect.catch_cpu_bound',
+            'pfun.effect.catch_io_bound'
+        ):
             return _effect_catch_hook
         if fullname == _CURRY:
             return _curry_hook
@@ -616,10 +768,14 @@ class PFun(Plugin):
             _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all'
         ):
             return _variadic_decorator_hook
-        if fullname in ('pfun.effect.combine',
-                        'pfun.effect.combine_cpu_bound',
-                        'pfun.effect.combine_io_bound'):
+        if fullname in (
+            'pfun.effect.combine',
+            'pfun.effect.combine_cpu_bound',
+            'pfun.effect.combine_io_bound'
+        ):
             return _combine_hook
+        if fullname == 'pfun.functions.identity':
+            return _identity_hook
         return None
 
     def get_method_hook(self, fullname: str):
@@ -631,19 +787,36 @@ class PFun(Plugin):
             return _effect_ensure_hook
         if fullname == 'pfun.effect.Effect.recover':
             return _effect_recover_hook
-        if fullname in ('pfun.effect.catch.__call__',
-                        'pfun.effect.catch_io_bound.__call__',
-                        'pfun.effect.catch_cpu_bound.__call__'):
+        if fullname in (
+            'pfun.effect.catch.__call__',
+            'pfun.effect.catch_io_bound.__call__',
+            'pfun.effect.catch_cpu_bound.__call__'
+        ):
             return _effect_catch_call_hook
-        if fullname in ('pfun.effect.lift.__call__',
-                        'pfun.effect.lift_io_bound.__call__',
-                        'pfun.effect.lift_cpu_bound.__call__'):
+        if fullname in (
+            'pfun.effect.lift.__call__',
+            'pfun.effect.lift_io_bound.__call__',
+            'pfun.effect.lift_cpu_bound.__call__'
+        ):
             return _effect_lift_call_hook
+        if fullname == 'pfun.lens.Lens.__lshift__':
+            return _lens_lshift_hook
+        if fullname == 'pfun.lens.Transform.__call__':
+            return _lens_transform_call_hook
+        if fullname == 'pfun.lens.Transform.__and__':
+            return _lens_transform_and_hook
+
+    def get_attribute_hook(self, fullname: str):
+        if fullname.startswith('pfun.lens.RootLens'
+                               ) and not fullname.endswith('__path'):
+            return _lens_getattr_hook(fullname)
 
     def get_method_signature_hook(self, fullname: str):
-        if fullname in ('pfun.effect.lift.__call__',
-                        'pfun.effect.lift_cpu_bound.__call__',
-                        'pfun.effect.lift_io_bound.__call__'):
+        if fullname in (
+            'pfun.effect.lift.__call__',
+            'pfun.effect.lift_cpu_bound.__call__',
+            'pfun.effect.lift_io_bound.__call__'
+        ):
             return _effect_lift_call_signature_hook
 
     def get_base_class_hook(self, fullname: str):

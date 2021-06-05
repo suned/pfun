@@ -29,28 +29,5 @@ class Immutable:
             frozen=True, init=init, repr=repr, eq=eq, order=order
         )(cls)
 
-    def clone(self: T, **kwargs) -> T:
-        """
-        Make a shallow copy of an instance, potentially overwriting
-        fields given by ``kwargs``
-
-        Example:
-            >>> class A(Immutable):
-            ...     a: str
-            >>> a = A('a')
-            >>> a2 = a.clone(a='new value')
-            >>> a2.a
-            "new value"
-
-        Args:
-            kwargs: fields to overwrite
-        Return:
-            New instance of same type with copied and overwritten fields
-
-        """
-        attrs = self.__dict__.copy()
-        attrs.update(kwargs)
-        return type(self)(**attrs)  # type: ignore
-
 
 __all__ = ['Immutable']

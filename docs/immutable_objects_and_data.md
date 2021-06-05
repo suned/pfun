@@ -69,3 +69,42 @@ assert 'new_key' not in d and d2.get('new_key') == Just('new_value')
 
 It supports the same api as `dict` which the exception of `__setitem__` which will raise an exception, and uses
 `pfun.maybe.Maybe` to indicate the presence or absence of a key when using `get`.
+
+## Lens
+Working with immutable objects and data-structures can be tricky when you want to transform only one field of an object or one part of a data-structure,
+but want to keep other the rest of the object or data-structure intact.
+
+```python
+from pfun import Immutable, lens
+
+
+class Organization(Immutable):
+    name: str
+
+
+class User(Immutable):
+    name: str
+    organization: Organization
+
+
+alice = User('Alice', Organization('Bar Inc'))
+transform = lens.organization.name << 'Foo Corp'
+assert transform(alice) == User('Alice', Organization('Foo Corp'))
+assert alice == User('Alice', Organization('Bar Inc'))
+```
+
+lens functions can be composed with type-safety using the `&` operator (if the `pfun` MyPy plugin is enabled):
+```python
+transform = lens.organization.name << 'Foo Corp' & lens.name << 'Bob'
+assert transform(alice) == User('Bob', Organization('Foo Corp'))
+```
+Semantically, `lens_function_1 & lens_function_2` is equivalent, to `pfun.compose(lens_function_2, lens_function_1)`.
+The difference between using `compose` and `&` is that `&` enables the MyPy plugin to construct an Intersection
+type of the two protocols derived from the two lens functions, such that the resulting transform function is
+type-safe.
+
+Currently, `lens` supports working the following types of objects and data-structures:
+- Regular Python objects
+- `dataclasses.dataclass` and `pfun.Immutable`
+- `pfun.List`, `tuple` and `list`
+- `pfun.Dict` and `dict`
