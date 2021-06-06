@@ -30,14 +30,3 @@ def test_derived_is_immutable(a, a2):
         d.a = a
     with pytest.raises(FrozenInstanceError):
         d.a2 = a2
-
-
-@given(anything(), anything())
-def test_clone(initial, updated):
-    c = C(initial)
-    c = c.clone(a=updated)
-    assert c.a == updated
-    d = D(initial, initial)
-    d = d.clone(a=updated, a2=updated)
-    assert d.a == updated
-    assert d.a2 == updated
