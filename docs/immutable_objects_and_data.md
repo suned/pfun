@@ -71,40 +71,56 @@ It supports the same api as `dict` which the exception of `__setitem__` which wi
 `pfun.maybe.Maybe` to indicate the presence or absence of a key when using `get`.
 
 ## Lens
-Working with immutable objects and data-structures can be tricky when you want to transform only one field of an object or one part of a data-structure,
-but want to keep other the rest of the object or data-structure intact.
+Working with deeply nested immutable data-structures can be tricky when you want to transform only one member of an object deep inside the nested structure, but want to keep other the remaining data-structure intact, for example in:
 
 ```python
-from pfun import Immutable, lens
+d = {
+    'a': {
+        'b': {
+            'c': 'I want to change this...'
+        }
+    },
+    'd': 'but not this'
+}
+new_d = d.copy()
+new_d['a'] = d['a'].copy()
+new_d['a']['b'] = d['a']['b'].copy()
+new_d['a']['b']['c'] = 'Phew! That took a lot of work!'
+```
+`pfun.lens` gives you an object that allows you to "zoom in" on some field in a data-structure, and copy only what is necessary to change what you want without altering the original object. You use the lens object as a proxy for the object you want to transform, and "set" values using the `<<` operator, which returns a transformation function that you can apply to the data-structure:
+
+```python
+from pfun import lens
 
 
-class Organization(Immutable):
+l = lens()
+t = l['a']['b']['c'] << 'Wow, that was a lot easier!'
+new_d = t(d)
+```
+If you use the `pfun` MyPy plugin, you can give a type as an argument to `lens`, which allows MyPy to check that the operations you make on the lens object are supported by the type you intend to transform:
+```python
+class Person:
     name: str
 
 
-class User(Immutable):
-    name: str
-    organization: Organization
+class User(Person):
+    organization: str
 
 
-alice = User('Alice', Organization('Bar Inc'))
-transform = lens.organization.name << 'Foo Corp'
-assert transform(alice) == User('Alice', Organization('Foo Corp'))
-assert alice == User('Alice', Organization('Bar Inc'))
+u = lens(User)
+
+# MyPy type error because we misspelled 'organization'
+u.organisation << 'Foo Inc'
+
+
+# MyPy type error because "Person" is not a "User"
+(u.organization << 'Foo Inc')(Person())
 ```
-
-lens functions can be composed with type-safety using the `&` operator (if the `pfun` MyPy plugin is enabled):
-```python
-transform = lens.organization.name << 'Foo Corp' & lens.name << 'Bob'
-assert transform(alice) == User('Bob', Organization('Foo Corp'))
-```
-Semantically, `lens_function_1 & lens_function_2` is equivalent, to `pfun.compose(lens_function_2, lens_function_1)`.
-The difference between using `compose` and `&` is that `&` enables the MyPy plugin to construct an Intersection
-type of the two protocols derived from the two lens functions, such that the resulting transform function is
-type-safe.
 
 Currently, `lens` supports working the following types of objects and data-structures:
+
 - Regular Python objects
-- `dataclasses.dataclass` and `pfun.Immutable`
+- `collections.namedtuple` and `typing.NamedTuple` instances
+- normal and frozen `dataclasses.dataclass` and `pfun.Immutable`
 - `pfun.List`, `tuple` and `list`
 - `pfun.Dict` and `dict`

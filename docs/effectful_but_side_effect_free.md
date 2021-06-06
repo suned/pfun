@@ -5,7 +5,7 @@ In functional programming, programs are built by composing functions that have n
 - `pfun.effect` helps you work with side-effects in functional style.
 
 
-If you have some experience with functionl programming, you can probably skip ahead to the section on `pfun.effect.Effect`.
+If you have some experience with functional programming, you can probably skip ahead to the section on `pfun.effect.Effect`.
 ## Maybe
 The job of the `pfun.maybe.Maybe` type is to help you work with missing values, in much the same way that the built-in `None` type is used. One of the main disadvantages of the `None` type is that you end up with logic for dealing with missing values all over the place, using code like `if foo is not None`.
 

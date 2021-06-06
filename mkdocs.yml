@@ -8,10 +8,10 @@ nav:
     - 'Guide':
         - What Is This?: what_is_this.md
         - Install: install.md
-        - Effectful (But Side-Effect Free) Programming: effectful_but_side_effect_free.md
-        - Useful Functions: useful_functions.md
-        - Curried And Type-Safe Operators: curried_and_typesafe_operators.md
         - Immutable Objects And Data Structures: immutable_objects_and_data.md
+        - Useful Functions: useful_functions.md
+        - Effectful (But Side-Effect Free) Programming: effectful_but_side_effect_free.md
+        - Curried And Type-Safe Operators: curried_and_typesafe_operators.md
         - Stack-Safety And Recursion: stack_safety.md
         - Property-Based Testing: property_based_testing.md
     - Other Resources: other_resources.md
@@ -33,6 +33,7 @@ nav:
         - 'pfun.trampoline': trampoline_api.md
         - 'pfun.hypothesis_strategies': hypothesis_strategies_api.md
         - 'pfun.operator': operator_api.md
+        - 'pfun.lens': lens_api.md
 theme:
     name: material
     palette:

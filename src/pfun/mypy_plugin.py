@@ -7,9 +7,8 @@ from mypy import checkmember, infer
 from mypy.checker import TypeChecker
 from mypy.mro import calculate_mro
 from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
-                        ARG_STAR2, MDEF, AssignmentStmt, Block, ClassDef,
-                        Expression, NameExpr, Statement, SymbolTable,
-                        SymbolTableNode, TempNode, TypeInfo, Var)
+                        ARG_STAR2, Block, ClassDef, Expression, NameExpr,
+                        Statement, SymbolTable, TypeInfo)
 from mypy.plugin import (AttributeContext, ClassDefContext, FunctionContext,
                          MethodContext, MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
@@ -630,125 +629,77 @@ def _effect_io_bound_hook(context: FunctionContext) -> Type:
 @curry
 def _lens_getattr_hook(fullname: str, context: AttributeContext) -> Type:
     attr_name = fullname.split('.')[-1]
-    protocol_name = f'Has<{attr_name}>'
-    body = [
-        AssignmentStmt(
-            lvalues=[NameExpr(attr_name)],
-            rvalue=TempNode(AnyType(TypeOfAny.special_form)),
-            type=AnyType(TypeOfAny.special_form),
-            new_syntax=True
+    t = context.type.args[-1]
+    if isinstance(t, AnyType):
+        return context.default_attr_type
+    if context.api.expr_checker.has_member(t, attr_name):
+        attr_type = context.api.expr_checker.analyze_external_member_access(
+            attr_name, t, context.context
         )
-    ]
-    var = Var(attr_name, AnyType(TypeOfAny.special_form))
-    names = {attr_name: SymbolTableNode(MDEF, var)}
-    _, _, protocol = _create_protocol_type(
-        protocol_name,
-        body=body,
-        names=names,
-        abstract_attributes=[attr_name],
-        base_types=[context.api.named_type('builtins.object')]
+        return context.default_attr_type.copy_modified(
+            args=context.type.args + (attr_type, )
+        )
+    args_repr = ", ".join(str(a) for a in context.type.args)
+    type_repr = f'pfun.lens.Lens[{args_repr}]'
+    context.api.fail(
+        f'"{type_repr}" has no attribute "{attr_name}"', context.context
     )
-    lens = context.type
-    if not lens.args:
-        return context.default_attr_type.copy_modified(args=(protocol, ))
-    old_protocol = lens.args[0]
-    old_names = old_protocol.type.names
-    old_attr_name = list(old_names.keys())[0]
-    new_node = SymbolTableNode(
-        MDEF, Var(attr_name, protocol), plugin_generated=True
+    return context.default_attr_type.copy_modified(
+        args=(AnyType(TypeOfAny.special_form), )
     )
-    new_names = {old_attr_name: new_node}
-    new_assign = AssignmentStmt(
-        lvalues=[NameExpr(old_attr_name)],
-        rvalue=TempNode(AnyType(TypeOfAny.special_form)),
-        type=protocol,
-        new_syntax=True
-    )
-    new_body = [new_assign]
-    new_name = f'Has<{old_attr_name}.{attr_name}>'
-    _, _, new_protocol = _create_protocol_type(
-        new_name,
-        body=new_body,
-        names=new_names,
-        abstract_attributes=[old_attr_name],
-        base_types=[context.api.named_type('builtins.object')]
-    )
-    return context.default_attr_type.copy_modified(args=(new_protocol, ))
 
 
-def _lens_lshift_hook(context: MethodContext) -> Type:
-    lens = context.type
-    arg_type = context.arg_types[0][0]
-    if not lens.args:
+def _lens_lshift_hook(context: MethodSigContext) -> Type:
+    return context.default_signature.copy_modified(
+        arg_types=(context.type.args[-1], )
+    )
+
+
+def _transform_call_hook(context: MethodContext) -> Type:
+    if isinstance(context.type.args[0], AnyType):
         return context.default_return_type
-    last_protocol = lens.args[0]
-    protocol_stack = [last_protocol]
-    names = last_protocol.type.names
-    attr, *_ = names.keys()
-    while not isinstance(names[attr].node.type, AnyType):
-        last_protocol = names[attr].type
-        names = last_protocol.type.names
-        attr, *_ = names.keys()
-        protocol_stack.append(last_protocol)
-    protocol_stack.pop()
-    new_node = SymbolTableNode(
-        MDEF, Var(attr, arg_type), plugin_generated=True
-    )
-    new_names = {attr: new_node}
-    new_assign = AssignmentStmt(
-        lvalues=[NameExpr(attr)],
-        rvalue=TempNode(AnyType(TypeOfAny.special_form)),
-        type=arg_type,
-        new_syntax=True
-    )
-    new_body = [new_assign]
-    new_name = f'Has<{attr}: {arg_type.type.fullname}>'
-    _, _, last_protocol = _create_protocol_type(
-        new_name,
-        body=new_body,
-        names=new_names,
-        abstract_attributes=[attr],
-        base_types=[context.api.named_type('builtins.object')]
-    )
-    last_attr = attr
-    for protocol in reversed(protocol_stack):
-        attr, *_ = protocol.type.names.keys()
-        new_node = SymbolTableNode(
-            MDEF, Var(attr, last_protocol), plugin_generated=True
-        )
-        new_names = {attr: new_node}
-        new_assign = AssignmentStmt(
-            lvalues=[NameExpr(attr)],
-            rvalue=TempNode(AnyType(TypeOfAny.special_form)),
-            type=last_protocol,
-            new_syntax=True
-        )
-        new_body = [new_assign]
-        new_name = f'Has<{attr}.{last_attr}: {arg_type.type.fullname}>'
-        _, _, last_protocol = _create_protocol_type(new_name,
-            body=new_body,
-            names=new_names,
-            abstract_attributes=[attr],
-            base_types=[context.api.named_type('builtins.object')]
-        )
-        last_attr = attr
-    return context.default_return_type.copy_modified(args=(last_protocol, ))
-
-
-def _lens_transform_call_hook(context: MethodContext) -> Type:
     return context.arg_types[0][0]
 
 
-def _lens_transform_and_hook(context: MethodContext) -> Type:
-    first_protocol = context.type.args[0]
-    second_protocol = context.arg_types[0][0].args[0]
-    intersection = _combine_protocols(first_protocol, second_protocol)
-    return context.default_return_type.copy_modified(args=(intersection, ))
+def _lens_getitem_hook(context: MethodContext) -> Type:
+    t = context.type.args[-1]
+    args_repr = ", ".join(str(a) for a in context.type.args)
+    type_repr = f'pfun.lens.Lens[{args_repr}]'
+    if context.api.expr_checker.has_member(t, '__getitem__'):
+        getitem_type = context.api.expr_checker.analyze_external_member_access(
+            '__getitem__', t, context.context
+        )
+        result_type, _ = context.api.expr_checker.check_call(
+            getitem_type,
+            context.args[0],
+            context.arg_kinds[0],
+            context.context,
+            object_type=t,
+            callable_name=f'{type_repr}.__getitem__'
+        )
+        return context.default_return_type.copy_modified(
+            args=context.type.args + (result_type, )
+        )
+
+    context.api.fail(
+        f'Value of type "{type_repr}" is not indexable', context.context
+    )
+    return context.default_return_type.copy_modified(
+        args=(AnyType(TypeOfAny.special_form), )
+    )
 
 
-def _identity_hook(context: FunctionContext) -> Type:
-    import ipdb
-    ipdb.set_trace()
+def _lens_hook(context: FunctionContext) -> Type:
+    if not context.arg_types[0]:
+        return context.default_return_type
+    arg_type = context.arg_types[0][0]
+    if not hasattr(arg_type, 'is_type_obj') or not arg_type.is_type_obj():
+        return context.default_return_type
+    if isinstance(arg_type, Overloaded):
+        arg_type = arg_type.items()[0]
+    return context.default_return_type.copy_modified(
+        args=(arg_type.ret_type, )
+    )
 
 
 class PFun(Plugin):
@@ -774,8 +725,8 @@ class PFun(Plugin):
             'pfun.effect.combine_io_bound'
         ):
             return _combine_hook
-        if fullname == 'pfun.functions.identity':
-            return _identity_hook
+        if fullname == 'pfun.lens.lens':
+            return _lens_hook
         return None
 
     def get_method_hook(self, fullname: str):
@@ -799,12 +750,12 @@ class PFun(Plugin):
             'pfun.effect.lift_cpu_bound.__call__'
         ):
             return _effect_lift_call_hook
-        if fullname == 'pfun.lens.Lens.__lshift__':
-            return _lens_lshift_hook
+        if fullname in (
+            'pfun.lens.RootLens.__getitem__', 'pfun.lens.Lens.__getitem__'
+        ):
+            return _lens_getitem_hook
         if fullname == 'pfun.lens.Transform.__call__':
-            return _lens_transform_call_hook
-        if fullname == 'pfun.lens.Transform.__and__':
-            return _lens_transform_and_hook
+            return _transform_call_hook
 
     def get_attribute_hook(self, fullname: str):
         if fullname.startswith('pfun.lens.RootLens'
@@ -818,6 +769,8 @@ class PFun(Plugin):
             'pfun.effect.lift_io_bound.__call__'
         ):
             return _effect_lift_call_signature_hook
+        if fullname == 'pfun.lens.Lens.__lshift__':
+            return _lens_lshift_hook
 
     def get_base_class_hook(self, fullname: str):
         return _immutable_hook
