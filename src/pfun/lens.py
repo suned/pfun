@@ -1,52 +1,31 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Generic, Optional, Type, TypeVar, overload
+from typing import Any, Callable, Generic, Optional, Type, TypeVar, overload
 
 from .dict import Dict
+from .functions import Curry, curry, flip
 from .immutable import Immutable
 from .list import List
 
 A = TypeVar('A')
-B = TypeVar('B', covariant=True)
+B = TypeVar('B')
 
 
-class Transform(Immutable, Generic[A]):
-    """
-    Represents transformation functions created by `Lens` instances
-    """
-    lens: Lens[A]
-    value: Any
-
-    def __repr__(self) -> str:
-        return f'{repr(self.lens)} << {repr(self.value)}'
-
-    def __call__(self, a: A) -> A:
-        """
-        Apply transformation to object `a`
-
-        Examples:
-            >>> from typing import List
-            >>> (lens(List[int])[0] << 1)([0])
-            [1]
-        Args:
-            a: Object to transform
-        Return:
-            Transformed object
-        """
-        *rest, head = self.lens
-        attr_stack = [a]
-        for path_element in rest:
-            *attrs, last_attr = attr_stack
-            next_attr = path_element.get(last_attr)
-            attr_stack = attrs + [last_attr, next_attr]
+def _transform(lens: Lens[A, B], a: A, value: B) -> A:
+    *rest, head = lens
+    attr_stack = [a]
+    for path_element in rest:
         *attrs, last_attr = attr_stack
-        transformed_last_attr = head.set(last_attr, self.value)
-        for attr, path_element in zip(reversed(attrs), reversed(rest)):
-            transformed_last_attr = path_element.set(
-                attr, transformed_last_attr
-            )
-        return transformed_last_attr
+        next_attr = path_element.get(last_attr)
+        attr_stack = attrs + [last_attr, next_attr]
+    *attrs, last_attr = attr_stack
+    transformed_last_attr = head.set(last_attr, value)
+    for attr, path_element in zip(reversed(attrs), reversed(rest)):
+        transformed_last_attr = path_element.set(
+            attr, transformed_last_attr
+        )
+    return transformed_last_attr
 
 
 class PathElement(Immutable):
@@ -108,7 +87,7 @@ class Index(PathElement):
         return x
 
 
-class RootLens(Immutable, Generic[B]):
+class RootLens(Immutable, Generic[A]):
     """
     Lens object that supports attribute access and indexing
     """
@@ -123,7 +102,7 @@ class RootLens(Immutable, Generic[B]):
             result += repr(path_element)
         return result
 
-    def __getattr__(self, name: str) -> Lens[B]:
+    def __getattr__(self, name: str) -> Lens[A, Any]:
         """
         Create a new `Lens` that transform instances at path `name`
 
@@ -141,7 +120,7 @@ class RootLens(Immutable, Generic[B]):
         """
         return Lens(self.__path + [Attr(name)])
 
-    def __getitem__(self, index: Any) -> Lens[B]:
+    def __getitem__(self, index: Any) -> Lens[A, Any]:
         """
         Create a `Lens` object that supports
         transformations of instances at index `index
@@ -158,15 +137,21 @@ class RootLens(Immutable, Generic[B]):
         return Lens(self.__path + [Index(index)])
 
 
-class Lens(RootLens[B]):
+class Lens(RootLens[A], Generic[A, B]):
     """
     Lens object that supports attribute access, indexing
-    and can create transformations
+    and transform objects
     """
     def __repr__(self):
         return super().__repr__()
 
-    def __lshift__(self, value: Any) -> Transform[B]:
+    def __call__(self, a: A, b: B) -> A:
+        return _transform(self, a, b)
+
+    def __ror__(self, a: A) -> Curry[Callable[[B], A]]:
+        return curry(self)(a)
+
+    def __lshift__(self, value: B) -> Curry[Callable[[A], A]]:
         """
         Create a transformation function that assigns `value`
         to this path in the `Lens`
@@ -180,7 +165,7 @@ class Lens(RootLens[B]):
         Return:
             Transformation function
         """
-        return Transform(self, value)
+        return flip(curry(self))(value)
 
 
 T = TypeVar('T', bound=Type[Any])

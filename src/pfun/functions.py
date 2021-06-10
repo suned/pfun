@@ -115,7 +115,7 @@ def compose(
         if isinstance(h, Composition):
             fs += h.functions
         else:
-            fs += (h,)
+            fs += (h, )
     return Composition(fs)
 
 
@@ -146,15 +146,21 @@ def pipeline(
     return compose(*reversed(rest), second, first)
 
 
-class Curry:
-    _f: Callable
+F = TypeVar('F', bound=Callable, covariant=True)
 
-    def __init__(self, f: Callable):
+
+class Curry(Generic[F]):
+    _f: F
+
+    def __init__(self, f: F):
         functools.wraps(f)(self)
-        self._f = f  # type: ignore
+        self._f = f
 
     def __repr__(self):
-        return repr(self._f)
+        return f'curry({repr(self._f)})'
+
+    def __ror__(self, x):
+        return self(x)
 
     def __call__(self, *args, **kwargs):
         signature = inspect.signature(self._f)
@@ -176,7 +182,10 @@ class Curry:
         return Curry(partial)
 
 
-def curry(f: Callable) -> Callable:
+G = TypeVar('G', bound=Callable)
+
+
+def curry(f: G) -> Curry[G]:
     """
     Get a version of ``f`` that can be partially applied
 
@@ -193,13 +202,27 @@ def curry(f: Callable) -> Callable:
     Returns:
         Curried version of ``f``
     """
-    @functools.wraps(f)
-    def decorator(*args, **kwargs):
-        return Curry(f)(*args, **kwargs)
+    if isinstance(f, Curry):
+        return f
+    return Curry(f)
 
-    return decorator
+
+def uncurry(f: Curry[G]) -> G:
+    return f._f  # type: ignore
+
+
+def flip(f: Curry) -> Curry:
+    return curry(lambda *args, **kwargs: f(*reversed(args), **kwargs))
 
 
 __all__ = [
-    'curry', 'always', 'compose', 'pipeline', 'identity', 'Unary', 'Predicate'
+    'curry',
+    'always',
+    'compose',
+    'pipeline',
+    'identity',
+    'Unary',
+    'Predicate',
+    'flip',
+    'uncurry'
 ]

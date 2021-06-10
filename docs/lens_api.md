@@ -10,8 +10,3 @@
         members: [
             '__lshift__'
         ]
-::: pfun.lens.Transform
-    selection:
-        members: [
-            '__call__'
-        ]
