@@ -5,25 +5,26 @@ from functools import reduce
 from mypy import checkmember, infer
 from mypy.argmap import map_actuals_to_formals, map_formals_to_actuals
 from mypy.checker import TypeChecker
+from mypy.checkexpr import has_uninhabited_component
 from mypy.checkmember import analyze_member_access
-from mypy.expandtype import freshen_function_type_vars, expand_type
+from mypy.expandtype import expand_type, freshen_function_type_vars
 from mypy.mro import calculate_mro
 from mypy.nodes import (ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR, ARG_STAR2,
-                        MDEF, Argument, Block, CallExpr, ClassDef, Expression,
-                        FakeInfo, FuncDef, NameExpr, OpExpr, PassStmt,
-                        Statement, SymbolTable, SymbolTableNode, TypeInfo, Var, INVARIANT, COVARIANT)
+                        COVARIANT, INVARIANT, MDEF, Argument, Block, CallExpr,
+                        ClassDef, Expression, FakeInfo, FuncDef, NameExpr,
+                        OpExpr, PassStmt, Statement, SymbolTable,
+                        SymbolTableNode, TypeInfo, Var)
 from mypy.plugin import (AttributeContext, ClassDefContext, FunctionContext,
                          MethodContext, MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.semanal import set_callable_name
-from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
-                        TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
-                        UnionType, get_proper_type, UninhabitedType, TupleType)
-from mypy.typevars import fill_typevars
-from mypy.typeops import bind_self, get_type_vars
-from mypy.checkexpr import has_uninhabited_component
 from mypy.stats import is_complex
 from mypy.type_visitor import TypeTranslator
+from mypy.typeops import bind_self, get_type_vars
+from mypy.types import (AnyType, CallableType, Instance, Overloaded, TupleType,
+                        Type, TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
+                        UninhabitedType, UnionType, get_proper_type)
+from mypy.typevars import fill_typevars
 
 from .functions import curry
 
@@ -39,9 +40,9 @@ _EITHER_CATCH = 'pfun.either.catch'
 class ReplaceTypeVar(TypeTranslator):
     """
     Visitor that replaces a target type variable and defintion with
-    new 
+    new
     """
-    def __init__(self, 
+    def __init__(self,
                  target_t_var: TypeVarType,
                  replacement_t_var: TypeVarType,
                  target_t_def: t.Optional[TypeVarDef] = None,
@@ -53,7 +54,7 @@ class ReplaceTypeVar(TypeTranslator):
 
     def translate_variables(self, variables):
         return [v if v != self.target_t_def else self.replacement_t_def for v in variables]
-    
+
     def visit_type_var(self, t: TypeVarType):
         return t if t != self.target_t_var else self.replacement_t_var
 
@@ -669,7 +670,7 @@ def _curry_call_hook(context: MethodContext) -> Type:
         for arg_kind in unapplied_arg_kinds
     ):
         ret_type = callee.ret_type
-    else:   
+    else:
         arg = CallableType(
             arg_kinds=unapplied_arg_kinds,
             arg_types=unapplied_arg_types,
@@ -811,7 +812,7 @@ def _curry_hook(context):
     __call__ = _get_callable_type(__call__, context)
     if isinstance(__call__, Instance) and __call__.type.fullname == 'pfun.functions.Curry':
         return __call__
-    any_t = AnyType(TypeOfAny.special_form) 
+    any_t = AnyType(TypeOfAny.special_form)
     __ror__ = CallableType(
         [any_t], [ARG_POS], ['x'],
         any_t,
@@ -838,18 +839,18 @@ def _curry_instance(f: CallableType) -> Instance:
 def _curry_signature(f: CallableType) -> CallableType:
     def variable_id(v: TypeVarDef) -> int:
         return abs(v.id.raw_id)
-    
+
     def filter_args_by_kind(kinds: t.List[int]) -> t.Tuple[str, int, Type]:
         return zip(*[
-            (arg_name, arg_kind, arg_type) 
-            for arg_name, arg_kind, arg_type 
-            in zip(f.arg_names, f.arg_kinds, f.arg_types) 
+            (arg_name, arg_kind, arg_type)
+            for arg_name, arg_kind, arg_type
+            in zip(f.arg_names, f.arg_kinds, f.arg_types)
             if arg_kind in kinds
         ])
-    
+
     def get_variables(arg_types: t.List[Type]) -> t.Set[TypeVarDef]:
-        return {variables[variable_id(v)] 
-                for t in arg_types 
+        return {variables[variable_id(v)]
+                for t in arg_types
                 for v in get_type_vars(t)}
 
     optional_kinds = (ARG_OPT, ARG_STAR2)
@@ -870,7 +871,7 @@ def _curry_signature(f: CallableType) -> CallableType:
      required_arg_types) = filter_args_by_kinds(required_kinds)
     required_variables = get_variables(required_arg_types)
     if optional_arg_kinds:
-        return_f = f.copy_modified(arg_types=required_arg_types, 
+        return_f = f.copy_modified(arg_types=required_arg_types,
                                    arg_kinds=required_arg_kinds,
                                    arg_names=required_arg_names,
                                    variables=required_varablies)
@@ -889,9 +890,9 @@ def _curry_signature(f: CallableType) -> CallableType:
     overload = f.copy_modified(arg_types=[first_arg_type], arg_names=[first_arg_name], arg_kinds=[first_arg_kind], variables=first_arg_variables, ret_type=_curry_instance(return_f))
     overloads.append(overload)
     return Overloaded(overloads)
-    
 
-    
+
+
 
 
 class PFun(Plugin):
