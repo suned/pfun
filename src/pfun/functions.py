@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import inspect
 from typing import Any, Callable, Generic, Tuple, TypeVar
@@ -91,7 +93,7 @@ def compose(
     f: Callable[[Any], Any],
     g: Callable[[Any], Any],
     *functions: Callable[[Any], Any]
-) -> Callable[[Any], Any]:
+) -> Curry:
     """
     Compose functions from left to right
 
@@ -116,14 +118,14 @@ def compose(
             fs += h.functions
         else:
             fs += (h, )
-    return Composition(fs)
+    return curry(Composition(fs))
 
 
 def pipeline(
     first: Callable[[Any], Any],
     second: Callable[[Any], Any],
     *rest: Callable[[Any], Any]
-):
+) -> Curry:
     """
     Compose functions from right to left
 
@@ -185,7 +187,7 @@ class Curry(Generic[F]):
 G = TypeVar('G', bound=Callable)
 
 
-def curry(f: G) -> Curry[G]:
+def curry(f: Callable) -> Curry:
     """
     Get a version of ``f`` that can be partially applied
 
@@ -207,10 +209,6 @@ def curry(f: G) -> Curry[G]:
     return Curry(f)
 
 
-def uncurry(f: Curry[G]) -> G:
-    return f._f  # type: ignore
-
-
 def flip(f: Curry) -> Curry:
     return curry(lambda *args, **kwargs: f(*reversed(args), **kwargs))
 
@@ -223,6 +221,5 @@ __all__ = [
     'identity',
     'Unary',
     'Predicate',
-    'flip',
-    'uncurry'
+    'flip'
 ]

@@ -87,15 +87,41 @@ new_d['a'] = d['a'].copy()
 new_d['a']['b'] = d['a']['b'].copy()
 new_d['a']['b']['c'] = 'Phew! That took a lot of work!'
 ```
-`pfun.lens` gives you an object that allows you to "zoom in" on some field in a data-structure, and copy only what is necessary to change what you want without altering the original object. You use the lens object as a proxy for the object you want to transform, and "set" values using the `<<` operator, which returns a transformation function that you can apply to the data-structure:
+`pfun.lens` gives you an object that allows you to "zoom in" on some field in a data-structure, and copy only what is necessary to change what you want without altering the original object. You can think of a lens as a setter function
+that transforms objects given as its argument. You use the lens object as a proxy for the object you want to transform. In the end you call the lens with an object that you want to transform and an assignment value, which
+gives you back a new object:
 
 ```python
 from pfun import lens
 
 
+
+t = 
+new_d = t(d)('Wow that was a lot easier!')
+assert new_d['a']['b']['c'] == 'Wow that was a lot easier!'
+```
+Just like curried functions, lenses support applying the first argument using the `|` operator:
+```python
+(d | lens()['a']['b']['c'])('Wow that was a lot easier!')
+```
+Lenses also has supplying the assignment value as the first argument by using the `<<` operator, which allows you to write code that looks like imperative code, but is purely functional:
+```python
+class Organization:
+    name: str
+
+
+class User:
+    name: str
+    organization: Organization
+
+
+user = User('Bob', Organization('Foo Inc'))
+
 l = lens()
-t = l['a']['b']['c'] << 'Wow, that was a lot easier!'
-new_d = t(d)
+set_name = l.name << 'Alice'
+set_organization_name = l.organization.name << 'Bar Corp'
+
+new_user = user | set_name | set_organization_name
 ```
 If you use the `pfun` MyPy plugin, you can give a type as an argument to `lens`, which allows MyPy to check that the operations you make on the lens object are supported by the type you intend to transform:
 ```python
@@ -104,7 +130,7 @@ class Person:
 
 
 class User(Person):
-    organization: str
+    organization: Organization
 
 
 u = lens(User)

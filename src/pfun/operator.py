@@ -1,5 +1,5 @@
 import operator
-from typing import Container, TypeVar, overload
+from typing import Container, Optional, TypeVar, overload
 
 from . import protocols
 from .functions import Unary, curry
@@ -570,7 +570,7 @@ def count_of(elem: A, container: Container[A]) -> int:
 
 
 @curry
-def get_item(index: A, container: protocols.SupportsGetItem[A, B]) -> B:
+def get_item(index: A, container: protocols.SupportsGetItem[A, B]) -> Optional[B]:
     """
     Return element at `index` in `container`. Note that the order \
     of arguments are flipped comparet to the builtins `operator` module
@@ -586,7 +586,10 @@ def get_item(index: A, container: protocols.SupportsGetItem[A, B]) -> B:
     Return:
         `container[index]`
     """
-    return container[index]
+    try:
+        return container[index]
+    except (KeyError, IndexError):
+        return None
 
 
 @curry

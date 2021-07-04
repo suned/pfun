@@ -10,10 +10,10 @@ from mypy.checkmember import analyze_member_access
 from mypy.expandtype import expand_type, freshen_function_type_vars
 from mypy.mro import calculate_mro
 from mypy.nodes import (ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR, ARG_STAR2,
-                        COVARIANT, INVARIANT, MDEF, Argument, Block, CallExpr,
-                        ClassDef, Expression, FakeInfo, FuncDef, NameExpr,
-                        OpExpr, PassStmt, Statement, SymbolTable,
-                        SymbolTableNode, TypeInfo, Var)
+                        COVARIANT, INVARIANT, MDEF, Argument, AssignmentStmt,
+                        Block, CallExpr, ClassDef, Expression, FakeInfo,
+                        FuncDef, NameExpr, OpExpr, PassStmt, Statement,
+                        SymbolTable, SymbolTableNode, TempNode, TypeInfo, Var)
 from mypy.plugin import (AttributeContext, ClassDefContext, FunctionContext,
                          MethodContext, MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
@@ -22,8 +22,9 @@ from mypy.stats import is_complex
 from mypy.type_visitor import TypeTranslator
 from mypy.typeops import bind_self, get_type_vars
 from mypy.types import (AnyType, CallableType, Instance, Overloaded, TupleType,
-                        Type, TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
-                        UninhabitedType, UnionType, get_proper_type)
+                        Type, TypeList, TypeOfAny, TypeVarDef, TypeVarId,
+                        TypeVarType, UninhabitedType, UnionType,
+                        get_proper_type)
 from mypy.typevars import fill_typevars
 
 from .functions import curry
@@ -57,6 +58,14 @@ class ReplaceTypeVar(TypeTranslator):
 
     def visit_type_var(self, t: TypeVarType):
         return t if t != self.target_t_var else self.replacement_t_var
+
+
+class RemoveTypeVars(TypeTranslator):
+    def translate_variables(self, variables):
+        return []
+
+    def visit_type_alias_type(self, t):
+        return t
 
 
 def _get_callable_type(type_: Type,
@@ -608,167 +617,27 @@ def _lens_hook(context: FunctionContext) -> Type:
     )
 
 
-def _curry_call_hook(context: MethodContext) -> Type:
-    any_t = AnyType(TypeOfAny.special_form)
-    default_signature = context.default_signature.copy_modified(
-        ret_type=any_t,
-        arg_types=[any_t, any_t],
-        arg_kinds=[ARG_STAR, ARG_STAR2],
-        arg_names=['args', 'kwargs']
-    )
-    callee = context.type.args[0]
-    if isinstance(callee, AnyType):
-        return default_signature
-    if isinstance(callee, Instance):
-        variables = {}
-        callee = analyze_member_access(
-            '__call__',
-            callee,
-            context.context,
-            is_lvalue=False,
-            is_super=False,
-            is_operator=True,
-            msg=context.api.msg,
-            original_type=callee,
-            chk=context.api,
-            in_literal_context=context.api.expr_checker.is_literal_context()
-        )
-    else:
-        variables = {abs(v.id.raw_id): v for v in callee.variables}
-    expr = context.context
-    if isinstance(expr, CallExpr):
-        arg_kinds = expr.arg_kinds
-        arg_names = expr.arg_names
-        args = expr.args
-    else:
-        arg_kinds = [ARG_POS]
-        arg_names = [None]
-        args = context.args[0]
-    actual_to_formal = map_formals_to_actuals(
-        arg_kinds,
-        arg_names,
-        callee.arg_kinds,
-        callee.arg_names,
-        lambda i: f.arg_types[i]
-    )
-    applied_args = set(i for m in actual_to_formal for i in m)
-    unapplied_args = set(range(len(callee.arg_kinds))) - applied_args
-    applied_arg_kinds = [callee.arg_kinds[i] for i in applied_args]
-    applied_arg_names = [callee.arg_names[i] for i in applied_args]
-    applied_arg_types = [callee.arg_types[i] for i in applied_args]
-    unapplied_arg_kinds = [callee.arg_kinds[i] for i in unapplied_args]
-    unapplied_arg_names = [callee.arg_names[i] for i in unapplied_args]
-    unapplied_arg_types = [callee.arg_types[i] for i in unapplied_args]
-    if variables:
-        applied_variables = set(variables[abs(v.id.raw_id)] for t in applied_arg_types for v in get_type_vars(t))
-        unapplied_variables = set(variables[abs(v.id.raw_id)] for t in unapplied_arg_types for v in get_type_vars(t)) - applied_variables
-        unapplied_variables = unapplied_variables | (set(variables[abs(v.id.raw_id)] for v in get_type_vars(callee.ret_type)) - applied_variables)
-    else:
-        applied_variables = unapplied_variables = []
-    if all(
-        arg_kind in (ARG_OPT, ARG_STAR, ARG_STAR2, ARG_NAMED_OPT)
-        for arg_kind in unapplied_arg_kinds
-    ):
-        ret_type = callee.ret_type
-    else:
-        arg = CallableType(
-            arg_kinds=unapplied_arg_kinds,
-            arg_types=unapplied_arg_types,
-            arg_names=unapplied_arg_names,
-            ret_type=callee.ret_type,
-            fallback=callee.fallback,
-            name=callee.name,
-            variables=list(unapplied_variables)
-        )
-        ret_type = context.type.copy_modified(args=[arg])
-        add_method_to_instance(
-            ret_type,
-            arg,
-            '__call__',
-            context.api.named_type('builtins.function')
-        )
-    return default_signature.copy_modified(arg_types=applied_arg_types, arg_kinds=applied_arg_kinds, arg_names=applied_arg_names, ret_type=ret_type, variables=list(applied_variables))
-
-
-def add_method_to_class(
-    fallback: Type,
-    cls: ClassDef,
-    name: str,
-    args: t.List[Argument],
-    return_type: Type,
-    self_type: t.Optional[Type] = None,
-    variables = ()
-) -> None:
-    """Adds a new method to a class definition. Copied from
-    https://github.com/python/mypy/blob/master/mypy/plugins/common.py
-    """
-    info = cls.info
-
-    # First remove any previously generated methods with the same name
-    # to avoid clashes and problems in the semantic analyzer.
-    if name in info.names:
-        sym = info.names[name]
-        if sym.plugin_generated and isinstance(sym.node, FuncDef):
-            cls.defs.body.remove(sym.node)
-
-    self_type = self_type or fill_typevars(info)
-
-    args = [Argument(Var('self'), self_type, None, ARG_POS)] + args
-    arg_types, arg_names, arg_kinds = [], [], []
-    for arg in args:
-        assert arg.type_annotation, 'All arguments must be fully typed.'
-        arg_types.append(arg.type_annotation)
-        arg_names.append(arg.variable.name)
-        arg_kinds.append(arg.kind)
-
-    signature = CallableType(
-        arg_types, arg_kinds, arg_names, return_type, fallback
-    )
-    signature.variables = variables
-
-    func = FuncDef(name, args, Block([PassStmt()]))
-    func.info = info
-    func.type = set_callable_name(signature, func)
-    func._fullname = info.fullname + '.' + name
-    func.line = info.line
-    # NOTE: we would like the plugin generated node to dominate, but we still
-    # need to keep any existing definitions so they get semantically analyzed.
-    if name in info.names:
-        # Get a nice unique name instead.
-        r_name = get_unique_redefinition_name(name, info.names)
-        info.names[r_name] = info.names[name]
-
-    info.names[name] = SymbolTableNode(MDEF, func, plugin_generated=True)
-    info.defn.defs.body.append(func)
-
-
-def add_method_to_instance(
-    instance: Instance, f: CallableType, name: str, fallback
-) -> None:
-    if name in instance.type.names:
-        del instance.type.names[name]
+def add_curry_call_var(instance: Instance, f: CallableType) -> None:
+    # Remove type vars because they are added to the curry instance
+    f = f.accept(RemoveTypeVars())
+    var_node = Var('__call__', f)
+    var_node.info = instance.type
+    instance.type.names['__call__'] = SymbolTableNode(MDEF, var_node, plugin_generated=True)
     instance.type.defn.defs.body = [
         node for node in instance.type.defn.defs.body
-        if hasattr(node, 'name') and node.name != name
+        if hasattr(node, 'name') and node.name != '__call__'
     ]
-    arg_types = f.arg_types if hasattr(
-        f, 'arg_types'
-    ) else [AnyType(TypeOfAny.special_form)] * len(f.arg_kinds)
-    arguments = [
-        Argument(Var(name if name else f'a{i}', t), t, None, kind)
-        for i, (t, kind,
-                name) in enumerate(zip(arg_types, f.arg_kinds, f.arg_names))
-    ]
-    ret_type = f.ret_type if hasattr(f, 'ret_type') else AnyType(
-        TypeOfAny.special_form
+    assignment = AssignmentStmt(
+        lvalues=[NameExpr('__call__')],
+        rvalue=TempNode(AnyType(TypeOfAny.special_form), no_rhs=True),
+        type=f
     )
-    add_method_to_class(
-        fallback, instance.type.defn, name, arguments, ret_type, variables=f.variables
-    )
+    instance.type.defn.defs.body.append(assignment)
 
 
-def _empty_curry_instance(args, fallback):
-    defn = ClassDef(name='Curry', defs=Block([]))
+
+def _empty_curry_instance(args, fallback, type_vars=[]):
+    defn = ClassDef(name='Curry', defs=Block([]), type_vars=type_vars)
     defn.fullname = 'pfun.functions.Curry'
     instance = Instance(
         typ=TypeInfo(names={}, defn=defn, module_name='pfun.functions'),
@@ -781,29 +650,30 @@ def _empty_curry_instance(args, fallback):
     instance.type.defn.info = instance.type
     __call__ = CallableType(arg_types, arg_kinds, arg_names, any_t, fallback)
     __ror__ = CallableType([any_t], [ARG_POS], ['x'], any_t, fallback)
-    add_method_to_instance(instance, __call__, '__call__', fallback)
-    add_method_to_instance(instance, __ror__, '__ror__', fallback)
+    add_curry_call_var(instance, __call__)
     calculate_mro(instance.type)
+    instance.type.add_type_vars()
     return instance
 
 
 def _curry_type_analyze_hook(context):
     fallback = context.api.named_type('builtins.function')
     any_t = AnyType(TypeOfAny.special_form)
+    default = _empty_curry_instance([any_t], fallback)
     if not context.type.args:
-        return _empty_curry_instance([any_t], fallback)
-    f = context.type.args[0]
-    f_analyzed = context.api.anal_type(f)
-    curry_instance = _empty_curry_instance([f_analyzed], fallback)
-    if isinstance(f_analyzed, TypeVarType):
-        return curry_instance
-    elif isinstance(f_analyzed, AnyType):
-        return curry_instance
-    add_method_to_instance(
-        curry_instance, f_analyzed, '__call__', f_analyzed.fallback
+        return default
+    *args, ret_type = context.type.args
+    arg_types = [context.api.anal_type(t) for t in args]
+    ret_type = context.api.anal_type(ret_type)
+    f = CallableType(
+        arg_types=arg_types,
+        arg_names=[None] * len(arg_types),
+        arg_kinds=[ARG_POS] * len(arg_types),
+        ret_type=ret_type,
+        fallback=fallback
     )
-    context.api.api.add_plugin_dependency(curry_instance.type.fullname)
-    return context.api.anal_type(curry_instance)
+    return _curry_instance(f)
+
 
 
 def _curry_hook(context):
@@ -812,26 +682,15 @@ def _curry_hook(context):
     __call__ = _get_callable_type(__call__, context)
     if isinstance(__call__, Instance) and __call__.type.fullname == 'pfun.functions.Curry':
         return __call__
-    any_t = AnyType(TypeOfAny.special_form)
-    __ror__ = CallableType(
-        [any_t], [ARG_POS], ['x'],
-        any_t,
-        context.api.named_type('builtins.function')
-    )
-    add_method_to_instance(
-        t, __call__, '__call__', context.api.named_type('builtins.function')
-    )
-    add_method_to_instance(
-        t, __ror__, '__ror__', context.api.named_type('builtins.function')
-    )
-    return t.copy_modified(args=[__call__])
+    return _curry_instance(__call__)
 
 
 
 def _curry_instance(f: CallableType) -> Instance:
-    instance = _empty_curry_instance((f,), f.fallback)
+    args = f.arg_types + [f.ret_type]
+    instance = _empty_curry_instance(args, f.fallback, f.variables)
     __call__ = _curry_signature(f)
-    add_method_to_instance(instance, __call__, '__call__', f.fallback)
+    add_curry_call_var(instance, __call__)
     return instance
 
 
@@ -840,18 +699,21 @@ def _curry_signature(f: CallableType) -> CallableType:
     def variable_id(v: TypeVarDef) -> int:
         return abs(v.id.raw_id)
 
-    def filter_args_by_kind(kinds: t.List[int]) -> t.Tuple[str, int, Type]:
-        return zip(*[
+    def filter_args_by_kinds(kinds: t.List[int]) -> t.Tuple[str, int, Type]:
+        if not any(k in kinds for k in f.arg_kinds):
+            return [], [], []
+        arg_names, arg_kinds, arg_types = zip(*[
             (arg_name, arg_kind, arg_type)
             for arg_name, arg_kind, arg_type
             in zip(f.arg_names, f.arg_kinds, f.arg_types)
             if arg_kind in kinds
         ])
+        return list(arg_names), list(arg_kinds), list(arg_types)
 
-    def get_variables(arg_types: t.List[Type]) -> t.Set[TypeVarDef]:
-        return {variables[variable_id(v)]
-                for t in arg_types
-                for v in get_type_vars(t)}
+    def get_variables(types: t.List[Type]) -> t.Set[TypeVarDef]:
+        return list({variables[variable_id(v)]
+                for t in types
+                for v in get_type_vars(t)})
 
     optional_kinds = (ARG_OPT, ARG_STAR2)
     required_kinds = (ARG_POS, ARG_STAR)
@@ -863,9 +725,9 @@ def _curry_signature(f: CallableType) -> CallableType:
     variable_id = lambda v: abs(v.id.raw_id)
     variables = {variable_id(v): v for v in f.variables}
     (optional_arg_names,
-     optional_arg_kinds,
-     optional_arg_types) = filter_args_by_kinds(optional_kinds)
-    optional_variables = get_variables(required_arg_types)
+    optional_arg_kinds,
+    optional_arg_types) = filter_args_by_kinds(optional_kinds)
+    optional_variables = get_variables(optional_arg_types)
     (required_arg_names,
      required_arg_kinds,
      required_arg_types) = filter_args_by_kinds(required_kinds)
@@ -874,7 +736,7 @@ def _curry_signature(f: CallableType) -> CallableType:
         return_f = f.copy_modified(arg_types=required_arg_types,
                                    arg_kinds=required_arg_kinds,
                                    arg_names=required_arg_names,
-                                   variables=required_varablies)
+                                   variables=required_variables)
         overload = f.copy_modified(arg_types=optional_arg_types,
                                    arg_kinds=optional_arg_kinds,
                                    arg_names=optional_arg_names,
@@ -891,6 +753,11 @@ def _curry_signature(f: CallableType) -> CallableType:
     overloads.append(overload)
     return Overloaded(overloads)
 
+
+
+def dbhook(context):
+    import ipdb; ipdb.set_trace()
+    return context.default_return_type
 
 
 
@@ -964,10 +831,6 @@ class PFun(Plugin):
             'pfun.effect.lift_io_bound.__call__'
         ):
             return _effect_lift_call_signature_hook
-        if fullname == 'pfun.functions.Curry.__call__':
-            return _curry_call_hook
-        if fullname == 'pfun.functions.Curry.__or__':
-            return _curry_call_hook
 
     def get_base_class_hook(self, fullname: str):
         return _immutable_hook
