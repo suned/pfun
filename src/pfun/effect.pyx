@@ -27,10 +27,10 @@ cdef class RuntimeEnv:
     """
     cdef object r
     cdef object exit_stack
-    cdef int max_processes
-    cdef int max_threads
-    cdef object process_executor
-    cdef object thread_executor
+    cdef object max_processes
+    cdef object max_threads
+    cdef readonly object process_executor
+    cdef readonly object thread_executor
 
     def __cinit__(self, r, exit_stack, max_processes, max_threads):
         self.r = r
