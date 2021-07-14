@@ -8,7 +8,7 @@ from .functions import Curry, curry, flip
 from .immutable import Immutable
 from .list import List
 
-A = TypeVar('A', covariant=True)
+A = TypeVar('A')
 B = TypeVar('B')
 
 
@@ -146,13 +146,13 @@ class Lens(RootLens[A], Generic[A, B]):
     def __repr__(self):
         return super().__repr__()
 
-    def __call__(self, a: A) -> Curry[B, A]:
+    def __call__(self, a: A) -> Curry[Callable[[B], A]]:
         return _transform(self)(a)
 
-    def __ror__(self, a: A) -> Curry[B, A]:
+    def __ror__(self, a: A) -> Curry[Callable[[B], A]]:
         return curry(self)(a)
 
-    def __lshift__(self, value: B) -> Curry[A, A]:
+    def __lshift__(self, value: B) -> Curry[Callable[[A], A]]:
         """
         Create a transformation function that assigns `value`
         to this path in the `Lens`

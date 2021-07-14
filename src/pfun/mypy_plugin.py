@@ -657,21 +657,13 @@ def _empty_curry_instance(args, fallback, type_vars=[]):
 
 
 def _curry_type_analyze_hook(context):
+    #import ipdb; ipdb.set_trace()
     fallback = context.api.named_type('builtins.function')
     any_t = AnyType(TypeOfAny.special_form)
     default = _empty_curry_instance([any_t], fallback)
     if not context.type.args:
         return default
-    *args, ret_type = context.type.args
-    arg_types = [context.api.anal_type(t) for t in args]
-    ret_type = context.api.anal_type(ret_type)
-    f = CallableType(
-        arg_types=arg_types,
-        arg_names=[None] * len(arg_types),
-        arg_kinds=[ARG_POS] * len(arg_types),
-        ret_type=ret_type,
-        fallback=fallback
-    )
+    f = context.api.anal_type(context.type.args[0])
     return _curry_instance(f)
 
 
@@ -687,9 +679,8 @@ def _curry_hook(context):
 
 
 def _curry_instance(f: CallableType) -> Instance:
-    args = f.arg_types + [f.ret_type]
-    instance = _empty_curry_instance(args, f.fallback, f.variables)
     __call__ = _curry_signature(f)
+    instance = _empty_curry_instance(__call__.arg_types, f.fallback, __call__.variables)
     add_curry_call_var(instance, __call__)
     return instance
 
@@ -756,7 +747,7 @@ def _curry_signature(f: CallableType) -> CallableType:
 
 
 def dbhook(context):
-    import ipdb; ipdb.set_trace()
+    #import ipdb; ipdb.set_trace()
     return context.default_return_type
 
 
@@ -791,6 +782,8 @@ class PFun(Plugin):
             return _lens_hook
         if fullname == 'pfun.functions.curry':
             return _curry_hook
+        if fullname == 'test_types.C':
+            return dbhook
         return None
 
     def get_method_hook(self, fullname: str):
