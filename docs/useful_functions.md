@@ -1,5 +1,6 @@
 ## curry
-`curry` makes it easy to [curry](https://en.wikipedia.org/wiki/Currying) functions while inferring the resulting type signature with MyPy (if the `pfun` MyPy plugin is enabled).
+`curry` makes it easy to [curry](https://en.wikipedia.org/wiki/Currying) functions. If you enable the MyPy plugin, MyPy can also
+type check the arguments and return types of curried functions.
 
 The functions returned by `curry` support both normal and curried call styles:
 
@@ -26,55 +27,60 @@ def f(a, b='b', c='c'):
 
 assert f('a', c='c', b='b') == f(b='b')(a='a') == f(c='c')(a='a')(b='b') == ...
 ```
-
-To keep things simple, the `pfun` MyPy plugin doesn't infer all possible overloads of curried signatures. Instead, the inferred signature is split into the following argument lists: One argument list for optional arguments and `**kwargs` followed by one argument list for each positional argument. If the uncurried function accepts `*args`, it's added to the last positional argument list of the curried function
-
-In other words, given the following function `f`:
-```python
-@curry
-def f(pos_1: T, pos_2: T, *args: T, keyword: T = '', **kwargs: T) -> T:
-    ...
-```
-the MyPy plugin infers the following overloaded signatures:
-
-- **Curried signature without optional arguments**  
-`(pos_1: T) -> (pos_2: T, *args: T) -> T`
-- **Curried signature with optional arguments**  
-`(*, keyword: T =, **kwargs: T) -> (pos_1: T) -> (pos_2: T, *args: T) -> T`
-- **Uncurried signature**  
-`(pos_1: T, pos_2: T, *args: T, *, keyword: T =, **kwargs: T) -> T`
-
-The reasoning behind this behaviour is that the main use-case for currying is
-to pass partially applied functions as arguments to other functions that expect
-unary function arguments such as `pfun.effect.Effect.map` or `pfun.effect.Effect.and_then`,
-and in by-far most cases, we need the required arguments to be applied last:
+To keep things simple, the actual signature of curried functions is simply the original function signature,
+which allows you to pass curried functions as arguments to functions that expects callbacks:
 
 ```python
-import operator as op
-from pfun.functions import curry
-from pfun.effect import success
+from typing import Callable
 
-success(2).map(curry(op.add)(2)).run(None)
-4
-```
-
-If this is not the behaviour you need, you can cast the result of calling a curried function,
-or use a `lambda`:
-```python
-from typing import cast, Callable
-
+from pfun import curry
 
 @curry
-def only_optional_args(a: str = 'a', b: str = 'b') -> str:
-    ...
+def f(a: int, b: int) -> int: ...
 
-# we need to cast here because the MyPy plugin does not infer this signature
-f = cast(Callable[[str], str], only_optional_args('c'))
 
-# alternatively, use a lambda
-f = lambda b: only_optional_args('c', b)
+def h(g: Callable[[int], int]) - int: ...
+
+h(f(1))  # type safe
 ```
 
+Because the signature of curried functions is not actually curried, this call will
+currently issue a false type error:
+
+```python
+@curry
+def f(a: int, b: int) -> int: ...
+
+
+def h(g: Callable[[int], Callable[[int], int]]) -> int: ...
+
+
+h(f)  # false type error
+```
+
+If you need to take curried functions as callback arguments, this is a type-safe
+alternative
+```python
+from pfun.functions import Curry, curry
+
+@curry
+def f(a: int, b: int) -> int: ...
+
+def h(g: Curry[Callable[[int, int], int]]) -> int: ...
+
+
+h(f)  # type safe
+```
+Currently the `curry` MyPy plugin doesn't support methods. If you want to return a curried function from a method you can use the following workaround:
+
+```python
+from pfun.functions import Curry, curry
+
+
+class C:
+    def f(self, x: int) -> Curry[[Callable[[int], int]]]:
+        return curry(lambda y: x + y)
+```
 ## compose
 
 `compose` makes it easy to compose functions while inferring the resulting type signature with MyPy (if the `pfun` MyPy plugin is enabled).

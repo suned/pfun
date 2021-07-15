@@ -415,3 +415,78 @@
 
 
     reveal_type(catch_cpu_bound(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'
+- case: lens_without_arg_allows_all
+  disable_cache: true
+  main: |
+    from pfun import lens
+
+    reveal_type(lens().name)  # N: Revealed type is 'pfun.lens.Lens[Any, Any]'
+    reveal_type(lens().name('')([]))   # N: Revealed type is 'Any'
+- case: lens_with_arg_checks_access
+  disable_cache: true
+  main: |
+    from typing import List
+    from pfun import lens
+    
+    class Organization:
+        name: str
+        tags: List[str]
+
+    class User:
+        name: str
+        organization: Organization
+        tags: List[str]
+    
+    lens(User).foo
+    lens(User).organization.foo
+    lens(User).tags['']
+    lens(User).organization.tags['']
+    lens(User).name(1)
+    lens(User).organization.name(1)
+
+    reveal_type(lens(User).organization)
+    reveal_type(lens(User).organization.name)
+  out: |
+    main:13: error: "pfun.lens.Lens[main.User]" has no attribute "foo"
+    main:14: error: "pfun.lens.Lens[main.User, main.Organization]" has no attribute "foo"
+    main:15: error: No overload variant of "__getitem__" of "list" matches argument type "str"
+    main:15: note: Possible overload variants:
+    main:15: note:     def __getitem__(self, int) -> str
+    main:15: note:     def __getitem__(self, slice) -> List[str]
+    main:16: error: No overload variant of "__getitem__" of "list" matches argument type "str"
+    main:16: note: Possible overload variants:
+    main:16: note:     def __getitem__(self, int) -> str
+    main:16: note:     def __getitem__(self, slice) -> List[str]
+    main:17: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
+    main:18: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
+    main:20: note: Revealed type is 'pfun.lens.Lens[main.User, main.Organization]'
+    main:21: note: Revealed type is 'pfun.lens.Lens[main.User, builtins.str]'
+- case: lens_supports_protocols
+  disable_cache: true
+  main: |
+    from typing_extensions import Protocol
+    from pfun import lens
+
+    class User(Protocol):
+        name: str
+    
+    reveal_type(lens(User))  # N: Revealed type is 'pfun.lens.RootLens[main.User]'
+- case: transform_checks_args
+  disable_cache: true
+  main: |
+    from typing import Dict
+    from pfun import lens
+
+    lens(Dict[str, str])['key']('value')([])  # E: Value of type variable "A" of function cannot be "List[<nothing>]"
+- case: transform___call___is_generic
+  disable_cache: true
+  main: |
+    from pfun import lens
+
+    class Person:
+        name: str
+    
+    class User(Person):
+        password: str
+    
+    reveal_type(lens(Person).name('')(User()))  # N: Revealed type is 'main.User*'

@@ -154,7 +154,7 @@ class Curry:
         self._f = f  # type: ignore
 
     def __repr__(self):
-        return repr(self._f)
+        return f'curry({repr(self._f)})'
 
     def __call__(self, *args, **kwargs):
         signature = inspect.signature(self._f)
@@ -198,6 +198,23 @@ def curry(f: Callable) -> Callable:
         return Curry(f)(*args, **kwargs)
 
     return decorator
+
+
+def flip(f: Callable) -> Callable:
+    """
+    Reverse the order of positional arguments of `f`
+
+    Example:
+        >>> f = lambda a, b, c: (a, b, c)
+        >>> flip(f)('a', 'b', 'c')
+        ('c', 'b', 'a')
+
+    Args:
+        f: Function to flip positional arguments of
+    Returns:
+        Function with positional arguments flipped
+    """
+    return curry(lambda *args, **kwargs: f(*reversed(args), **kwargs))
 
 
 __all__ = [
