@@ -87,41 +87,21 @@ new_d['a'] = d['a'].copy()
 new_d['a']['b'] = d['a']['b'].copy()
 new_d['a']['b']['c'] = 'Phew! That took a lot of work!'
 ```
-`pfun.lens` gives you an object that allows you to "zoom in" on some field in a data-structure, and copy only what is necessary to change what you want without altering the original object. You can think of a lens as a setter function
-that transforms objects given as its argument. You use the lens object as a proxy for the object you want to transform. In the end you call the lens with an object that you want to transform and an assignment value, which
-gives you back a new object:
-
+A _lens_ is a setter function that takes as arguments a value to replace at some path/index
+in an object/data-structure, and an object to transform. `pfun.lens` allows you
+to easily construct these setter functions by specifying the path/index at
+which you want to perform a replacement using normal Python indexing and attribute
+access. You use the object returned by `lens()` as a proxy for the object you want
+to transform by accessing attributes and indexes on it. The lens will remember this
+path, and use it when performing an update. You perform an update by calling the lens
+with the value to use as a replacement, and an object on which to perform the replacement:
 ```python
 from pfun import lens
 
 
-
-t = 
-new_d = t(d)('Wow that was a lot easier!')
+t = lens()['a']['b']['c']
+new_d = t('Wow that was a lot easier!')(d)
 assert new_d['a']['b']['c'] == 'Wow that was a lot easier!'
-```
-Just like curried functions, lenses support applying the first argument using the `|` operator:
-```python
-(d | lens()['a']['b']['c'])('Wow that was a lot easier!')
-```
-Lenses also has supplying the assignment value as the first argument by using the `<<` operator, which allows you to write code that looks like imperative code, but is purely functional:
-```python
-class Organization:
-    name: str
-
-
-class User:
-    name: str
-    organization: Organization
-
-
-user = User('Bob', Organization('Foo Inc'))
-
-l = lens()
-set_name = l.name << 'Alice'
-set_organization_name = l.organization.name << 'Bar Corp'
-
-new_user = user | set_name | set_organization_name
 ```
 If you use the `pfun` MyPy plugin, you can give a type as an argument to `lens`, which allows MyPy to check that the operations you make on the lens object are supported by the type you intend to transform:
 ```python
@@ -136,14 +116,31 @@ class User(Person):
 u = lens(User)
 
 # MyPy type error because we misspelled 'organization'
-u.organisation << 'Foo Inc'
+u.organisation('Foo Inc')
 
+# MyPy type error because "User.organization" must a "str"
+u.organization(0)
 
 # MyPy type error because "Person" is not a "User"
-(u.organization << 'Foo Inc')(Person())
+u.organization('Foo Inc')(Person())
 ```
+Since lenses are just Python callables, you can combine them using the normal
+compose operations available in `pfun`:
+```python
+from pfun import compose
 
-Currently, `lens` supports working the following types of objects and data-structures:
+
+class NamedUser(User):
+    name: str
+
+
+u = lens(NamedUser)
+set_name = u.name
+set_org_name = u.organization.name
+
+new_user = compose(set_name('Bob'), set_org_name('Foo Inc'))(NamedUser())
+```
+Currently, `lens` supports working with the following types of objects and data-structures:
 
 - Regular Python objects
 - `collections.namedtuple` and `typing.NamedTuple` instances

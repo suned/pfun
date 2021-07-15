@@ -570,7 +570,8 @@ def count_of(elem: A, container: Container[A]) -> int:
 
 
 @curry
-def get_item(index: A, container: protocols.SupportsGetItem[A, B]) -> Optional[B]:
+def get_item(index: A,
+             container: protocols.SupportsGetItem[A, B]) -> Optional[B]:
     """
     Return element at `index` in `container`. Note that the order \
     of arguments are flipped comparet to the builtins `operator` module

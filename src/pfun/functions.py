@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import functools
 import inspect
 from typing import Any, Callable, Generic, Tuple, TypeVar
@@ -93,7 +91,7 @@ def compose(
     f: Callable[[Any], Any],
     g: Callable[[Any], Any],
     *functions: Callable[[Any], Any]
-) -> Curry:
+) -> Callable[[Any], Any]:
     """
     Compose functions from left to right
 
@@ -117,15 +115,15 @@ def compose(
         if isinstance(h, Composition):
             fs += h.functions
         else:
-            fs += (h, )
-    return curry(Composition(fs))
+            fs += (h,)
+    return Composition(fs)
 
 
 def pipeline(
     first: Callable[[Any], Any],
     second: Callable[[Any], Any],
     *rest: Callable[[Any], Any]
-) -> Curry:
+):
     """
     Compose functions from right to left
 
@@ -148,21 +146,15 @@ def pipeline(
     return compose(*reversed(rest), second, first)
 
 
-F = TypeVar('F', bound=Callable, covariant=True)
+class Curry:
+    _f: Callable
 
-
-class Curry(Generic[F]):
-    _f: F
-
-    def __init__(self, f: F):
+    def __init__(self, f: Callable):
         functools.wraps(f)(self)
-        self._f = f
+        self._f = f  # type: ignore
 
     def __repr__(self):
         return f'curry({repr(self._f)})'
-
-    def __ror__(self, x):
-        return self(x)
 
     def __call__(self, *args, **kwargs):
         signature = inspect.signature(self._f)
@@ -184,10 +176,7 @@ class Curry(Generic[F]):
         return Curry(partial)
 
 
-G = TypeVar('G', bound=Callable)
-
-
-def curry(f: Callable) -> Curry:
+def curry(f: Callable) -> Callable:
     """
     Get a version of ``f`` that can be partially applied
 
@@ -204,22 +193,30 @@ def curry(f: Callable) -> Curry:
     Returns:
         Curried version of ``f``
     """
-    if isinstance(f, Curry):
-        return f
-    return Curry(f)
+    @functools.wraps(f)
+    def decorator(*args, **kwargs):
+        return Curry(f)(*args, **kwargs)
+
+    return decorator
 
 
-def flip(f: Curry) -> Curry:
+def flip(f: Callable) -> Callable:
+    """
+    Reverse the order of positional arguments of `f`
+
+    Example:
+        >>> f = lambda a, b, c: (a, b, c)
+        >>> flip(f)('a', 'b', 'c')
+        ('c', 'b', 'a')
+
+    Args:
+        f: Function to flip positional arguments of
+    Returns:
+        Function with positional arguments flipped
+    """
     return curry(lambda *args, **kwargs: f(*reversed(args), **kwargs))
 
 
 __all__ = [
-    'curry',
-    'always',
-    'compose',
-    'pipeline',
-    'identity',
-    'Unary',
-    'Predicate',
-    'flip'
+    'curry', 'always', 'compose', 'pipeline', 'identity', 'Unary', 'Predicate'
 ]

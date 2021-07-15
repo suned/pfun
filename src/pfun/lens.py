@@ -4,7 +4,7 @@ import copy
 from typing import Any, Callable, Generic, Optional, Type, TypeVar, overload
 
 from .dict import Dict
-from .functions import Curry, curry, flip
+from .functions import curry
 from .immutable import Immutable
 from .list import List
 
@@ -13,7 +13,7 @@ B = TypeVar('B')
 
 
 @curry
-def _transform(lens: Lens[A, B], a: A, value: B) -> A:
+def _transform(lens: Lens[A, B], value: B, a: A) -> A:
     *rest, head = lens
     attr_stack = [a]
     for path_element in rest:
@@ -112,7 +112,7 @@ class RootLens(Immutable, Generic[A]):
             >>> class User(Immutable):
             ...     name: str
             >>> user = User('Bob')
-            >>> (lens(User).name << 'Alice')(user)
+            >>> lens(User).name('Alice')(user)
             User(name='Alice')
         Args:
             name: name of attribute to transform in returned `Lens`
@@ -128,7 +128,7 @@ class RootLens(Immutable, Generic[A]):
 
         Example:
             >>> from typing import List
-            >>> (lens(List[int])[0] << 1)([0])
+            >>> lens(List[int])[0](1)([0])
             [1]
         Args:
             index: index that the `Lens` supports transformations of
@@ -146,27 +146,20 @@ class Lens(RootLens[A], Generic[A, B]):
     def __repr__(self):
         return super().__repr__()
 
-    def __call__(self, a: A) -> Curry[Callable[[B], A]]:
-        return _transform(self)(a)
-
-    def __ror__(self, a: A) -> Curry[Callable[[B], A]]:
-        return curry(self)(a)
-
-    def __lshift__(self, value: B) -> Curry[Callable[[A], A]]:
+    def __call__(self, value: B) -> Callable[[A], A]:
         """
-        Create a transformation function that assigns `value`
-        to this path in the `Lens`
+        Apply lens to object with value.
 
         Example:
-            >>> from typing import List
-            >>> (lens(List[int])[0] << 1)([0])
-            [1]
+            >>> lens()['foo']('bar')({})
+            {'foo': 'bar'}
+
         Args:
-            value: Value to assign in transformation
-        Return:
-            Transformation function
+            value: Value to assign to this name/index in the path
+        Returns:
+            Transformation function that can be applied to an object
         """
-        return flip(curry(self))(value)
+        return _transform(self)(value)
 
 
 T = TypeVar('T', bound=Type[Any])
@@ -189,7 +182,7 @@ def lens(t: Optional[T] = None) -> RootLens[T]:
 
     Example:
         >>> from typing import List
-        >>> (lens(List[int])[0] << 1)([0])
+        >>> lens(List[int])[0](1)([0])
         [1]
     Args:
         t: Type that the `Lens` supports transformations of

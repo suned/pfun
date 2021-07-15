@@ -1,34 +1,25 @@
 #  type: ignore
+
 import typing as t
 from functools import reduce
 
 from mypy import checkmember, infer
-from mypy.argmap import map_actuals_to_formals, map_formals_to_actuals
 from mypy.checker import TypeChecker
-from mypy.checkexpr import has_uninhabited_component
-from mypy.checkmember import analyze_member_access
-from mypy.expandtype import expand_type, freshen_function_type_vars
 from mypy.mro import calculate_mro
-from mypy.nodes import (ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR, ARG_STAR2,
-                        COVARIANT, INVARIANT, MDEF, Argument, AssignmentStmt,
-                        Block, CallExpr, ClassDef, Expression, FakeInfo,
-                        FuncDef, NameExpr, OpExpr, PassStmt, Statement,
-                        SymbolTable, SymbolTableNode, TempNode, TypeInfo, Var)
+from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
+                        ARG_STAR2, COVARIANT, INVARIANT, Block, ClassDef,
+                        NameExpr, TypeInfo)
 from mypy.plugin import (AttributeContext, ClassDefContext, FunctionContext,
                          MethodContext, MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.semanal import set_callable_name
-from mypy.stats import is_complex
 from mypy.type_visitor import TypeTranslator
-from mypy.typeops import bind_self, get_type_vars
-from mypy.types import (AnyType, CallableType, Instance, Overloaded, TupleType,
-                        Type, TypeList, TypeOfAny, TypeVarDef, TypeVarId,
-                        TypeVarType, UninhabitedType, UnionType,
-                        get_proper_type)
-from mypy.typevars import fill_typevars
+from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
+                        TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
+                        UnionType, get_proper_type)
 
 from .functions import curry
 
+_CURRY = 'pfun.functions.curry'
 _COMPOSE = 'pfun.functions.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
 _MAYBE = 'pfun.maybe.maybe'
@@ -54,18 +45,11 @@ class ReplaceTypeVar(TypeTranslator):
         self.replacement_t_def = replacement_t_def
 
     def translate_variables(self, variables):
-        return [v if v != self.target_t_def else self.replacement_t_def for v in variables]
+        return [v if v != self.target_t_def else self.replacement_t_def
+                for v in variables]
 
     def visit_type_var(self, t: TypeVarType):
         return t if t != self.target_t_var else self.replacement_t_var
-
-
-class RemoveTypeVars(TypeTranslator):
-    def translate_variables(self, variables):
-        return []
-
-    def visit_type_alias_type(self, t):
-        return t
 
 
 def _get_callable_type(type_: Type,
@@ -92,6 +76,141 @@ def _get_callable_type(type_: Type,
     return None
 
 
+def _curry_hook(context: FunctionContext) -> Type:
+    arg_type = context.arg_types[0][0]
+    function = _get_callable_type(arg_type, context)
+
+    if function is None:
+        # argument was not callable type or function
+        return context.default_return_type
+
+    if len(function.arg_types) < 2:
+        # nullary or unary function: nothing to do
+        return function
+
+    type_vars = {var.fullname: var for var in function.variables}
+
+    def get_variables(*types):
+        def collect_variables(*ts):
+            variables = []
+            for type_ in ts:
+                if isinstance(type_, TypeVarType):
+                    variables.append(type_)
+                if hasattr(type_, 'args'):
+                    variables += get_variables(*type_.args)
+                if isinstance(type_, CallableType):
+                    variables += get_variables(
+                        type_.ret_type, *type_.arg_types
+                    )
+                if isinstance(type_, UnionType):
+                    variables += get_variables(*type_.items)
+            return variables
+
+        return set(type_vars[v.fullname] for v in collect_variables(*types))
+
+    args = tuple(
+        zip(function.arg_types, function.arg_kinds, function.arg_names)
+    )
+    optional_args = tuple(
+        filter(lambda a: a[1] in (ARG_OPT, ARG_NAMED_OPT, ARG_STAR2), args)
+    )
+    positional_args = tuple(
+        filter(lambda a: a[1] in (ARG_POS, ARG_NAMED, ARG_STAR), args)
+    )
+
+    if not positional_args:
+        # no positional args: nothing to do
+        return function
+    opt_arg_types, opt_arg_kinds, opt_arg_names = (tuple(zip(*optional_args))
+                                                   if optional_args
+                                                   else ((), (), ()))
+    pos_arg_types, pos_arg_kinds, pos_arg_names = tuple(zip(*positional_args))
+    arg_type, *arg_types = pos_arg_types
+    arg_name, *arg_names = pos_arg_names
+    arg_kind, *arg_kinds = pos_arg_kinds
+    return_type = function.ret_type
+
+    opt_variables = get_variables(*opt_arg_types)
+    variables = get_variables(arg_type)
+    if len(pos_arg_types) == 1:
+        variables |= get_variables(return_type)
+        ret_type = return_type
+    else:
+        ret_type = AnyType(TypeOfAny.special_form)
+    functions = [
+        CallableType(
+            arg_types=[arg_type],
+            arg_kinds=[arg_kind],
+            arg_names=[arg_name],
+            ret_type=ret_type,
+            fallback=function.fallback,
+            variables=list(variables)
+        )
+    ]
+
+    remaining_args = zip(arg_types, arg_kinds, arg_names)
+    for i, (arg_type, kind, name) in enumerate(remaining_args):
+        variables = get_variables(arg_type)
+        if i == len(arg_types) - 1:
+            variables |= get_variables(return_type)
+            ret_type = return_type
+        else:
+            ret_type = AnyType(TypeOfAny.special_form)
+        variables -= set.union(*[set(f.variables) for f in functions])
+        if kind == ARG_STAR:
+            last_f = functions[i]
+            functions[i] = last_f.copy_modified(
+                arg_types=last_f.arg_types + [arg_type],
+                arg_kinds=last_f.arg_kinds + [kind],
+                arg_names=last_f.arg_names + [name],
+                variables=list(sorted(variables, key=str)),
+                ret_type=ret_type
+            )
+        else:
+            functions.append(
+                CallableType(
+                    arg_types=[arg_type],
+                    arg_kinds=[kind],
+                    arg_names=[name],
+                    ret_type=ret_type,
+                    fallback=function.fallback,
+                    variables=list(sorted(variables, key=str))
+                )
+            )
+
+    def merge(fs):
+        if len(fs) == 1:
+            return fs[0]
+        first, next_, *rest = fs
+        first.ret_type = next_
+        for f in rest:
+            next_.ret_type = f
+            next_ = f
+        return first
+
+    merged = merge(functions)
+    if optional_args:
+        mod_functions = [
+            f.copy_modified(
+                variables=list(
+                    sorted(set(f.variables) - opt_variables, key=str)
+                )
+            )
+            for f in functions
+        ]
+        mod_merged = merge(mod_functions)
+        with_opts = CallableType(
+            arg_types=list(opt_arg_types),
+            arg_kinds=list(opt_arg_kinds),
+            arg_names=list(opt_arg_names),
+            ret_type=mod_merged,
+            fallback=function.fallback,
+            variables=list(sorted(opt_variables, key=str))
+        )
+        return Overloaded([merged, function, with_opts])
+    return Overloaded([merged, function])
+
+
 def _variadic_decorator_hook(context: FunctionContext) -> Type:
     arg_type = context.arg_types[0][0]
     function = _get_callable_type(arg_type, context)
@@ -114,7 +233,12 @@ def _variadic_decorator_hook(context: FunctionContext) -> Type:
 
 
 def _type_var_def(
-    name: str, module: str, upper_bound, values=(), meta_level=0, variance=INVARIANT
+    name: str,
+    module: str,
+    upper_bound,
+    values=(),
+    meta_level=0,
+    variance=INVARIANT
 ) -> TypeVarDef:
     id_ = TypeVarId.new(meta_level)
     id_.raw_id = -id_.raw_id
@@ -201,29 +325,6 @@ def _immutable_hook(context: ClassDefContext):
     transformer.transform()
     attributes = transformer.collect_attributes()
     transformer._freeze(attributes)
-
-
-def _create_protocol_type(
-    name: str,
-    base_types: t.List[Expression] = None,
-    type_vars: t.List[TypeVarDef] = None,
-    args=(),
-    body: t.List[Statement] = (),
-    names: SymbolTable = None,
-    abstract_attributes: t.List[str] = ()
-):
-    defn = ClassDef(name, Block(list(body)), type_vars, base_types, None, [])
-    defn.fullname = f'pfun.{name}'
-    info = TypeInfo(names, defn, '')
-    info.bases = base_types
-    info.is_protocol = True
-    info.is_abstract = True
-    info.abstract_attributes = list(abstract_attributes)
-    calculate_mro(info)
-    for node in names.values():
-        node.node.info = info
-    instance = Instance(info, args)
-    return defn, info, instance
 
 
 def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
@@ -556,25 +657,6 @@ def _lens_getattr_hook(fullname: str, context: AttributeContext) -> Type:
     return context.default_attr_type.copy_modified(args=(any_t, any_t))
 
 
-def _set_lens_method_types(lens: Instance) -> None:
-    arg_type = lens.args[0]
-    t_def = _type_var_def('A', 'pfun.lens', upper_bound=arg_type, variance=COVARIANT)
-    t_var = TypeVarType(t_def)
-    __call__ = lens.type.names['__call__']
-    __ror__ = lens.type.names['__ror__']
-    _set_method_type_vars(__ror__, t_var, t_def)
-    _set_method_type_vars(__call__, t_var, t_def)
-
-
-def _set_method_type_vars(method, t_var, t_def):
-    old_t_var = method.node.type.arg_types[1]
-    translator = ReplaceTypeVar(target_t_var=old_t_var, replacement_t_var=t_var)
-    any_t = AnyType(TypeOfAny.special_form)
-    method.node.type.arg_types[0] = method.node.type.arg_types[0].copy_modified(args=(any_t, method.node.type.arg_types[0].args[1]))
-    method.node.type = method.node.type.copy_modified(variables=[t_def])
-    method.node.type = method.node.type.accept(translator)
-
-
 def _lens_getitem_hook(context: MethodContext) -> Type:
     t = context.type.args[-1]
     args_repr = ", ".join(str(a) for a in context.type.args)
@@ -603,6 +685,31 @@ def _lens_getitem_hook(context: MethodContext) -> Type:
     return context.default_return_type.copy_modified(args=(any_t, any_t))
 
 
+def _set_lens_method_types(lens: Instance) -> None:
+    arg_type = lens.args[0]
+    t_def = _type_var_def(
+        'A',
+        'pfun.lens',
+        upper_bound=arg_type,
+        variance=COVARIANT
+    )
+    t_var = TypeVarType(t_def)
+    __call__ = lens.type.names['__call__']
+    _set_method_type_vars(__call__, t_var, t_def)
+
+
+def _set_method_type_vars(method, t_var, t_def):
+    ret_type = method.node.type.ret_type
+    old_t_var = ret_type.ret_type
+    translator = ReplaceTypeVar(
+        target_t_var=old_t_var,
+        replacement_t_var=t_var
+    )
+    ret_type = ret_type.accept(translator)
+    ret_type = ret_type.copy_modified(variables=[t_def])
+    method.node.type = method.node.type.copy_modified(ret_type=ret_type)
+
+
 def _lens_hook(context: FunctionContext) -> Type:
     if not context.arg_types[0]:
         return context.default_return_type
@@ -617,173 +724,27 @@ def _lens_hook(context: FunctionContext) -> Type:
     )
 
 
-def add_curry_call_var(instance: Instance, f: CallableType) -> None:
-    # Remove type vars because they are added to the curry instance
-    f = f.accept(RemoveTypeVars())
-    var_node = Var('__call__', f)
-    var_node.info = instance.type
-    instance.type.names['__call__'] = SymbolTableNode(MDEF, var_node, plugin_generated=True)
-    instance.type.defn.defs.body = [
-        node for node in instance.type.defn.defs.body
-        if hasattr(node, 'name') and node.name != '__call__'
-    ]
-    assignment = AssignmentStmt(
-        lvalues=[NameExpr('__call__')],
-        rvalue=TempNode(AnyType(TypeOfAny.special_form), no_rhs=True),
-        type=f
-    )
-    instance.type.defn.defs.body.append(assignment)
-
-
-
-def _empty_curry_instance(args, fallback, type_vars=[]):
-    defn = ClassDef(name='Curry', defs=Block([]), type_vars=type_vars)
-    defn.fullname = 'pfun.functions.Curry'
-    instance = Instance(
-        typ=TypeInfo(names={}, defn=defn, module_name='pfun.functions'),
-        args=args
-    )
-    any_t = AnyType(TypeOfAny.special_form)
-    arg_types = [any_t, any_t]
-    arg_kinds = [ARG_STAR, ARG_STAR2]
-    arg_names = ['args', 'kwargs']
-    instance.type.defn.info = instance.type
-    __call__ = CallableType(arg_types, arg_kinds, arg_names, any_t, fallback)
-    __ror__ = CallableType([any_t], [ARG_POS], ['x'], any_t, fallback)
-    add_curry_call_var(instance, __call__)
-    calculate_mro(instance.type)
-    instance.type.add_type_vars()
-    return instance
-
-
-def _curry_type_analyze_hook(context):
-    #import ipdb; ipdb.set_trace()
-    fallback = context.api.named_type('builtins.function')
-    any_t = AnyType(TypeOfAny.special_form)
-    default = _empty_curry_instance([any_t], fallback)
-    if not context.type.args:
-        return default
-    f = context.api.anal_type(context.type.args[0])
-    return _curry_instance(f)
-
-
-
-def _curry_hook(context):
-    t = context.default_return_type
-    __call__ = context.arg_types[0][0]
-    __call__ = _get_callable_type(__call__, context)
-    if isinstance(__call__, Instance) and __call__.type.fullname == 'pfun.functions.Curry':
-        return __call__
-    return _curry_instance(__call__)
-
-
-
-def _curry_instance(f: CallableType) -> Instance:
-    __call__ = _curry_signature(f)
-    instance = _empty_curry_instance(__call__.arg_types, f.fallback, __call__.variables)
-    add_curry_call_var(instance, __call__)
-    return instance
-
-
-
-def _curry_signature(f: CallableType) -> CallableType:
-    def variable_id(v: TypeVarDef) -> int:
-        return abs(v.id.raw_id)
-
-    def filter_args_by_kinds(kinds: t.List[int]) -> t.Tuple[str, int, Type]:
-        if not any(k in kinds for k in f.arg_kinds):
-            return [], [], []
-        arg_names, arg_kinds, arg_types = zip(*[
-            (arg_name, arg_kind, arg_type)
-            for arg_name, arg_kind, arg_type
-            in zip(f.arg_names, f.arg_kinds, f.arg_types)
-            if arg_kind in kinds
-        ])
-        return list(arg_names), list(arg_kinds), list(arg_types)
-
-    def get_variables(types: t.List[Type]) -> t.Set[TypeVarDef]:
-        return list({variables[variable_id(v)]
-                for t in types
-                for v in get_type_vars(t)})
-
-    optional_kinds = (ARG_OPT, ARG_STAR2)
-    required_kinds = (ARG_POS, ARG_STAR)
-    all_optional = all(k in optional_kinds for k in f.arg_kinds)
-    unary_or_nullary = len(f.arg_names) < 2
-    if unary_or_nullary or all_optional:
-        return f
-    overloads = [f]
-    variable_id = lambda v: abs(v.id.raw_id)
-    variables = {variable_id(v): v for v in f.variables}
-    (optional_arg_names,
-    optional_arg_kinds,
-    optional_arg_types) = filter_args_by_kinds(optional_kinds)
-    optional_variables = get_variables(optional_arg_types)
-    (required_arg_names,
-     required_arg_kinds,
-     required_arg_types) = filter_args_by_kinds(required_kinds)
-    required_variables = get_variables(required_arg_types)
-    if optional_arg_kinds:
-        return_f = f.copy_modified(arg_types=required_arg_types,
-                                   arg_kinds=required_arg_kinds,
-                                   arg_names=required_arg_names,
-                                   variables=required_variables)
-        overload = f.copy_modified(arg_types=optional_arg_types,
-                                   arg_kinds=optional_arg_kinds,
-                                   arg_names=optional_arg_names,
-                                   variables=optional_variables,
-                                   ret_type=_curry_instance(return_f))
-        overloads.append(overload)
-    first_arg_name, *rest_arg_names = required_arg_names
-    first_arg_kind, *rest_arg_kinds = required_arg_kinds
-    first_arg_type, *rest_arg_types = required_arg_types
-    first_arg_variables = get_variables([first_arg_type])
-    rest_variables = get_variables(rest_arg_types)
-    return_f = f.copy_modified(arg_types=rest_arg_types, arg_names=rest_arg_names, arg_kinds=rest_arg_kinds, variables=rest_variables)
-    overload = f.copy_modified(arg_types=[first_arg_type], arg_names=[first_arg_name], arg_kinds=[first_arg_kind], variables=first_arg_variables, ret_type=_curry_instance(return_f))
-    overloads.append(overload)
-    return Overloaded(overloads)
-
-
-
-def dbhook(context):
-    #import ipdb; ipdb.set_trace()
-    return context.default_return_type
-
-
-
-
 class PFun(Plugin):
-    def get_type_analyze_hook(self, fullname: str):
-        if fullname == 'pfun.functions.Curry':
-            return _curry_type_analyze_hook
-
     def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
-        if fullname in (
-            'pfun.effect.catch',
-            'pfun.effect.catch_cpu_bound',
-            'pfun.effect.catch_io_bound'
-        ):
+        if fullname in ('pfun.effect.catch',
+                        'pfun.effect.catch_cpu_bound',
+                        'pfun.effect.catch_io_bound'):
             return _effect_catch_hook
+        if fullname == _CURRY:
+            return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
         if fullname in (
             _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all'
         ):
             return _variadic_decorator_hook
-        if fullname in (
-            'pfun.effect.combine',
-            'pfun.effect.combine_cpu_bound',
-            'pfun.effect.combine_io_bound'
-        ):
+        if fullname in ('pfun.effect.combine',
+                        'pfun.effect.combine_cpu_bound',
+                        'pfun.effect.combine_io_bound'):
             return _combine_hook
         if fullname == 'pfun.lens.lens':
             return _lens_hook
-        if fullname == 'pfun.functions.curry':
-            return _curry_hook
-        if fullname == 'test_types.C':
-            return dbhook
         return None
 
     def get_method_hook(self, fullname: str):
@@ -795,17 +756,13 @@ class PFun(Plugin):
             return _effect_ensure_hook
         if fullname == 'pfun.effect.Effect.recover':
             return _effect_recover_hook
-        if fullname in (
-            'pfun.effect.catch.__call__',
-            'pfun.effect.catch_io_bound.__call__',
-            'pfun.effect.catch_cpu_bound.__call__'
-        ):
+        if fullname in ('pfun.effect.catch.__call__',
+                        'pfun.effect.catch_io_bound.__call__',
+                        'pfun.effect.catch_cpu_bound.__call__'):
             return _effect_catch_call_hook
-        if fullname in (
-            'pfun.effect.lift.__call__',
-            'pfun.effect.lift_io_bound.__call__',
-            'pfun.effect.lift_cpu_bound.__call__'
-        ):
+        if fullname in ('pfun.effect.lift.__call__',
+                        'pfun.effect.lift_io_bound.__call__',
+                        'pfun.effect.lift_cpu_bound.__call__'):
             return _effect_lift_call_hook
         if fullname in (
             'pfun.lens.RootLens.__getitem__', 'pfun.lens.Lens.__getitem__'
@@ -818,11 +775,9 @@ class PFun(Plugin):
             return _lens_getattr_hook(fullname)
 
     def get_method_signature_hook(self, fullname: str):
-        if fullname in (
-            'pfun.effect.lift.__call__',
-            'pfun.effect.lift_cpu_bound.__call__',
-            'pfun.effect.lift_io_bound.__call__'
-        ):
+        if fullname in ('pfun.effect.lift.__call__',
+                        'pfun.effect.lift_cpu_bound.__call__',
+                        'pfun.effect.lift_io_bound.__call__'):
             return _effect_lift_call_signature_hook
 
     def get_base_class_hook(self, fullname: str):

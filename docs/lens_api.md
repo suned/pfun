@@ -8,5 +8,5 @@
 ::: pfun.lens.Lens
     selection:
         members: [
-            '__lshift__'
+            '__call__'
         ]
