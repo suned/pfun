@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from subprocess import CalledProcessError
 from unittest import mock
 
@@ -235,6 +236,15 @@ class TestEffect(MonadTest):
     @given(unaries(anything()))
     def test_catch_io_bound(self, f):
         assert effect.catch_io_bound(Exception)(f)(None).run(None) == f(None)
+
+    @pytest.mark.asyncio
+    @given(anything())
+    async def test_process_and_thread_pool_initialized_lazily(self, value):
+        with ExitStack() as stack:
+            env = effect.RuntimeEnv(None, stack, 1, 1)
+            await effect.success(value).do(env)
+            assert env.process_executor is None
+            assert env.thread_executor is None
 
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'

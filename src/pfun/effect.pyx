@@ -27,18 +27,25 @@ cdef class RuntimeEnv:
     """
     cdef object r
     cdef object exit_stack
-    cdef object process_executor
-    cdef object thread_executor
+    cdef object max_processes
+    cdef object max_threads
+    cdef readonly object process_executor
+    cdef readonly object thread_executor
 
-    def __cinit__(self, r, exit_stack, process_executor, thread_executor):
+    def __cinit__(self, r, exit_stack, max_processes, max_threads):
         self.r = r
         self.exit_stack = exit_stack
-        self.process_executor = process_executor
-        self.thread_executor = thread_executor
+        self.max_processes = max_processes
+        self.max_threads = max_threads
+        self.process_executor = None
+        self.thread_executor = None
     
     async def run_in_process_executor(self, f, *args, **kwargs):
         loop = asyncio.get_running_loop()
         payload = dill.dumps((f, args, kwargs))
+        if self.process_executor is None:
+            self.process_executor = ProcessPoolExecutor(max_workers=self.max_processes)
+            self.exit_stack.enter_context(self.process_executor)
         return dill.loads(
             await loop.run_in_executor(
                 self.process_executor, run_dill_encoded, payload
@@ -47,6 +54,9 @@ cdef class RuntimeEnv:
 
     async def run_in_thread_executor(self, f, *args, **kwargs):
         loop = asyncio.get_running_loop()
+        if self.thread_executor is None:
+            self.thread_executor = ThreadPoolExecutor(max_workers=self.max_threads)
+            self.exit_stack.enter_context(self.thread_executor)
         return await loop.run_in_executor(
             self.thread_executor, lambda: f(*args, **kwargs)
         )
@@ -100,12 +110,8 @@ cdef class CEffect:
                           Exception
         """
         stack = AsyncExitStack()
-        process_executor = ProcessPoolExecutor(max_workers=max_processes)
-        thread_executor = ThreadPoolExecutor(max_workers=max_threads)
         async with stack:
-            stack.enter_context(process_executor)
-            stack.enter_context(thread_executor)
-            env = RuntimeEnv(r, stack, process_executor, thread_executor)
+            env = RuntimeEnv(r, stack, max_processes, max_threads)
             effect = await self.do(env)
             if isinstance(effect, CSuccess):
                 return effect.result
