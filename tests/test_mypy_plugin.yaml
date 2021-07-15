@@ -446,8 +446,6 @@
 
     reveal_type(lens(User).organization)
     reveal_type(lens(User).organization.name)
-    reveal_type(lens(User).name(''))
-    reveal_type(lens(User).organization.name(''))
   out: |
     main:13: error: "pfun.lens.Lens[main.User]" has no attribute "foo"
     main:14: error: "pfun.lens.Lens[main.User, main.Organization]" has no attribute "foo"
@@ -463,8 +461,6 @@
     main:18: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
     main:20: note: Revealed type is 'pfun.lens.Lens[main.User, main.Organization]'
     main:21: note: Revealed type is 'pfun.lens.Lens[main.User, builtins.str]'
-    main:22: note: Revealed type is 'def [A <: main.User] (A`-4861) -> A`-4861'
-    main:23: note: Revealed type is 'def [A <: main.User] (A`-4864) -> A`-4864'
 - case: lens_supports_protocols
   disable_cache: true
   main: |
