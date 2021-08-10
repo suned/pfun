@@ -82,6 +82,8 @@ d = {
     },
     'd': 'but not this'
 }
+
+
 new_d = d.copy()
 new_d['a'] = d['a'].copy()
 new_d['a']['b'] = d['a']['b'].copy()
@@ -101,7 +103,6 @@ from pfun import lens
 
 t = lens()['a']['b']['c']
 new_d = t('Wow that was a lot easier!')(d)
-assert new_d['a']['b']['c'] == 'Wow that was a lot easier!'
 ```
 If you use the `pfun` MyPy plugin, you can give a type as an argument to `lens`, which allows MyPy to check that the operations you make on the lens object are supported by the type you intend to transform:
 ```python
