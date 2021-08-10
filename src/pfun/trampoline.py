@@ -89,10 +89,10 @@ class Call(Trampoline[A]):
 
     def _handle_cont(self,
                      cont: Callable[[A], Trampoline[B]]) -> Trampoline[B]:
-        return self.thunk().and_then(cont)  # type: ignore
+        return self.thunk().and_then(cont)
 
     def _resume(self) -> Trampoline[A]:
-        return self.thunk()  # type: ignore
+        return self.thunk()
 
 
 class AndThen(Generic[A, B], Trampoline[B]):
@@ -105,10 +105,10 @@ class AndThen(Generic[A, B], Trampoline[B]):
 
     def _handle_cont(self,
                      cont: Callable[[B], Trampoline[C]]) -> Trampoline[C]:
-        return self.sub.and_then(self.cont).and_then(cont)  # type: ignore
+        return self.sub.and_then(self.cont).and_then(cont)
 
     def _resume(self) -> Trampoline[B]:
-        return self.sub._handle_cont(self.cont)  # type: ignore
+        return self.sub._handle_cont(self.cont)
 
     def and_then(  # type: ignore
         self, f: Callable[[A], Trampoline[B]]

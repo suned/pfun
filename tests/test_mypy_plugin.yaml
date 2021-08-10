@@ -7,7 +7,7 @@
     def f() -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def () -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
+    reveal_type(f)  # N: Revealed type is "def () -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]"
 - case: variadic_decorators_preserve_unary_signature
   disable_cache: true
   main: |
@@ -17,7 +17,7 @@
     def f(a: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
+    reveal_type(f)  # N: Revealed type is "def (a: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]"
 - case: variadic_decorators_preserve_binary_signature
   disable_cache: true
   main: |
@@ -27,7 +27,7 @@
     def f(a: int, b: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
+    reveal_type(f)  # N: Revealed type is "def (a: builtins.int, b: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]"
 - case: variadic_decorators_preserve_trinary_signature
   disable_cache: true
   main: |
@@ -37,7 +37,7 @@
     def f(a: int, b: int, c: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int, b: builtins.int, c: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]'
+    reveal_type(f)  # N: Revealed type is "def (a: builtins.int, b: builtins.int, c: builtins.int) -> Union[pfun.maybe.Nothing, pfun.maybe.Just[builtins.int*]]"
 - case: curry_nullary_function
   disable_cache: true
   main: |
@@ -47,7 +47,7 @@
     def f() -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def () -> builtins.int'
+    reveal_type(f)  # N: Revealed type is "def () -> builtins.int"
 - case: curry_unary_function
   disable_cache: true
   main: |
@@ -57,7 +57,7 @@
     def f(a: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def (a: builtins.int) -> builtins.int'
+    reveal_type(f)  # N: Revealed type is "def (a: builtins.int) -> builtins.int"
 - case: curry_binary_function
   disable_cache: true
   main: |
@@ -67,7 +67,7 @@
     def f(a: int, b: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> def (b: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int) -> builtins.int)'
+    reveal_type(f)  # N: Revealed type is "Overload(def (a: builtins.int) -> def (b: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int) -> builtins.int)"
 - case: curry_trinary_function
   disable_cache: true
   main: |
@@ -77,7 +77,7 @@
     def f(a: int, b: int, c: int) -> int:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'Overload(def (a: builtins.int) -> def (b: builtins.int) -> def (c: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int, c: builtins.int) -> builtins.int)'
+    reveal_type(f)  # N: Revealed type is "Overload(def (a: builtins.int) -> def (b: builtins.int) -> def (c: builtins.int) -> builtins.int, def (a: builtins.int, b: builtins.int, c: builtins.int) -> builtins.int)"
 - case: curry_generic_function
   disable_cache: true
   main: |
@@ -92,8 +92,8 @@
     def f(a: A, b: B) -> Union[A, B]:
       ...
 
-    reveal_type(f(1))  # N: Revealed type is 'def [B] (b: B`-2) -> Union[builtins.int*, B`-2]'
-    reveal_type(f(1)(''))  # N: Revealed type is 'Union[builtins.int, builtins.str*]'
+    reveal_type(f(1))  # N: Revealed type is "def [B] (b: B`-2) -> Union[builtins.int*, B`-2]"
+    reveal_type(f(1)(''))  # N: Revealed type is "Union[builtins.int, builtins.str*]"
 - case: curry_optional_and_variadic
   disable_cache: true
   main: |
@@ -108,7 +108,7 @@
     def f(pos_1: T2, pos_2: T2, *args: T3, keyword: T1 = None, **kwargs: T2) -> T3:
       ...
 
-    reveal_type(f)  # N: Revealed type is 'Overload(def [T2] (pos_1: T2`-1) -> def [T3] (pos_2: T2`-1, *args: T3`-2) -> T3`-2, def [T2, T3, T1] (pos_1: T2`-1, pos_2: T2`-1, *args: T3`-2, *, keyword: Union[T1`-3, None] =, **kwargs: T2`-1) -> T3`-2, def [T1, T2] (*, keyword: Union[T1`-3, None] =, **kwargs: T2`-1) -> def (pos_1: T2`-1) -> def [T3] (pos_2: T2`-1, *args: T3`-2) -> T3`-2)'
+    reveal_type(f)  # N: Revealed type is "Overload(def [T2] (pos_1: T2`-1) -> def [T3] (pos_2: T2`-1, *args: T3`-2) -> T3`-2, def [T2, T3, T1] (pos_1: T2`-1, pos_2: T2`-1, *args: T3`-2, *, keyword: Union[T1`-3, None] =, **kwargs: T2`-1) -> T3`-2, def [T1, T2] (*, keyword: Union[T1`-3, None] =, **kwargs: T2`-1) -> def (pos_1: T2`-1) -> def [T3] (pos_2: T2`-1, *args: T3`-2) -> T3`-2)"
 - case: curry_optional_only
   disable_cache: true
   main: |
@@ -118,7 +118,7 @@
     def f(a: str = '', b: str = '') -> str:
       pass
 
-    reveal_type(f)  # N: Revealed type is 'def (a: builtins.str =, b: builtins.str =) -> builtins.str'
+    reveal_type(f)  # N: Revealed type is "def (a: builtins.str =, b: builtins.str =) -> builtins.str"
 - case: compose_simple_functions
   disable_cache: true
   main: |
@@ -130,7 +130,7 @@
     def g(a: int) -> float:
       pass
 
-    reveal_type(compose(g, f))  # N: Revealed type is 'def (builtins.str*) -> builtins.float*'
+    reveal_type(compose(g, f))  # N: Revealed type is "def (builtins.str*) -> builtins.float*"
 - case: immutable_has_correct_constructor
   disable_cache: true
   main: |
@@ -172,7 +172,7 @@
 
     e1: Effect[P1, NoReturn, str]
     e2: Effect[P2, NoReturn, int]
-    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]'
+    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]"
 - case: effect_and_then_combines_protocols_variadically
   disable_cache: true
   main: |
@@ -192,8 +192,8 @@
     e1: Effect[P1, NoReturn, str]
     e2: Effect[P2, NoReturn, int]
     e3: Effect[P3, NoReturn, float]
-    reveal_type(e1.and_then(lambda _: e2).and_then(lambda _: e3))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]'
-    reveal_type(e1.and_then(lambda _: e2.and_then(lambda _: e3)))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]'
+    reveal_type(e1.and_then(lambda _: e2).and_then(lambda _: e3))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]"
+    reveal_type(e1.and_then(lambda _: e2.and_then(lambda _: e3)))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]"
 - case: effect_and_then_combines_protocols_for_type_aliases
   disable_cache: true
   main: |
@@ -206,7 +206,7 @@
     e1: Depends[P1, str]
     e2: Success[str]
 
-    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[main.P1, <nothing>, builtins.str*]'
+    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[main.P1, <nothing>, builtins.str*]"
 - case: effect_and_then_does_not_combine_non_protocols
   disable_cache: true
   main: |
@@ -216,7 +216,7 @@
     e1: Effect[int, NoReturn, str]
     e2: Effect[str, NoReturn, int]
 
-    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[Any, <nothing>, builtins.int*]'
+    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[Any, <nothing>, builtins.int*]"
 - case: effect_discard_and_then_combines_protocols
   disable_cache: true
   main: |
@@ -233,7 +233,7 @@
 
     e1: Effect[P1, NoReturn, str]
     e2: Effect[P2, NoReturn, int]
-    reveal_type(e1.discard_and_then(e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]'
+    reveal_type(e1.discard_and_then(e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]"
 - case: effect_ensure_combines_protocols
   disable_cache: true
   main: |
@@ -250,7 +250,7 @@
 
     e1: Effect[P1, NoReturn, str]
     e2: Effect[P2, NoReturn, int]
-    reveal_type(e1.ensure(e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
+    reveal_type(e1.ensure(e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]"
 - case: effect_recover_combines_protocols
   disable_cache: true
   main: |
@@ -267,7 +267,7 @@
 
     e1: Effect[P1, ValueError, str]
     e2: Effect[P2, NoReturn, str]
-    reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str]'
+    reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str]"
 - case: effect_recover_does_not_combine_non_protocols
   disable_cache: true
   main: |
@@ -277,7 +277,7 @@
     e1: Effect[int, ValueError, str]
     e2: Effect[str, NoReturn, str]
 
-    reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is 'pfun.effect.Effect[Any, <nothing>, builtins.str]'
+    reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[Any, <nothing>, builtins.str]"
 - case: effect_combine_checks_args
   disable_cache: true
   main: |
@@ -310,9 +310,9 @@
     def f(a: str, b: str) -> str:
       pass
 
-    reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
-    reveal_type(combine_cpu_bound(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
-    reveal_type(combine_io_bound(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]'
+    reveal_type(combine(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]"
+    reveal_type(combine_cpu_bound(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]"
+    reveal_type(combine_io_bound(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]"
 - case: effect_combine_unions_errors
   disable_cache: true
   main: |
@@ -325,9 +325,9 @@
     def f(a: str, b: str) -> str:
       pass
 
-    reveal_type(combine(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'
-    reveal_type(combine_cpu_bound(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'
-    reveal_type(combine_io_bound(e1, e2)(f))  # N: Revealed type is 'pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]'
+    reveal_type(combine(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]"
+    reveal_type(combine_cpu_bound(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]"
+    reveal_type(combine_io_bound(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]"
 - case: effect_lift_checks_arguments
   disable_cache: true
   main: |
@@ -350,9 +350,9 @@
     def f(v: A) -> A:
       ...
 
-    reveal_type(lift(f)(success('')))  # N: Revealed type is 'pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]'
-    reveal_type(lift_cpu_bound(f)(success('')))  # N: Revealed type is 'pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]'
-    reveal_type(lift_io_bound(f)(success('')))  # N: Revealed type is 'pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]'
+    reveal_type(lift(f)(success('')))  # N: Revealed type is "pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]"
+    reveal_type(lift_cpu_bound(f)(success('')))  # N: Revealed type is "pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]"
+    reveal_type(lift_io_bound(f)(success('')))  # N: Revealed type is "pfun.effect.Effect[builtins.object, <nothing>, builtins.str*]"
 - case: effect_lift_infers_return_type
   disable_cache: true
   main: |
@@ -370,9 +370,9 @@
 
     e1: Effect[P1, ZeroDivisionError, int]
     e2: Effect[P2, KeyError, int]
-    reveal_type(lift(f)(e1, e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]'
-    reveal_type(lift_cpu_bound(f)(e1, e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]'
-    reveal_type(lift_io_bound(f)(e1, e2))  # N: Revealed type is 'pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]'
+    reveal_type(lift(f)(e1, e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]"
+    reveal_type(lift_cpu_bound(f)(e1, e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]"
+    reveal_type(lift_io_bound(f)(e1, e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], Union[builtins.KeyError, builtins.ZeroDivisionError], builtins.int]"
 - case: effect_catch_one_error
   disable_cache: true
   main: |
@@ -381,7 +381,7 @@
     def f(a: str) -> int:
       ...
 
-    reveal_type(catch(Exception)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, builtins.Exception, builtins.int]'
+    reveal_type(catch(Exception)(f))  # N: Revealed type is "def (a: builtins.str) -> pfun.effect.Effect[builtins.object, builtins.Exception, builtins.int]"
 - case: effect_catch_unions_errors
   disable_cache: true
   main: |
@@ -392,7 +392,7 @@
       pass
 
 
-    reveal_type(catch(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'
+    reveal_type(catch(ValueError, TypeError)(f))  # N: Revealed type is "def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]"
 - case: effect_catch_io_bound_unions_errors
   disable_cache: true
   main: |
@@ -403,7 +403,7 @@
       pass
 
 
-    reveal_type(catch_io_bound(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'
+    reveal_type(catch_io_bound(ValueError, TypeError)(f))  # N: Revealed type is "def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]"
 - case: effect_catch_cpu_bound_unions_errors
   disable_cache: true
   main: |
@@ -414,14 +414,14 @@
       pass
 
 
-    reveal_type(catch_cpu_bound(ValueError, TypeError)(f))  # N: Revealed type is 'def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]'
+    reveal_type(catch_cpu_bound(ValueError, TypeError)(f))  # N: Revealed type is "def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int*]"
 - case: lens_without_arg_allows_all
   disable_cache: true
   main: |
     from pfun import lens
 
-    reveal_type(lens().name)  # N: Revealed type is 'pfun.lens.Lens[Any, Any]'
-    reveal_type(lens().name('')([]))   # N: Revealed type is 'Any'
+    reveal_type(lens().name)  # N: Revealed type is "pfun.lens.Lens[Any, Any]"
+    reveal_type(lens().name('')([]))   # N: Revealed type is "Any"
 - case: lens_with_arg_checks_access
   disable_cache: true
   main: |
@@ -451,16 +451,16 @@
     main:14: error: "pfun.lens.Lens[main.User, main.Organization]" has no attribute "foo"
     main:15: error: No overload variant of "__getitem__" of "list" matches argument type "str"
     main:15: note: Possible overload variants:
-    main:15: note:     def __getitem__(self, int) -> str
+    main:15: note:     def __getitem__(self, SupportsIndex) -> str
     main:15: note:     def __getitem__(self, slice) -> List[str]
     main:16: error: No overload variant of "__getitem__" of "list" matches argument type "str"
     main:16: note: Possible overload variants:
-    main:16: note:     def __getitem__(self, int) -> str
+    main:16: note:     def __getitem__(self, SupportsIndex) -> str
     main:16: note:     def __getitem__(self, slice) -> List[str]
     main:17: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
     main:18: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
-    main:20: note: Revealed type is 'pfun.lens.Lens[main.User, main.Organization]'
-    main:21: note: Revealed type is 'pfun.lens.Lens[main.User, builtins.str]'
+    main:20: note: Revealed type is "pfun.lens.Lens[main.User, main.Organization]"
+    main:21: note: Revealed type is "pfun.lens.Lens[main.User, builtins.str]"
 - case: lens_supports_protocols
   disable_cache: true
   main: |
@@ -470,7 +470,7 @@
     class User(Protocol):
         name: str
     
-    reveal_type(lens(User))  # N: Revealed type is 'pfun.lens.RootLens[main.User]'
+    reveal_type(lens(User))  # N: Revealed type is "pfun.lens.RootLens[main.User]"
 - case: transform_checks_args
   disable_cache: true
   main: |
@@ -489,4 +489,4 @@
     class User(Person):
         password: str
     
-    reveal_type(lens(Person).name('')(User()))  # N: Revealed type is 'main.User*'
+    reveal_type(lens(Person).name('')(User()))  # N: Revealed type is "main.User*"
