@@ -236,42 +236,6 @@
           
           
 
-
-  <li class="md-nav__item">
-    <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link">
-      Effectful (But Side-Effect Free) Programming
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../useful_functions/" title="Useful Functions" class="md-nav__link">
-      Useful Functions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
-      Curried And Type-Safe Operators
-    </a>
-  </li>
-
-        
-          
-          
-          
-
   
 
 
@@ -321,10 +285,53 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#lens" class="md-nav__link">
+    Lens
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
     
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../useful_functions/" title="Useful Functions" class="md-nav__link">
+      Useful Functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link">
+      Effectful (But Side-Effect Free) Programming
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
+      Curried And Type-Safe Operators
+    </a>
   </li>
 
         
@@ -594,6 +601,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../lens_api/" title="pfun.lens" class="md-nav__link">
+      pfun.lens
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -637,6 +656,13 @@
         <li class="md-nav__item">
   <a href="#dict" class="md-nav__link">
     Dict
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lens" class="md-nav__link">
+    Lens
   </a>
   
 </li>
@@ -721,6 +747,84 @@ instance methods</p>
 
 <p>It supports the same api as <code>dict</code> which the exception of <code>__setitem__</code> which will raise an exception, and uses
 <code>pfun.maybe.Maybe</code> to indicate the presence or absence of a key when using <code>get</code>.</p>
+<h2 id="lens">Lens</h2>
+<p>Working with deeply nested immutable data-structures can be tricky when you want to transform only one member of an object deep inside the nested structure, but want to keep other the remaining data-structure intact, for example in:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;I want to change this...&#39;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="s1">&#39;but not this&#39;</span>
+<span class="p">}</span>
+
+
+<span class="n">new_d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">new_d</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">new_d</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">][</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">][</span><span class="s1">&#39;b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">new_d</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">][</span><span class="s1">&#39;b&#39;</span><span class="p">][</span><span class="s1">&#39;c&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Phew! That took a lot of work!&#39;</span>
+</code></pre></div>
+
+<p>A <em>lens</em> is a setter function that takes as arguments a value to replace at some path/index
+in an object/data-structure, and an object to transform. <code>pfun.lens</code> allows you
+to easily construct these setter functions by specifying the path/index at
+which you want to perform a replacement using normal Python indexing and attribute
+access. You use the object returned by <code>lens()</code> as a proxy for the object you want
+to transform by accessing attributes and indexes on it. The lens will remember this
+path, and use it when performing an update. You perform an update by calling the lens
+with the value to use as a replacement, and an object on which to perform the replacement:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">lens</span>
+
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">lens</span><span class="p">()[</span><span class="s1">&#39;a&#39;</span><span class="p">][</span><span class="s1">&#39;b&#39;</span><span class="p">][</span><span class="s1">&#39;c&#39;</span><span class="p">]</span>
+<span class="n">new_d</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="s1">&#39;Wow that was a lot easier!&#39;</span><span class="p">)(</span><span class="n">d</span><span class="p">)</span>
+</code></pre></div>
+
+<p>If you use the <code>pfun</code> MyPy plugin, you can give a type as an argument to <code>lens</code>, which allows MyPy to check that the operations you make on the lens object are supported by the type you intend to transform:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">Person</span><span class="p">):</span>
+    <span class="n">organization</span><span class="p">:</span> <span class="n">Organization</span>
+
+
+<span class="n">u</span> <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
+
+<span class="c1"># MyPy type error because we misspelled &#39;organization&#39;</span>
+<span class="n">u</span><span class="o">.</span><span class="n">organisation</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">)</span>
+
+<span class="c1"># MyPy type error because &quot;User.organization&quot; must a &quot;str&quot;</span>
+<span class="n">u</span><span class="o">.</span><span class="n">organization</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># MyPy type error because &quot;Person&quot; is not a &quot;User&quot;</span>
+<span class="n">u</span><span class="o">.</span><span class="n">organization</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">)(</span><span class="n">Person</span><span class="p">())</span>
+</code></pre></div>
+
+<p>Since lenses are just Python callables, you can combine them using the normal
+compose operations available in <code>pfun</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">compose</span>
+
+
+<span class="k">class</span> <span class="nc">NamedUser</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">u</span> <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">NamedUser</span><span class="p">)</span>
+<span class="n">set_name</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">name</span>
+<span class="n">set_org_name</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">organization</span><span class="o">.</span><span class="n">name</span>
+
+<span class="n">new_user</span> <span class="o">=</span> <span class="n">compose</span><span class="p">(</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">),</span> <span class="n">set_org_name</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">))(</span><span class="n">NamedUser</span><span class="p">())</span>
+</code></pre></div>
+
+<p>Currently, <code>lens</code> supports working with the following types of objects and data-structures:</p>
+<ul>
+<li>Regular Python objects</li>
+<li><code>collections.namedtuple</code> and <code>typing.NamedTuple</code> instances</li>
+<li>normal and frozen <code>dataclasses.dataclass</code> and <code>pfun.Immutable</code></li>
+<li><code>pfun.List</code>, <code>tuple</code> and <code>list</code></li>
+<li><code>pfun.Dict</code> and <code>dict</code></li>
+</ul>
                 
               
               
@@ -739,7 +843,7 @@ instance methods</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../install/" title="Install" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -748,19 +852,19 @@ instance methods</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Curried And Type-Safe Operators
+                Install
               </div>
             </div>
           </a>
         
         
-          <a href="../stack_safety/" title="Stack-Safety And Recursion" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../useful_functions/" title="Useful Functions" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-footer-nav__title">
               <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Stack-Safety And Recursion
+                Useful Functions
               </div>
             </div>
             <div class="md-footer-nav__button md-icon">

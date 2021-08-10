@@ -12,7 +12,7 @@
         <meta name="description" content="Purely functional, Statically Typed Python">
       
       
-        <link rel="canonical" href="https://pfun.dev/property_based_testing/">
+        <link rel="canonical" href="https://pfun.dev/lens_api/">
       
       
       <link rel="shortcut icon" href="../nav_logo.svg">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Property-Based Testing - pfun</title>
+        <title>pfun.lens - pfun</title>
       
     
     
@@ -64,6 +64,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#pfun.lens.lens" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -87,7 +92,7 @@
           </span>
           <span class="md-header-nav__topic md-ellipsis">
             
-              Property-Based Testing
+              pfun.lens
             
           </span>
         </div>
@@ -184,12 +189,10 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1" checked>
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1">
     
     <label class="md-nav__link" for="nav-1">
       Guide
@@ -291,18 +294,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Property-Based Testing" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../property_based_testing/" title="Property-Based Testing" class="md-nav__link">
       Property-Based Testing
     </a>
-    
   </li>
 
         
@@ -327,10 +323,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
     
     <label class="md-nav__link" for="nav-3">
       API Reference
@@ -552,11 +550,92 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../lens_api/" title="pfun.lens" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        pfun.lens
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="pfun.lens" class="md-nav__link md-nav__link--active">
       pfun.lens
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.lens.lens" class="md-nav__link">
+    lens()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.lens.RootLens" class="md-nav__link">
+    RootLens
+  </a>
+  
+    <nav class="md-nav" aria-label="RootLens">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfun.lens.RootLens.__getattr__" class="md-nav__link">
+    __getattr__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.lens.RootLens.__getitem__" class="md-nav__link">
+    __getitem__()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.lens.Lens" class="md-nav__link">
+    Lens
+  </a>
+  
+    <nav class="md-nav" aria-label="Lens">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfun.lens.Lens.__call__" class="md-nav__link">
+    __call__()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -572,6 +651,81 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.lens.lens" class="md-nav__link">
+    lens()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.lens.RootLens" class="md-nav__link">
+    RootLens
+  </a>
+  
+    <nav class="md-nav" aria-label="RootLens">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfun.lens.RootLens.__getattr__" class="md-nav__link">
+    __getattr__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.lens.RootLens.__getitem__" class="md-nav__link">
+    __getitem__()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.lens.Lens" class="md-nav__link">
+    Lens
+  </a>
+  
+    <nav class="md-nav" aria-label="Lens">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfun.lens.Lens.__call__" class="md-nav__link">
+    __call__()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
@@ -581,28 +735,330 @@
                   
                 
                 
-                  <h1>Property-Based Testing</h1>
-                
-                <p>Pure functional programming lends itself well to <a href="https://hypothesis.works/articles/what-is-property-based-testing/">property-based testing</a>. To make property based testing easy, <code>pfun</code> comes with a number of test case generators for the excellent <a href="https://hypothesis.readthedocs.io/en/latest/">hypothesis</a> library.</p>
-<p>For example, if you're testing a function that takes <code>pfun.list.List</code> value as an argument, you can use the <code>pfun.hypothesis_strategies.lists</code> search strategy:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">hypothesis</span> <span class="kn">import</span> <span class="n">given</span>
-<span class="kn">from</span> <span class="nn">hypothesis.strategies</span> <span class="kn">import</span> <span class="n">integers</span>
-
-<span class="kn">from</span> <span class="nn">pfun.hypothesis_strategies</span> <span class="kn">import</span> <span class="n">lists</span>
-<span class="kn">from</span> <span class="nn">pfun.list</span> <span class="kn">import</span> <span class="n">List</span>
+                <div class="doc doc-object doc-function">
 
 
-<span class="k">def</span> <span class="nf">increment_all</span><span class="p">(</span><span class="n">l</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="n">l</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<h1 class="doc doc-heading" id="pfun.lens.lens">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">lens</span><span class="o">.</span><span class="n">lens</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 
-<span class="nd">@given</span><span class="p">(</span><span class="n">lists</span><span class="p">(</span><span class="n">integers</span><span class="p">()))</span>
-<span class="k">def</span> <span class="nf">test_increment_all</span><span class="p">(</span><span class="n">l</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="nb">sum</span><span class="p">(</span><span class="n">increment_all</span><span class="p">(</span><span class="n">l</span><span class="p">))</span> <span class="o">==</span> <span class="nb">sum</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Create a <code>Lens</code> object that supports
+transformations of instances of type <code>T</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">lens</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])[</span><span class="mi">0</span><span class="p">](</span><span class="mi">1</span><span class="p">)([</span><span class="mi">0</span><span class="p">])</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 </code></pre></div>
 
-<p>To see all search strategies that comes with <code>pfun</code> check out the <a href="../hypothesis_strategies_api/">API reference</a>.</p>
-<p>To use the version of hypothesis that <code>pfun</code> is tested against, you can install <code>pfun</code> along with <code>hypothesis</code> using <code>pip install pfun[test]</code></p>
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>t</code></td>
+        <td><code>Optional[T]</code></td>
+        <td><p>Type that the <code>Lens</code> supports transformations of</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>RootLens[T]</code></td>
+      <td><p><code>Lens</code> instance</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h1 class="doc doc-heading" id="pfun.lens.RootLens">
+        <code>pfun.lens.RootLens</code>
+
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Lens object that supports attribute access and indexing</p>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.lens.RootLens.__getattr__">
+<code class="codehilite language-python"><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Create a new <code>Lens</code> that transform instances at path <code>name</code></p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">Immutable</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">Immutable</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">lens</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s1">&#39;Alice&#39;</span><span class="p">)(</span><span class="n">user</span><span class="p">)</span>
+<span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Alice&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>name</code></td>
+        <td><code>str</code></td>
+        <td><p>name of attribute to transform in returned <code>Lens</code></p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Lens[A, Any]</code></td>
+      <td><p><code>Lens</code> that transform instances at path <code>name</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.lens.RootLens.__getitem__">
+<code class="codehilite language-python"><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Create a <code>Lens</code> object that supports
+transformations of instances at index `index</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">lens</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])[</span><span class="mi">0</span><span class="p">](</span><span class="mi">1</span><span class="p">)([</span><span class="mi">0</span><span class="p">])</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>index</code></td>
+        <td><code>Any</code></td>
+        <td><p>index that the <code>Lens</code> supports transformations of</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Lens[A, Any]</code></td>
+      <td><p><code>Lens</code> instance</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h1 class="doc doc-heading" id="pfun.lens.Lens">
+        <code>pfun.lens.Lens</code>
+
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Lens object that supports attribute access, indexing
+and transform objects</p>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.lens.Lens.__call__">
+<code class="codehilite language-python"><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Apply lens to object with value.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">lens</span><span class="p">()[</span><span class="s1">&#39;foo&#39;</span><span class="p">](</span><span class="s1">&#39;bar&#39;</span><span class="p">)({})</span>
+<span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>value</code></td>
+        <td><code>B</code></td>
+        <td><p>Value to assign to this name/index in the path</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Callable[[A], A]</code></td>
+      <td><p>Transformation function that can be applied to an object</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
                 
               
               
@@ -621,7 +1077,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../stack_safety/" title="Stack-Safety And Recursion" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../operator_api/" title="pfun.operator" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -630,25 +1086,11 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Stack-Safety And Recursion
+                pfun.operator
               </div>
             </div>
           </a>
         
-        
-          <a href="../other_resources/" title="Other Resources" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Other Resources
-              </div>
-            </div>
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-            </div>
-          </a>
         
       </nav>
     </div>

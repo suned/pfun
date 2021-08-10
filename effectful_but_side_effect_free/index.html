@@ -236,6 +236,30 @@
           
           
 
+
+  <li class="md-nav__item">
+    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
+      Immutable Objects And Data Structures
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../useful_functions/" title="Useful Functions" class="md-nav__link">
+      Useful Functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
   
 
 
@@ -374,32 +398,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../useful_functions/" title="Useful Functions" class="md-nav__link">
-      Useful Functions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
       Curried And Type-Safe Operators
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
-      Immutable Objects And Data Structures
     </a>
   </li>
 
@@ -670,6 +670,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../lens_api/" title="pfun.lens" class="md-nav__link">
+      pfun.lens
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -817,7 +829,7 @@
 <li><code>pfun.either</code> helps you deal with errors without exceptions.</li>
 <li><code>pfun.effect</code> helps you work with side-effects in functional style.</li>
 </ul>
-<p>If you have some experience with functionl programming, you can probably skip ahead to the section on <code>pfun.effect.Effect</code>.</p>
+<p>If you have some experience with functional programming, you can probably skip ahead to the section on <code>pfun.effect.Effect</code>.</p>
 <h2 id="maybe">Maybe</h2>
 <p>The job of the <code>pfun.maybe.Maybe</code> type is to help you work with missing values, in much the same way that the built-in <code>None</code> type is used. One of the main disadvantages of the <code>None</code> type is that you end up with logic for dealing with missing values all over the place, using code like <code>if foo is not None</code>.</p>
 <p><code>pfun.maybe.Maybe</code> makes things a bit easier by generalising the <code>if foo is not None</code> part as a function called <code>map</code>. Imagine that you have function that looks up values in a <code>dict</code> and returns <code>None</code> if the key isn't found:</p>
@@ -863,7 +875,7 @@
 </code></pre></div>
 
 <p>(For those with previous functional programming experience, <code>and_then</code> is the <a href="https://en.wikipedia.org/wiki/Monad_(functional_programming)#Overview">bind</a> operation of <code>Maybe</code>)</p>
-<p><code>pfun.maybe.Maybe</code> is in fact just a <a href="https://docs.python.org/3/library/typing.html#type-aliases">type-alias</a> for <code>Union[Just[TypeVar('A'), Nothing]]</code>. This means that your type checker can figure out when you're dealing with one or the other using either <code>__bool__</code> or <code>isinstance</code>, just like when using <code>Optional</code>:</p>
+<p><code>pfun.maybe.Maybe</code> is in fact just a <a href="https://docs.python.org/3/library/typing.html#type-aliases">type-alias</a> for <code>Union[Just[TypeVar('A')], Nothing]</code>. This means that your type checker can figure out when you're dealing with one or the other using either <code>__bool__</code> or <code>isinstance</code>, just like when using <code>Optional</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">value</span> <span class="o">=</span> <span class="n">lookup</span><span class="p">(</span><span class="n">some_dict</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
     <span class="o">...</span>  <span class="c1"># type checker knows that value is a Just</span>
@@ -1403,7 +1415,7 @@ both at the same time. This can lead to code like the following:</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../install/" title="Install" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../useful_functions/" title="Useful Functions" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -1412,19 +1424,19 @@ both at the same time. This can lead to code like the following:</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Install
+                Useful Functions
               </div>
             </div>
           </a>
         
         
-          <a href="../useful_functions/" title="Useful Functions" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-footer-nav__title">
               <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Useful Functions
+                Curried And Type-Safe Operators
               </div>
             </div>
             <div class="md-footer-nav__button md-icon">

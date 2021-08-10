@@ -236,8 +236,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link">
-      Effectful (But Side-Effect Free) Programming
+    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
+      Immutable Objects And Data Structures
     </a>
   </li>
 
@@ -260,8 +260,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
-      Curried And Type-Safe Operators
+    <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link">
+      Effectful (But Side-Effect Free) Programming
     </a>
   </li>
 
@@ -272,8 +272,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
-      Immutable Objects And Data Structures
+    <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
+      Curried And Type-Safe Operators
     </a>
   </li>
 
@@ -535,19 +535,6 @@
     Immutable
   </a>
   
-    <nav class="md-nav" aria-label="Immutable">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pfun.immutable.Immutable.clone" class="md-nav__link">
-    clone()
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -593,6 +580,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../lens_api/" title="pfun.lens" class="md-nav__link">
+      pfun.lens
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -623,19 +622,6 @@
   <a href="#pfun.immutable.Immutable" class="md-nav__link">
     Immutable
   </a>
-  
-    <nav class="md-nav" aria-label="Immutable">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pfun.immutable.Immutable.clone" class="md-nav__link">
-    clone()
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -681,85 +667,6 @@
 </code></pre></div>
 
 
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-object doc-method">
-
-
-
-<h2 class="doc doc-heading" id="pfun.immutable.Immutable.clone">
-<code class="codehilite language-python"><span class="n">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
-        
-
-</h2>
-
-    <div class="doc doc-contents ">
-
-      <p>Make a shallow copy of an instance, potentially overwriting
-fields given by <code>kwargs</code></p>
-
-<p><strong>Examples:</strong></p>
-    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="n">Immutable</span><span class="p">):</span>
-<span class="o">...</span>     <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">a2</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;new value&#39;</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">a2</span><span class="o">.</span><span class="n">a</span>
-<span class="s2">&quot;new value&quot;</span>
-</code></pre></div>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>kwargs</code></td>
-        <td><code></code></td>
-        <td><p>fields to overwrite</p></td>
-        <td><code>{}</code></td>
-      </tr>
-  </tbody>
-</table>
-<p><strong>Returns:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>~T</code></td>
-      <td><p>New instance of same type with copied and overwritten fields</p></td>
-    </tr>
-  </tbody>
-</table>
-    </div>
-
-  </div>
-
-
-
-
-
-  </div>
 
     </div>
 

@@ -238,8 +238,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link">
-      Effectful (But Side-Effect Free) Programming
+    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
+      Immutable Objects And Data Structures
     </a>
   </li>
 
@@ -303,8 +303,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
-      Curried And Type-Safe Operators
+    <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-nav__link">
+      Effectful (But Side-Effect Free) Programming
     </a>
   </li>
 
@@ -315,8 +315,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-nav__link">
-      Immutable Objects And Data Structures
+    <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-nav__link">
+      Curried And Type-Safe Operators
     </a>
   </li>
 
@@ -587,6 +587,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../lens_api/" title="pfun.lens" class="md-nav__link">
+      pfun.lens
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -646,7 +658,8 @@
                   <h1>Useful Functions</h1>
                 
                 <h2 id="curry">curry</h2>
-<p><code>curry</code> makes it easy to <a href="https://en.wikipedia.org/wiki/Currying">curry</a> functions while inferring the resulting type signature with MyPy (if the <code>pfun</code> MyPy plugin is enabled).</p>
+<p><code>curry</code> makes it easy to <a href="https://en.wikipedia.org/wiki/Currying">curry</a> functions. If you enable the MyPy plugin, MyPy can also
+type check the arguments and return types of curried functions.</p>
 <p>The functions returned by <code>curry</code> support both normal and curried call styles:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.functions</span> <span class="kn">import</span> <span class="n">curry</span>
 
@@ -669,48 +682,53 @@ ways to call a curried function:</p>
 <span class="k">assert</span> <span class="n">f</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">f</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">)(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">f</span><span class="p">(</span><span class="n">c</span><span class="o">=</span><span class="s1">&#39;c&#39;</span><span class="p">)(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)(</span><span class="n">b</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="o">...</span>
 </code></pre></div>
 
-<p>To keep things simple, the <code>pfun</code> MyPy plugin doesn't infer all possible overloads of curried signatures. Instead, the inferred signature is split into the following argument lists: One argument list for optional arguments and <code>**kwargs</code> followed by one argument list for each positional argument. If the uncurried function accepts <code>*args</code>, it's added to the last positional argument list of the curried function</p>
-<p>In other words, given the following function <code>f</code>:</p>
-<div class="codehilite"><pre><span></span><code><span class="nd">@curry</span>
-<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">pos_1</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">pos_2</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">keyword</span><span class="p">:</span> <span class="n">T</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-    <span class="o">...</span>
-</code></pre></div>
+<p>To keep things simple, the actual signature of curried functions is simply the original function signature,
+which allows you to pass curried functions as arguments to functions that expects callbacks:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span>
 
-<p>the MyPy plugin infers the following overloaded signatures:</p>
-<ul>
-<li><strong>Curried signature without optional arguments</strong><br />
-<code>(pos_1: T) -&gt; (pos_2: T, *args: T) -&gt; T</code></li>
-<li><strong>Curried signature with optional arguments</strong><br />
-<code>(*, keyword: T =, **kwargs: T) -&gt; (pos_1: T) -&gt; (pos_2: T, *args: T) -&gt; T</code></li>
-<li><strong>Uncurried signature</strong><br />
-<code>(pos_1: T, pos_2: T, *args: T, *, keyword: T =, **kwargs: T) -&gt; T</code></li>
-</ul>
-<p>The reasoning behind this behaviour is that the main use-case for currying is
-to pass partially applied functions as arguments to other functions that expect
-unary function arguments such as <code>pfun.effect.Effect.map</code> or <code>pfun.effect.Effect.and_then</code>,
-and in by-far most cases, we need the required arguments to be applied last:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">operator</span> <span class="k">as</span> <span class="nn">op</span>
-<span class="kn">from</span> <span class="nn">pfun.functions</span> <span class="kn">import</span> <span class="n">curry</span>
-<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">success</span>
-
-<span class="n">success</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">curry</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">add</span><span class="p">)(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-<span class="mi">4</span>
-</code></pre></div>
-
-<p>If this is not the behaviour you need, you can cast the result of calling a curried function,
-or use a <code>lambda</code>:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Callable</span>
-
+<span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">curry</span>
 
 <span class="nd">@curry</span>
-<span class="k">def</span> <span class="nf">only_optional_args</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="o">...</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
 
-<span class="c1"># we need to cast here because the MyPy plugin does not infer this signature</span>
-<span class="n">f</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="n">only_optional_args</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">))</span>
 
-<span class="c1"># alternatively, use a lambda</span>
-<span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">only_optional_args</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">h</span><span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+
+<span class="n">h</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># type safe</span>
+</code></pre></div>
+
+<p>Because the signature of curried functions is not actually curried, this call will
+currently issue a false type error:</p>
+<div class="codehilite"><pre><span></span><code><span class="nd">@curry</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">def</span> <span class="nf">h</span><span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="n">h</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># false type error</span>
+</code></pre></div>
+
+<p>If you need to take curried functions as callback arguments, this is a type-safe
+alternative</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.functions</span> <span class="kn">import</span> <span class="n">Curry</span><span class="p">,</span> <span class="n">curry</span>
+
+<span class="nd">@curry</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+
+<span class="k">def</span> <span class="nf">h</span><span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="n">Curry</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="n">h</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># type safe</span>
+</code></pre></div>
+
+<p>Currently the <code>curry</code> MyPy plugin doesn't support methods. If you want to return a curried function from a method you can use the following workaround:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.functions</span> <span class="kn">import</span> <span class="n">Curry</span><span class="p">,</span> <span class="n">curry</span>
+
+
+<span class="k">class</span> <span class="nc">C</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Curry</span><span class="p">[[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]]]:</span>
+        <span class="k">return</span> <span class="n">curry</span><span class="p">(</span><span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span>
 </code></pre></div>
 
 <h2 id="compose">compose</h2>
@@ -745,7 +763,7 @@ or use a <code>lambda</code>:</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../immutable_objects_and_data/" title="Immutable Objects And Data Structures" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -754,19 +772,19 @@ or use a <code>lambda</code>:</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Effectful (But Side-Effect Free) Programming
+                Immutable Objects And Data Structures
               </div>
             </div>
           </a>
         
         
-          <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../effectful_but_side_effect_free/" title="Effectful (But Side-Effect Free) Programming" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-footer-nav__title">
               <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Curried And Type-Safe Operators
+                Effectful (But Side-Effect Free) Programming
               </div>
             </div>
             <div class="md-footer-nav__button md-icon">
