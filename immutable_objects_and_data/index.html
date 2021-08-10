@@ -694,8 +694,10 @@ as for <code>dataclass</code> or <code>NamedTuple</code>:</p>
 <span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="n">Immutable</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
 
+
 <span class="k">class</span> <span class="nc">D</span><span class="p">(</span><span class="n">C</span><span class="p">):</span>
     <span class="n">b</span><span class="p">:</span> <span class="nb">int</span>
+
 
 <span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">c</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># raises: FrozenInstanceError</span>
@@ -709,6 +711,7 @@ usage documentation, see the official docs. You can use the entire <code>datacla
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">field</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 
+
 <span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="n">Immutable</span><span class="p">):</span>
     <span class="n">l</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">tuple</span><span class="p">)</span>
 
@@ -721,6 +724,7 @@ at runtime.</p>
 <h2 id="list">List</h2>
 <p><code>List</code> is a functional style list data structure.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.list</span> <span class="kn">import</span> <span class="n">List</span>
+
 
 <span class="n">l</span> <span class="o">=</span> <span class="n">List</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
 <span class="n">l2</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
@@ -739,6 +743,7 @@ instance methods</p>
 <p><code>Dict</code> is a functional style dictionary.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.dict</span> <span class="kn">import</span> <span class="n">Dict</span>
 <span class="kn">from</span> <span class="nn">pfun.maybe</span> <span class="kn">import</span> <span class="n">Just</span>
+
 
 <span class="n">d</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;value&#39;</span><span class="p">})</span>
 <span class="n">d2</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;new_key&#39;</span><span class="p">,</span> <span class="s1">&#39;new_value&#39;</span><span class="p">)</span>
@@ -781,24 +786,28 @@ with the value to use as a replacement, and an object on which to perform the re
 </code></pre></div>
 
 <p>If you use the <code>pfun</code> MyPy plugin, you can give a type as an argument to <code>lens</code>, which allows MyPy to check that the operations you make on the lens object are supported by the type you intend to transform:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">Organization</span><span class="p">:</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">Person</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Employee</span><span class="p">(</span><span class="n">Person</span><span class="p">):</span>
     <span class="n">organization</span><span class="p">:</span> <span class="n">Organization</span>
 
 
-<span class="n">u</span> <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">Employee</span><span class="p">)</span>
 
 <span class="c1"># MyPy type error because we misspelled &#39;organization&#39;</span>
-<span class="n">u</span><span class="o">.</span><span class="n">organisation</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">organisation</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">)</span>
 
-<span class="c1"># MyPy type error because &quot;User.organization&quot; must a &quot;str&quot;</span>
-<span class="n">u</span><span class="o">.</span><span class="n">organization</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># MyPy type error because &quot;Employee.name&quot; must be a &quot;str&quot;</span>
+<span class="n">e</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-<span class="c1"># MyPy type error because &quot;Person&quot; is not a &quot;User&quot;</span>
-<span class="n">u</span><span class="o">.</span><span class="n">organization</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">)(</span><span class="n">Person</span><span class="p">())</span>
+<span class="c1"># MyPy type error because &quot;Person&quot; is not an &quot;Employee&quot;</span>
+<span class="n">e</span><span class="o">.</span><span class="n">organization</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">)(</span><span class="n">Person</span><span class="p">())</span>
 </code></pre></div>
 
 <p>Since lenses are just Python callables, you can combine them using the normal
@@ -806,15 +815,11 @@ compose operations available in <code>pfun</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">compose</span>
 
 
-<span class="k">class</span> <span class="nc">NamedUser</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">Employee</span><span class="p">)</span>
+<span class="n">set_name</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">name</span>
+<span class="n">set_org_name</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">organization</span><span class="o">.</span><span class="n">name</span>
 
-
-<span class="n">u</span> <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">NamedUser</span><span class="p">)</span>
-<span class="n">set_name</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">name</span>
-<span class="n">set_org_name</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">organization</span><span class="o">.</span><span class="n">name</span>
-
-<span class="n">new_user</span> <span class="o">=</span> <span class="n">compose</span><span class="p">(</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">),</span> <span class="n">set_org_name</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">))(</span><span class="n">NamedUser</span><span class="p">())</span>
+<span class="n">new_user</span> <span class="o">=</span> <span class="n">compose</span><span class="p">(</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">),</span> <span class="n">set_org_name</span><span class="p">(</span><span class="s1">&#39;Foo Inc&#39;</span><span class="p">))(</span><span class="n">Employee</span><span class="p">())</span>
 </code></pre></div>
 
 <p>Currently, <code>lens</code> supports working with the following types of objects and data-structures:</p>
