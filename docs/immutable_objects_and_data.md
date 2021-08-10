@@ -10,8 +10,10 @@ from pfun.immutable import Immutable
 class C(Immutable):
     a: int
 
+
 class D(C):
     b: int
+
 
 c = C(1)
 c.a = 2  # raises: FrozenInstanceError
@@ -27,6 +29,7 @@ usage documentation, see the official docs. You can use the entire `dataclass` a
 from dataclasses import field
 from typing import Tuple
 
+
 class C(Immutable):
     l: Tuple[int] = field(default_factory=tuple)
 
@@ -40,6 +43,7 @@ at runtime.
 `List` is a functional style list data structure.
 ```python
 from pfun.list import List
+
 
 l = List(range(5))
 l2 = l.append(5)
@@ -61,6 +65,7 @@ assert List(range(3)).map(str) == ['0', '1', '2']
 ```python
 from pfun.dict import Dict
 from pfun.maybe import Just
+
 
 d = Dict({'key': 'value'})
 d2 = d.set('new_key', 'new_value')
@@ -106,24 +111,28 @@ new_d = t('Wow that was a lot easier!')(d)
 ```
 If you use the `pfun` MyPy plugin, you can give a type as an argument to `lens`, which allows MyPy to check that the operations you make on the lens object are supported by the type you intend to transform:
 ```python
+class Organization:
+    name: str
+
+
 class Person:
     name: str
 
 
-class User(Person):
+class Employee(Person):
     organization: Organization
 
 
-u = lens(User)
+e = lens(Employee)
 
 # MyPy type error because we misspelled 'organization'
-u.organisation('Foo Inc')
+e.organisation('Foo Inc')
 
-# MyPy type error because "User.organization" must a "str"
-u.organization(0)
+# MyPy type error because "Employee.name" must be a "str"
+e.name(0)
 
-# MyPy type error because "Person" is not a "User"
-u.organization('Foo Inc')(Person())
+# MyPy type error because "Person" is not an "Employee"
+e.organization.name('Foo Inc')(Person())
 ```
 Since lenses are just Python callables, you can combine them using the normal
 compose operations available in `pfun`:
@@ -131,15 +140,11 @@ compose operations available in `pfun`:
 from pfun import compose
 
 
-class NamedUser(User):
-    name: str
+e = lens(Employee)
+set_name = e.name
+set_org_name = e.organization.name
 
-
-u = lens(NamedUser)
-set_name = u.name
-set_org_name = u.organization.name
-
-new_user = compose(set_name('Bob'), set_org_name('Foo Inc'))(NamedUser())
+new_user = compose(set_name('Bob'), set_org_name('Foo Inc'))(Employee())
 ```
 Currently, `lens` supports working with the following types of objects and data-structures:
 
