@@ -90,11 +90,11 @@ class Call(Trampoline[A]):
 
     async def _handle_cont(self, cont: Callable[[A], Trampoline[B]]
                            ) -> Trampoline[B]:
-        trampoline = await self.thunk()  # type: ignore
+        trampoline = await self.thunk()
         return trampoline.and_then(cont)
 
     async def _resume(self) -> Trampoline[A]:
-        return await self.thunk()  # type: ignore
+        return await self.thunk()
 
 
 class AndThen(Generic[A, B], Trampoline[B]):
