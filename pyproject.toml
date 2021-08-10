@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "pfun"
 version = "0.12.3"
-description = ""
-authors = ["Sune Debel <sad@archii.ai>"]
+description = "Functional, composable, asynchronous, type-safe Python."
+authors = ["https://github.com/suned/pfun/graphs/contributors"]
 readme = "README.md"
 build = "build.py"
 include = ["src/pfun/py.typed", "src/pfun/*.c"]
