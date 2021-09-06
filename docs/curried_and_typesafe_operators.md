@@ -10,4 +10,4 @@ Moreover, `pfun.operator` provide more accutare typing than its standard library
 
 Note that for some operators, such as `contains`, the argument order is flipped compared to its counterpart in the builtin `operators` module to better support [tacit programming](https://en.wikipedia.org/wiki/Tacit_programming).
 
-To see all available operators, check out the [API reference](operators_api.md).
+To see all available operators, check out the [API reference](operator_api.md).
