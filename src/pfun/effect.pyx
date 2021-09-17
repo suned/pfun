@@ -115,7 +115,7 @@ cdef class CEffect:
             effect = await self.do(env)
             if isinstance(effect, CSuccess):
                 return effect.result
-            if isinstance(effect.reason, Exception):
+            if isinstance(effect.reason, Exception) or isinstance(effect.reason, BaseException):
                 raise effect.reason
             raise RuntimeError(effect.reason)
     

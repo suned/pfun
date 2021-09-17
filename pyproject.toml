@@ -9,7 +9,7 @@ include = ["src/pfun/py.typed", "src/pfun/*.c"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-typing-extensions = "^3.7"
+typing-extensions = "^3.10.0.0"
 aiohttp = {extras = ["speedups"], version = "^3.7.4", optional = true}
 asyncpg = {version = "^0.21.0", optional = true}
 hypothesis = {version = "^6.8.5", optional = true}
