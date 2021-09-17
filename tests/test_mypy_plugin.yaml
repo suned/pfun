@@ -328,6 +328,14 @@
     reveal_type(combine(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]"
     reveal_type(combine_cpu_bound(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]"
     reveal_type(combine_io_bound(e1, e2)(f))  # N: Revealed type is "pfun.effect.Effect[Any, Union[builtins.OSError, builtins.ValueError], builtins.str*]"
+- case: effect_combine_handles_variadic_arguments
+  disable_cache: true
+  main: |
+    from typing import List
+    from pfun.effect import combine, success, Success
+
+    l: List[Success[int]]
+    reveal_type(combine(*l))  # NR: Revealed type is "def \[R\d+\] \(def \[R\d+\] \(\*builtins\.int\) \-> R1`\-\d+\) -> pfun\.effect\.Effect\[builtins\.object, <nothing>, R\d+`\-\d+\]"
 - case: effect_lift_checks_arguments
   disable_cache: true
   main: |
