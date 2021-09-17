@@ -458,13 +458,13 @@
     main:13: error: "pfun.lens.Lens[main.User]" has no attribute "foo"
     main:14: error: "pfun.lens.Lens[main.User, main.Organization]" has no attribute "foo"
     main:15: error: No overload variant of "__getitem__" of "list" matches argument type "str"
-    main:15: note: Possible overload variants:
     main:15: note:     def __getitem__(self, SupportsIndex) -> str
     main:15: note:     def __getitem__(self, slice) -> List[str]
+    main:15: note: Possible overload variants:
     main:16: error: No overload variant of "__getitem__" of "list" matches argument type "str"
-    main:16: note: Possible overload variants:
     main:16: note:     def __getitem__(self, SupportsIndex) -> str
     main:16: note:     def __getitem__(self, slice) -> List[str]
+    main:16: note: Possible overload variants:
     main:17: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
     main:18: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
     main:20: note: Revealed type is "pfun.lens.Lens[main.User, main.Organization]"
