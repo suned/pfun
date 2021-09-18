@@ -110,6 +110,10 @@ class TestEffect(MonadTest):
         assert effect.filter_(lambda v: effect.success(v % 2 == 0),
                               range(5)).run(None) == (0, 2, 4)
 
+    def test_filter_async(self):
+        assert effect.filter_async(lambda v: effect.success(v % 2 == 0),
+                              range(5)).run(None) == (0, 2, 4)
+
     def test_filter_generator(self):
         e = effect.filter_(
             lambda v: effect.success(v % 2 == 0), (v for v in range(5))
@@ -120,11 +124,15 @@ class TestEffect(MonadTest):
     def test_for_each(self):
         assert effect.for_each(effect.success, range(3)).run(None) == (0, 1, 2)
 
+    def test_for_each_async(self):
+        assert (effect.for_each_async(effect.success, range(3)).run(None)
+                == (0, 1, 2))
+
     def test_either(self):
         success = effect.success(1)
         error = effect.error('error')
         assert success.either().run(None) == either.Right(1)
-        error.either().run(None) == either.Left('error')
+        assert error.either().run(None) == either.Left('error')
 
     def test_recover(self):
         success = effect.success(1)
@@ -154,12 +162,26 @@ class TestEffect(MonadTest):
         assert effect.combine(effect.success('a'),
                               effect.success('b'))(f).run(None) == 'ab'
 
+    def test_combine_async(self):
+        def f(a, b):
+            return a + b
+
+        assert effect.combine_async(effect.success('a'),
+                                    effect.success('b'))(f).run(None) == 'ab'
+
     def test_lift(self):
         def f(a, b):
             return a + b
 
         assert effect.lift(f)(effect.success(2),
                               effect.success(2)).run(None) == 4
+
+    def test_lift_async(self):
+        def f(a, b):
+            return a + b
+
+        assert effect.lift_async(f)(effect.success(2),
+                                    effect.success(2)).run(None) == 4
 
     def test_catch(self):
         def f(fail):
@@ -194,28 +216,28 @@ class TestEffect(MonadTest):
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
     def test_lift_cpu_bound(self, e1, e2):
-        effect.lift_cpu_bound(lambda v1, v2: (v1, v2)
-                              )(e1,
-                                e2).run(None) == (e1.run(None), e2.run(None))
+        assert effect.lift_cpu_bound(
+            lambda v1, v2: (v1, v2)
+        )(e1, e2).run(None) == (e1.run(None), e2.run(None))
 
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
     def test_lift_io_bound(self, e1, e2):
-        effect.lift_io_bound(lambda v1, v2: (v1, v2)
-                             )(e1,
-                               e2).run(None) == (e1.run(None), e2.run(None))
+        assert effect.lift_io_bound(
+            lambda v1, v2: (v1, v2)
+        )(e1, e2).run(None) == (e1.run(None), e2.run(None))
 
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
     def test_combine_cpu_bound(self, e1, e2):
-        effect.combine_cpu_bound(
+        assert effect.combine_cpu_bound(
             e1, e2
         )(lambda v1, v2: (v1, v2)).run(None) == (e1.run(None), e2.run(None))
 
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
     def test_combine_io_bound(self, e1, e2):
-        effect.combine_io_bound(
+        assert effect.combine_io_bound(
             e1, e2
         )(lambda v1, v2: (v1, v2)).run(None) == (e1.run(None), e2.run(None))
 
