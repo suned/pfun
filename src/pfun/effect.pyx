@@ -1049,6 +1049,29 @@ def lift(f):
         return effect.map(lambda xs: f(*xs)).with_repr(f'lift({repr(f)})({args_repr})')
     return decorator
 
+
+def lift_async(f):
+    """
+    Decorator that enables decorated functions to operate on `Effect`
+    instances asynchronously. Note that the returned function does not accept keyword arguments.
+    Example:
+        >>> def add(a: int, b: int) -> int:
+        ...     return a + b
+        >>> lift_async(add)(success(2), success(2)).run(None)
+        4
+    Args:
+        f ( (*A, **B) -> C): The function to decorate
+    Returns:
+        (*Effect[R, E, A] -> Effect[R, E, C]): The decorated function
+    """
+    @wraps(f)
+    def decorator(*effects):
+        effect = sequence_async(effects)
+        args_repr = ', '.join(repr(e) for e in effects)
+        return effect.map(lambda xs: f(*xs)).with_repr(f'lift_async({repr(f)})({args_repr})')
+    return decorator
+
+
 cdef class LiftIOBound(CEffect):
     cdef object f
     cdef object effects
@@ -1152,6 +1175,26 @@ def combine(*effects):
     return f
 
 
+def combine_async(*effects):
+    """
+    Create an effect that produces the result of calling the passed function \
+    with the results of effects in `effects` evaluated asynchronously.
+    Example:
+        >>> combine_async(success(2), success(2))(lambda a, b: a + b).run(None)
+        4
+    Args:
+        effects (Effect[R, E, A]): Effects the results of which to pass to the combiner \
+        function
+    Return:
+        (((*A, **B) -> C) -> *Effect[R, E, A] -> Effect[R, E, C]): function that takes a combiner function and returns an \
+        `Effect` that applies the function to the results of `effects`
+    """
+    def f(g):
+        args_repr = ', '.join(repr(e) for e in effects)
+        return lift_async(g)(*effects).with_repr(f'combine_async({args_repr})({repr(g)})')
+    return f
+
+
 def combine_cpu_bound(*effects):
     """
     Create an effect that produces the result of calling the passed cpu bound function \
@@ -1217,6 +1260,30 @@ def filter_(f, iterable):
 
 
 @curry
+def filter_async(f, iterable):
+    """
+    Map each element in ``iterable`` by applying ``f``,
+    filter the results by the value returned by ``f``
+    and combine from left to right asynchronously.
+    Example:
+        >>> filter_async(lambda v: success(v % 2 == 0), range(3)).run(None)
+        (0, 2)
+    Args:
+        f (A -> Effect[R, E, bool]): Function to map ``iterable`` by
+        iterable (Iterable[A]): Iterable to map by ``f``
+    Return:
+        Effect[R, E, Iterable[A]]: `iterable` mapped and filtered by `f`
+    """
+    iterable = tuple(iterable)
+    bools = sequence_async(f(a) for a in iterable)
+    return bools.map(
+        lambda bs: tuple(a for b, a in zip(bs, iterable) if b)
+    ).with_repr(
+        f'filter_async({repr(f)})({repr(iterable)})'
+    )
+
+
+@curry
 def for_each(f, iterable):
     """
     Map each in element in ``iterable`` to
@@ -1234,6 +1301,26 @@ def for_each(f, iterable):
     """
     iterable = tuple(iterable)
     return sequence(f(x) for x in iterable).with_repr(f'for_each({repr(f)})({repr(iterable)})')
+
+
+@curry
+def for_each_async(f, iterable):
+    """
+    Map each in element in ``iterable`` to
+    an `Effect` by applying ``f``,
+    combine the elements by ``and_then``
+    from left to right and collect the results asynchronously.
+    Example:
+        >>> for_each_async(success, range(3)).run(None)
+        (0, 1, 2)
+    Args:
+        f (A -> Effect[R, E, B]): Function to map over ``iterable``
+        iterable (Iterable[A]): Iterable to map ``f`` over
+    Return:
+        Effect[R, E, Iterable[B]]: `f` mapped over `iterable` and combined from left to right.
+    """
+    iterable = tuple(iterable)
+    return sequence_async(f(x) for x in iterable).with_repr(f'for_each_async({repr(f)})({repr(iterable)})')
 
 
 def absolve(effect):
@@ -1343,15 +1430,20 @@ __all__ = [
     'sequence_async',
     'sequence',
     'filter_',
+    'filter_async',
     'for_each',
+    'for_each_async',
     'absolve',
     'error',
     'lift',
     'lift_io_bound',
     'lift_cpu_bound',
+    'lift_async',
     'combine',
+    'combine_async',
     'combine_io_bound',
     'combine_cpu_bound',
+    'lift_async',
     'catch',
     'catch_io_bound',
     'catch_cpu_bound',
