@@ -766,7 +766,8 @@ class PFun(Plugin):
             return _variadic_decorator_hook
         if fullname in ('pfun.effect.combine',
                         'pfun.effect.combine_cpu_bound',
-                        'pfun.effect.combine_io_bound'):
+                        'pfun.effect.combine_io_bound',
+                        'pfun.effect.combine_async'):
             return _combine_hook
         if fullname == 'pfun.lens.lens':
             return _lens_hook
@@ -787,7 +788,8 @@ class PFun(Plugin):
             return _effect_catch_call_hook
         if fullname in ('pfun.effect.lift.__call__',
                         'pfun.effect.lift_io_bound.__call__',
-                        'pfun.effect.lift_cpu_bound.__call__'):
+                        'pfun.effect.lift_cpu_bound.__call__',
+                        'pfun.effect.lift_async.__call__'):
             return _effect_lift_call_hook
         if fullname in (
             'pfun.lens.RootLens.__getitem__', 'pfun.lens.Lens.__getitem__'
@@ -802,7 +804,8 @@ class PFun(Plugin):
     def get_method_signature_hook(self, fullname: str):
         if fullname in ('pfun.effect.lift.__call__',
                         'pfun.effect.lift_cpu_bound.__call__',
-                        'pfun.effect.lift_io_bound.__call__'):
+                        'pfun.effect.lift_io_bound.__call__',
+                        'pfun.effect.lift_async.__call__'):
             return _effect_lift_call_signature_hook
 
     def get_base_class_hook(self, fullname: str):

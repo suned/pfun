@@ -154,7 +154,19 @@ def for_each(f: Callable[[A1], Effect[R1, E1, B]],
 
 
 @curry
+def for_each_async(f: Callable[[A1], Effect[R1, E1, B]],
+             iterable: Iterable[A1]) -> Effect[R1, E1, Iterable[B]]:
+    ...
+
+
+@curry
 def filter_(f: Callable[[A], Effect[R1, E1, bool]],
+            iterable: Iterable[A]) -> Effect[R1, E1, Iterable[A]]:
+    ...
+
+
+@curry
+def filter_async(f: Callable[[A], Effect[R1, E1, bool]],
             iterable: Iterable[A]) -> Effect[R1, E1, Iterable[A]]:
     ...
 
@@ -175,6 +187,12 @@ def combine(
 ) -> Callable[[Callable[..., Union[Awaitable[A1], A1]]], Effect[Any, Any, A1]]:
     ...
 
+
+def combine_async(
+    *effects: Effect[R1, E1, A2]
+) -> Callable[[Callable[..., Union[Awaitable[A1], A1]]], Effect[Any, Any, A1]]:
+    ...
+
 def combine_cpu_bound(
     *effects: Effect[R1, E1, A2]
 ) -> Callable[[Callable[..., A1]], Effect[Any, Any, A1]]:
@@ -190,6 +208,14 @@ L = TypeVar('L', covariant=True, bound=Callable)
 
 
 class lift(Generic[L]):
+    def __init__(self, f: L):
+        ...
+
+    def __call__(self, *effects: Effect) -> Effect:
+        ...
+
+
+class lift_async(Generic[L]):
     def __init__(self, f: L):
         ...
 
