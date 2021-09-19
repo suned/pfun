@@ -1059,14 +1059,18 @@ cdef class SequenceAsync(CEffect):
 
     async def sequence(self, object r):
         async def thunk():
-            cdef CEffect effect
-            cdef list aws = [None]*len(self.effects)
+            tasks = [asyncio.create_task(e.do(r)) for e in self.effects]
+            cdef list results = [None]*len(self.effects)
             cdef int i = 0
-            for effect in self.effects:
-                aws[i] = effect.do(r)
+            for coro in asyncio.as_completed(tasks):
+                result = await coro
+                if isinstance(result, Error):
+                    for task in tasks:
+                        task.cancel()
+                    return result
+                results[i] = result.result
                 i += 1
-            effects = await asyncio.gather(*aws)
-            return sequence(effects)
+            return CSuccess(tuple(results))
         return Call.__new__(Call, thunk)
 
     async def resume(self, RuntimeEnv env):
