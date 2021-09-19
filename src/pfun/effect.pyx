@@ -314,6 +314,63 @@ cdef class CEffect:
             discard_and_then(error(reason))
         ).with_repr(f'{repr(self)}.ensure({repr(effect)})')
 
+    def race(self, other):
+        return Race(self, other)
+
+    def timeout(self, duration):
+        return Timeout(self, duration)
+
+
+cdef class Timeout(CEffect):
+    cdef CEffect effect
+    cdef object duration
+
+    def __cinit__(self, effect, duration):
+        self.effect = effect
+        self.duration = duration
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            try:
+                return await asyncio.wait_for(self.effect.do(env), timeout=self.duration.total_seconds())
+            except asyncio.TimeoutError as e:
+                return Error(e)
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
+cdef class Race(CEffect):
+    cdef CEffect first
+    cdef CEffect second
+
+    def __cinit__(self, first, second):
+        self.first = first
+        self.second = second
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            ts = [asyncio.create_task(c)
+                  for c in [self.first.do(env), self.second.do(env)]]
+            errors = []
+            for coro in asyncio.as_completed(ts):
+                result = await coro
+                if isinstance(result, CSuccess):
+                    for t in ts:
+                        t.cancel()
+                    return result
+                else:
+                    errors.append(result.reason)
+            return Error(tuple(errors))
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
 
 cdef class WithRepr(CEffect):
     cdef CEffect effect
@@ -330,7 +387,8 @@ cdef class WithRepr(CEffect):
         return await self.effect.resume(env)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        return await self.effect.apply_continuation(f, env)
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
 
 
 cdef class Memoize(CEffect):

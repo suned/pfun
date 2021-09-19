@@ -1,4 +1,6 @@
+import asyncio
 from contextlib import ExitStack
+from datetime import timedelta
 from subprocess import CalledProcessError
 from unittest import mock
 
@@ -400,6 +402,25 @@ class TestEffect(MonadTest):
     def test_absolve_repr(self):
         assert repr(effect.absolve(effect.success(0))) == 'absolve(success(0))'
 
+    def test_race(self):
+        async def f():
+            await asyncio.sleep(10)
+            return 'f'
+
+        async def g():
+            return 'g'
+
+        e1 = effect.from_awaitable(f())
+        e2 = effect.from_awaitable(g())
+
+        assert e1.race(e2).run(None) == 'g'
+
+    def test_timeout(self):
+        async def f():
+            await asyncio.sleep(10)
+            return 'f'
+        with pytest.raises(asyncio.TimeoutError):
+            effect.from_awaitable(f()).timeout(timedelta(milliseconds=1)).run(None)
 
 class TestResource:
     def test_get(self):

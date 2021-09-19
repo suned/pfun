@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
                     Iterable, NoReturn, Optional, Tuple, Type, TypeVar, Union,
                     overload)
@@ -115,6 +116,10 @@ class Effect(Generic[R, E, A], Immutable, Monad):
 
     @add_method_repr
     def map(self, f: Callable[[A], Union[Awaitable[B], B]]) -> Effect[R, E, B]: ...
+
+    def race(self, other: Effect[R1, E1, A]) -> Effect[Any, Tuple[E, E1], A]: ...
+
+    def timeout(self, duration: timedelta) -> Effect[R, Union[asyncio.TimeoutError, E], A]: ...
 
 
 R1 = TypeVar('R1')

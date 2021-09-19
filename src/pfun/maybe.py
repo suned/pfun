@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from functools import wraps
 from typing import (Any, Callable, Generic, Iterable, Optional, Sequence,
                     TypeVar, Union, cast)
@@ -17,111 +17,10 @@ C = TypeVar('C')
 
 
 class Maybe_(Immutable, Monad, ABC):
-    """
-    Abstract super class for classes that represent computations that can fail.
-    Should not be instantiated directly.
-    Use `Just` and `Nothing` instead.
-
-    """
-    @abstractmethod
-    def and_then(self, f: Callable) -> Any:
-        """
-        Chain together functional calls, carrying along the state of the
-        computation that may fail.
-
-        Example:
-            >>> f = lambda i: Just(1 / i) if i != 0 else Nothing()
-            >>> Just(2).and_then(f)
-            Just(0.5)
-            >>> Just(0).and_then(f)
-            Nothing()
-
-        Args:
-            f: the function to call
-
-        Return:
-            `Just` wrapping a value of type A if \
-            the computation was successful, `Nothing` otherwise.
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def map(self, f: Callable) -> Any:
-        """
-        Map the result of a possibly failed computation
-
-        Example:
-            >>> f = lambda i: Just(1 / i) if i != 0 else Nothing()
-            >>> Just(2).and_then(f).map(str)
-            Just('0.5')
-            >>> Just(0).and_then(f).map(str)
-            Nothing()
-
-        Args:
-            f: Function to apply to the result
-
-        Return:
-            `Just` wrapping result of type B if the computation was
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def or_else(self, default: Any) -> Any:
-        """
-        Try to get the result of the possibly failed computation if it was
-        successful.
-
-        Example:
-            >>> Just(1).or_else(2)
-            1
-            >>> Nothing().or_else(2)
-            2
-
-        Args:
-            default: Value to return if computation has failed
-        Return:
-            `value` if this is `Just(value)`, `default_value` if this `Nothing`
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def __bool__(self) -> bool:
-        """
-        Convert possibly failed computation to a bool
-
-        Example:
-            >>> "Just" if Just(1) else "Nothing"
-            "Just"
-            >>> "Just" if Nothing() else "Nothing"
-            "Nothing"
+    pass
 
 
-        Return:
-            True if this is a `Just` value, \
-                 False if this is a `Nothing`
-
-        """
-        raise NotImplementedError()
-
-
-def _invoke_optional_arg(
-    f: Union[Callable[[A], B], Callable[[], B]], arg: Optional[A]
-) -> B:
-    try:
-        return f(arg)  # type: ignore
-    except TypeError as e:
-        if arg is None:
-            try:
-                return f()  # type: ignore
-            except TypeError:
-                raise e
-        raise
-
-
-class Just(Maybe_, Generic[A]):
+class Just(Generic[A], Maybe_):
     """
     Represents the result of a successful computation
 
@@ -132,7 +31,7 @@ class Just(Maybe_, Generic[A]):
     """
 
     def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
-        return _invoke_optional_arg(f, self.get)
+        return f(self.get)
 
     def map(self, f: Callable[[A], B]) -> 'Maybe[B]':
         return Just(f(self.get))
@@ -167,7 +66,7 @@ class Nothing(Maybe_):
     Represents a failed computation
 
     """
-    def and_then(self, f: Callable[[A], 'Maybe[B]']) -> 'Maybe[B]':
+    def and_then(self, f: Callable[[Any], 'Maybe[B]']) -> 'Maybe[B]':
         return self
 
     def __eq__(self, other: Any) -> bool:

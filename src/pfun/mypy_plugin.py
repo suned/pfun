@@ -15,7 +15,7 @@ from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.type_visitor import TypeTranslator
 from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
                         TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
-                        UnionType, get_proper_type)
+                        UninhabitedType, UnionType, get_proper_type)
 
 from .functions import curry
 
@@ -396,34 +396,59 @@ def _effect_and_then_hook(context: MethodContext) -> Type:
         return return_type
 
 
+def _combine_error_types(ts: t.List[Type]) -> UnionType:
+    without_noreturn = list({e for e in ts
+                             if not isinstance(e, UninhabitedType)})
+    return UnionType.make_union(sorted(without_noreturn, key=str))
+
+
 def _combine_hook(context: FunctionContext):
-    result_types = []
     error_types = []
     env_types = []
+    pos_map_arg_types = []
+    var_map_arg_types = []
+    map_arg_kinds = []
+    variadic = False
     try:
-        for effect_type in context.arg_types[0]:
+        for arg_type, arg_kind in zip(context.arg_types[0],
+                                      context.arg_kinds[0]):
+            if arg_kind == ARG_STAR:
+                # assume iterable
+                effect_type = arg_type.args[0]
+                if not variadic:
+                    map_arg_kinds.append(ARG_STAR)
+                variadic = True
+            else:
+                effect_type = arg_type
+                if not variadic:
+                    map_arg_kinds.append(arg_kind)
             env_type, error_type, result_type = get_proper_type(
                 effect_type
             ).args
             env_types.append(env_type)
             error_types.append(error_type)
-            result_types.append(result_type)
+            if variadic:
+                var_map_arg_types.append(result_type)
+            else:
+                pos_map_arg_types.append(result_type)
+
         map_return_type_def = _type_var_def(
             'R1', 'pfun.effect', context.api.named_type('builtins.object')
         )
         map_return_type = TypeVarType(map_return_type_def)
+        var_arg_types = ([UnionType.make_union(list(set(var_map_arg_types)))]
+                         if var_map_arg_types else [])
+        arg_types = pos_map_arg_types + var_arg_types
         map_function_type = CallableType(
-            arg_types=result_types,
-            arg_kinds=[ARG_POS for _ in result_types],
-            arg_names=[None for _ in result_types],
+            arg_types=arg_types,
+            arg_kinds=map_arg_kinds,
+            arg_names=[None] * len(arg_types),
             ret_type=map_return_type,
             variables=[map_return_type_def],
             fallback=context.api.named_type('builtins.function')
         )
         ret_type = context.default_return_type.ret_type
-        combined_error_type = UnionType.make_union(
-            sorted(set(error_types), key=str)
-        )
+        combined_error_type = _combine_error_types(error_types)
         ret_type_args = list(ret_type.args)
         ret_type_args[1] = combined_error_type
         ret_type_args[2] = map_return_type
