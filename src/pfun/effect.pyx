@@ -329,6 +329,9 @@ cdef class Timeout(CEffect):
         self.effect = effect
         self.duration = duration
 
+    def __repr__(self):
+        return f'{repr(self.effect)}.timeout({repr(self.duration)})'
+
     async def resume(self, RuntimeEnv env):
         async def thunk():
             try:
@@ -349,6 +352,9 @@ cdef class Race(CEffect):
     def __cinit__(self, first, second):
         self.first = first
         self.second = second
+
+    def __repr__(self):
+        return f'{repr(self.first)}.race({repr(self.second)})'
 
     async def resume(self, RuntimeEnv env):
         async def thunk():

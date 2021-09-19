@@ -270,6 +270,28 @@ class TestEffect(MonadTest):
             assert env.process_executor is None
             assert env.thread_executor is None
 
+    def test_race(self):
+        async def f():
+            await asyncio.sleep(10)
+            return 'f'
+
+        async def g():
+            return 'g'
+
+        e1 = effect.from_awaitable(f())
+        e2 = effect.from_awaitable(g())
+
+        assert e1.race(e2).run(None) == 'g'
+
+    def test_timeout(self):
+        async def f():
+            await asyncio.sleep(10)
+            return 'f'
+
+        e = effect.from_awaitable(f())
+        with pytest.raises(asyncio.TimeoutError):
+            e.timeout(timedelta(milliseconds=1)).run(None)
+
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'
 
@@ -424,27 +446,13 @@ class TestEffect(MonadTest):
     def test_absolve_repr(self):
         assert repr(effect.absolve(effect.success(0))) == 'absolve(success(0))'
 
-    def test_race(self):
-        async def f():
-            await asyncio.sleep(10)
-            return 'f'
+    def test_race_repr(self):
+        assert (repr(effect.success(0).race(effect.success(0))) ==
+                'success(0).race(success(0))')
 
-        async def g():
-            return 'g'
-
-        e1 = effect.from_awaitable(f())
-        e2 = effect.from_awaitable(g())
-
-        assert e1.race(e2).run(None) == 'g'
-
-    def test_timeout(self):
-        async def f():
-            await asyncio.sleep(10)
-            return 'f'
-
-        e = effect.from_awaitable(f())
-        with pytest.raises(asyncio.TimeoutError):
-            e.timeout(timedelta(milliseconds=1)).run(None)
+    def test_timeout_repr(self):
+        assert (repr(effect.success(0).timeout(timedelta(seconds=1))) ==
+                'success(0).timeout(datetime.timedelta(seconds=1))')
 
 
 class TestResource:
