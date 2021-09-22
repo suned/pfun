@@ -345,6 +345,12 @@ cdef class Timeout(CEffect):
         return effect.c_and_then(f)
 
 
+def _cancel_tasks(tasks):
+    for t in tasks:
+        if not t.done:
+            t.cancel()
+
+
 cdef class Race(CEffect):
     cdef CEffect first
     cdef CEffect second
@@ -364,8 +370,7 @@ cdef class Race(CEffect):
             for coro in asyncio.as_completed(ts):
                 result = await coro
                 if isinstance(result, CSuccess):
-                    for t in ts:
-                        t.cancel()
+                    _cancel_tasks(ts)
                     return result
                 else:
                     errors.append(result.reason)
@@ -1058,18 +1063,19 @@ cdef class SequenceAsync(CEffect):
         return f'sequence_async({repr(self.effects)})'
 
     async def sequence(self, object r):
+        async def with_index(awaitable, index):
+            return index, (await awaitable)
+
         async def thunk():
-            tasks = [asyncio.create_task(e.do(r)) for e in self.effects]
+            tasks = [asyncio.create_task(with_index(e.do(r), i))
+                     for i, e in enumerate(self.effects)]
             cdef list results = [None]*len(self.effects)
-            cdef int i = 0
             for coro in asyncio.as_completed(tasks):
-                result = await coro
+                i, result = await coro
                 if isinstance(result, Error):
-                    for task in tasks:
-                        task.cancel()
+                    _cancel_tasks(tasks)
                     return result
                 results[i] = result.result
-                i += 1
             return CSuccess(tuple(results))
         return Call.__new__(Call, thunk)
 

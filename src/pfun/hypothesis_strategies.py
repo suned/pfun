@@ -1,7 +1,10 @@
+from datetime import timedelta
 from string import printable
-from typing import Any, Callable, Iterable, NoReturn, Tuple, TypeVar, Union
+from typing import (Any, Callable, Generic, Iterable, NoReturn, Tuple, TypeVar,
+                    Union)
 
-from . import Dict, List, aio_trampoline, effect, either, maybe, trampoline
+from . import (Dict, Immutable, List, aio_trampoline, effect, either, maybe,
+               trampoline)
 
 try:
     from hypothesis.strategies import (
@@ -47,6 +50,19 @@ def anything(allow_nan: bool = False
     return one_of(*_everything(allow_nan))
 
 
+CO = TypeVar('CO', covariant=True)
+
+
+class Unary(Immutable, Generic[CO]):
+    return_value: CO
+
+    def __repr__(self):
+        return f'lambda _: {repr(self.return_value)}'
+
+    def __call__(self, _: object) -> CO:
+        return self.return_value
+
+
 def unaries(return_strategy: SearchStrategy[A]
             ) -> SearchStrategy[Callable[[object], A]]:
     """
@@ -63,12 +79,7 @@ def unaries(return_strategy: SearchStrategy[A]
     Return:
         Search strategy that produces callables of 1 argument
     """
-    @composite
-    def _(draw):
-        a: A = draw(return_strategy)
-        return lambda _: a
-
-    return _()
+    return builds(Unary, return_strategy)
 
 
 def maybes(value_strategy: SearchStrategy[A]
@@ -348,6 +359,8 @@ def effects(
         combine_cpu_bound = unaries(value_strategy).flatmap(
             lambda f: children.map(lambda e: effect.combine_cpu_bound(e)(f))
         )
+        race = children.map(lambda e: e.race(e))
+        timeout = children.map(lambda e: e.timeout(timedelta(days=1)))
 
         return one_of(
             maps,
@@ -365,7 +378,9 @@ def effects(
             lift_cpu_bound,
             combine,
             combine_io_bound,
-            combine_cpu_bound
+            combine_cpu_bound,
+            race,
+            timeout
         )
 
     success = builds(effect.success, value_strategy)
@@ -413,4 +428,4 @@ def effects(
         errors = builds(effect.error, value_strategy)
         base = base | errors
 
-    return recursive(base, extend, max_leaves=10)
+    return recursive(base, extend, max_leaves=max_leaves)
