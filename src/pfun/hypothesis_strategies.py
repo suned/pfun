@@ -360,7 +360,6 @@ def effects(
             lambda f: children.map(lambda e: effect.combine_cpu_bound(e)(f))
         )
         race = children.map(lambda e: e.race(e))
-        timeout = children.map(lambda e: e.timeout(timedelta(days=1)))
 
         return one_of(
             maps,
@@ -379,8 +378,7 @@ def effects(
             combine,
             combine_io_bound,
             combine_cpu_bound,
-            race,
-            timeout
+            race
         )
 
     success = builds(effect.success, value_strategy)

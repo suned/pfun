@@ -10,12 +10,13 @@ import pytest
 from hypothesis import assume, given, settings
 
 from pfun import (Dict, Immutable, List, compose, console, effect, either,
-                  files, http, identity, logging, ref, sql, subprocess)
+                  files, http, identity, logging, ref, sql, subprocess, schedule)
 from pfun.effect import Resource
 from pfun.hypothesis_strategies import anything, effects, rights, unaries
 
 from .monad_test import MonadTest
 from .utils import recursion_limit
+from .mocks import MockModules
 
 
 class TestEffect(MonadTest):
@@ -290,7 +291,23 @@ class TestEffect(MonadTest):
 
         e = effect.from_awaitable(f())
         with pytest.raises(asyncio.TimeoutError):
-            e.timeout(timedelta(milliseconds=1)).run(None)
+            e.timeout(timedelta(milliseconds=1)).run(MockModules())
+
+    def test_repeat(self):
+        s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
+        assert effect.success(0).repeat(s).run(MockModules()) == (0, 0)
+
+    def test_repeat_error(self):
+        s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
+        assert effect.error('whoops').repeat(s).either().run(MockModules()) == either.Left('whoops')
+
+    def test_retry(self):
+        s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
+        assert effect.error('whoops').retry(s).either().run(MockModules()) == either.Left(('whoops', 'whoops'))
+
+    def test_retry_success(self):
+        s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
+        assert effect.success(0).retry(s).run(MockModules()) == 0
 
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'

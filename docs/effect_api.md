@@ -10,7 +10,11 @@
             either,
             recover,
             memoize,
-            ensure
+            ensure,
+            race,
+            timeout,
+            repeat,
+            retry
         ]
 
 ::: pfun.Success

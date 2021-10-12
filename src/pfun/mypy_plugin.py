@@ -5,17 +5,21 @@ from functools import reduce
 
 from mypy import checkmember, infer
 from mypy.checker import TypeChecker
+from mypy.expandtype import ExpandTypeVisitor
 from mypy.mro import calculate_mro
+from mypy.argmap import map_actuals_to_formals, map_formals_to_actuals
 from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
                         ARG_STAR2, COVARIANT, INVARIANT, Block, ClassDef,
                         NameExpr, TypeInfo)
 from mypy.plugin import (AttributeContext, ClassDefContext, FunctionContext,
-                         MethodContext, MethodSigContext, Plugin)
+                         MethodContext, MethodSigContext, Plugin, AnalyzeTypeContext, FunctionSigContext)
 from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.type_visitor import TypeTranslator
+from mypy.type_visitor import TypeTranslator, TypeVisitor
 from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
                         TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
-                        UninhabitedType, UnionType, get_proper_type)
+                        UninhabitedType, UnionType, get_proper_type, LiteralType, Bogus, _dummy, TypeAliasType)
+from mypy.expandtype import expand_type, expand_type_by_instance, freshen_function_type_vars
+from mypy.typevars import has_no_typevars
 
 from .functions import curry
 
@@ -50,6 +54,80 @@ class ReplaceTypeVar(TypeTranslator):
 
     def visit_type_var(self, t: TypeVarType):
         return t if t != self.target_t_var else self.replacement_t_var
+
+
+class IllegalIntersection(Exception):
+    pass
+
+
+class TranslateIntersection(TypeTranslator):
+    def __init__(self, api, context, inferred=False):
+        self.api = api
+        self.context = context
+        self.inferred = inferred
+
+    def get_bases(self, base, seen):
+        if isinstance(base, TypeVarType):
+            return [base]
+        if 'pfun.Intersection' in base.type.fullname:
+            for b in base.type.bases:
+                if b not in seen:
+                    seen = seen + self.get_bases(b, seen)
+            return seen
+        elif base.type.fullname == 'builtins.object':
+            return []
+        return [base]
+
+    def visit_type_alias_type(self, t: TypeAliasType) -> Type:
+        t = get_proper_type(t)
+        return t.accept(self)
+
+    def visit_instance(self, t: Instance) -> Type:
+        if 'pfun.Intersection' in t.type.fullname:
+            args = t.args
+            if any(isinstance(arg, AnyType) for arg in args):
+                return AnyType(TypeOfAny.special_form)
+            if not all(isinstance(arg, TypeVarType) or arg.type.is_protocol or arg.type.fullname == 'builtins.object' for arg in args):
+                s = str(t)
+                if self.inferred:
+                    msg = f'All arguments to "Intersection" must be protocols but inferred "{s}"'
+                else:
+                    msg = f'All arguments to "Intersection" must be protocols, but got "{s}"'
+                self.api.msg.fail(msg, self.context)
+                return AnyType(TypeOfAny.special_form)
+            bases = []
+            for arg in args:
+                if arg in bases:
+                    continue
+                bases.extend(self.get_bases(arg, []))
+            if len(bases) == 1:
+                return bases[0]
+            bases_repr = ', '.join(sorted([repr(base) for base in bases]))
+            name = f'Intersection[{bases_repr}]' if has_no_typevars(t) else 'Intersection'
+            defn = ClassDef(
+                name,
+                Block([]),
+                [],
+                [NameExpr(arg.name) if isinstance(arg, TypeVarType) else NameExpr(arg.type.fullname) for arg in args],
+                None,
+                []
+            )
+            defn.fullname = f'pfun.{name}'
+            info = TypeInfo({}, defn, '')
+            info.is_protocol = True
+            info.is_abstract = True
+            info.bases = [b for b in bases if not isinstance(b, TypeVarType)]
+            attrs = []
+            for base in bases:
+                if isinstance(base, TypeVarType):
+                    continue
+                attrs.extend(base.type.abstract_attributes)
+            info.abstract_attributes = attrs
+            calculate_mro(info)
+            return Instance(info, [] if has_no_typevars(t) else bases)
+
+
+        return super().visit_instance(t)
 
 
 def _get_callable_type(type_: Type,
@@ -381,21 +459,6 @@ def _combine_environments(r1: Type, r2: Type) -> Type:
         return AnyType(TypeOfAny.special_form)
 
 
-def _effect_and_then_hook(context: MethodContext) -> Type:
-    return_type = context.default_return_type
-    return_type_args = list(return_type.args)
-    return_type = return_type.copy_modified(args=return_type_args)
-    try:
-        e1 = get_proper_type(context.type)
-        r1 = e1.args[0]
-        e2 = get_proper_type(context.arg_types[0][0].ret_type)
-        r2 = e2.args[0]
-        return_type_args[0] = _combine_environments(r1, r2)
-        return return_type.copy_modified(args=return_type_args)
-    except (AttributeError, IndexError):
-        return return_type
-
-
 def _combine_error_types(ts: t.List[Type]) -> UnionType:
     without_noreturn = list({e for e in ts
                              if not isinstance(e, UninhabitedType)})
@@ -479,20 +542,6 @@ def _combine_hook(context: FunctionContext):
         return context.default_return_type
 
 
-def _effect_recover_hook(context: MethodContext) -> Type:
-    return_type = context.default_return_type
-    return_type_args = list(return_type.args)
-    try:
-        e1 = get_proper_type(context.type)
-        r1 = e1.args[0]
-        e2 = get_proper_type(context.arg_types[0][0].ret_type)
-        r2 = e2.args[0]
-        return_type_args[0] = _combine_environments(r1, r2)
-        return return_type.copy_modified(args=return_type_args)
-    except (AttributeError, IndexError):
-        return return_type
-
-
 def _lift_hook(context: FunctionContext) -> Type:
     lifted_arg_types = context.arg_types[0][0].arg_types
     lifted_ret_type = context.arg_types[0][0].ret_type
@@ -549,36 +598,6 @@ def _effect_catch_call_hook(context: MethodContext) -> Type:
         arg_kinds=f_type.arg_kinds,
         arg_names=f_type.arg_names
     )
-
-
-def _effect_discard_and_then_hook(context: MethodContext) -> Type:
-    return_type = context.default_return_type
-    return_type_args = list(return_type.args)
-    return_type = return_type.copy_modified(args=return_type_args)
-    try:
-        e1 = get_proper_type(context.type)
-        r1 = e1.args[0]
-        e2 = get_proper_type(context.arg_types[0][0])
-        r2 = e2.args[0]
-        return_type_args[0] = _combine_environments(r1, r2)
-        return return_type.copy_modified(args=return_type_args)
-    except TypeError:
-        return return_type
-
-
-def _effect_ensure_hook(context: MethodContext) -> Type:
-    return_type = context.default_return_type
-    return_type_args = list(return_type.args)
-    return_type = return_type.copy_modified(args=return_type_args)
-    try:
-        e1 = get_proper_type(context.type)
-        r1 = e1.args[0]
-        e2 = get_proper_type(context.arg_types[0][0])
-        r2 = e2.args[0]
-        return_type_args[0] = _combine_environments(r1, r2)
-        return return_type.copy_modified(args=return_type_args)
-    except TypeError:
-        return return_type
 
 
 def _effect_lift_call_hook(context: MethodContext) -> Type:
@@ -749,6 +768,39 @@ def _lens_hook(context: FunctionContext) -> Type:
     )
 
 
+def _intersection_analyze_hook(context):
+    args = [context.api.anal_type(arg) for arg in context.type.args]
+    defn = ClassDef('Intersection', Block([]))
+    defn.fullname = 'pfun.Intersection'
+    info = TypeInfo({}, defn, 'pfun')
+    info.is_protocol = True
+    calculate_mro(info)
+    i = Instance(info, args, line=context.context.line, column=context.context.column)
+    intersection_translator = TranslateIntersection(context.api.api, i)
+    return i.accept(intersection_translator)
+
+
+def _intersection_hook(context: FunctionSigContext):
+    if 'pfun.Intersection' not in str(context.default_signature) or not context.default_signature.is_generic():
+        return context.default_signature
+    formal_to_actual = map_actuals_to_formals(
+        context.context.arg_kinds,
+        context.context.arg_names,
+        context.default_signature.arg_kinds,
+        context.default_signature.arg_names,
+        lambda i: context.api.expr_checker.accept(context.args[0][i])
+    )
+    callee = freshen_function_type_vars(context.default_signature)
+    callee = context.api.expr_checker.infer_function_type_arguments_using_context(
+        callee, context.context)
+    args = [arg for args in context.args for arg in args]
+    callee = context.api.expr_checker.infer_function_type_arguments(
+        callee, args, context.context.arg_kinds, formal_to_actual, context.context)
+    intersection_translator = TranslateIntersection(context.api, context.context, inferred=True)
+    translated = callee.accept(intersection_translator)
+    return translated
+
+
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
                           ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
@@ -773,15 +825,11 @@ class PFun(Plugin):
             return _lens_hook
         return None
 
+    def get_function_signature_hook(self, fullname: str
+                                    ) -> t.Optional[t.Callable[[FunctionSigContext], CallableType]]:
+            return _intersection_hook
+
     def get_method_hook(self, fullname: str):
-        if fullname == 'pfun.effect.Effect.and_then':
-            return _effect_and_then_hook
-        if fullname == 'pfun.effect.Effect.discard_and_then':
-            return _effect_discard_and_then_hook
-        if fullname == 'pfun.effect.Effect.ensure':
-            return _effect_ensure_hook
-        if fullname == 'pfun.effect.Effect.recover':
-            return _effect_recover_hook
         if fullname in ('pfun.effect.catch.__call__',
                         'pfun.effect.catch_io_bound.__call__',
                         'pfun.effect.catch_cpu_bound.__call__'):
@@ -807,9 +855,15 @@ class PFun(Plugin):
                         'pfun.effect.lift_io_bound.__call__',
                         'pfun.effect.lift_async.__call__'):
             return _effect_lift_call_signature_hook
+        return _intersection_hook
 
     def get_base_class_hook(self, fullname: str):
         return _immutable_hook
+
+    def get_type_analyze_hook(self, fullname: str
+                              ) -> t.Optional[t.Callable[[AnalyzeTypeContext], Type]]:
+        if fullname == 'pfun.Intersection':
+            return _intersection_analyze_hook
 
 
 def plugin(_):

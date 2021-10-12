@@ -300,10 +300,10 @@ cdef class CEffect:
             RuntimeError: whoops!
         Args:
             self (Effect[R, E, A]):
-            effect (Effect[Any, NoReturn, Any]): `Effect` to run after this effect terminates \
+            effect (Effect[R1, NoReturn, Any]): `Effect` to run after this effect terminates \
             either successfully or with an error
         Return:
-            Effect[Any, E, A]: `Effect` that fails or succeeds with the result of \
+            Effect[pfun.Intersection[R, R1], E, A]: `Effect` that fails or succeeds with the result of \
             this effect, but always runs `effect`
         """
         return self.and_then(
@@ -315,10 +315,142 @@ cdef class CEffect:
         ).with_repr(f'{repr(self)}.ensure({repr(effect)})')
 
     def race(self, other):
+        """
+        Create an `Effect` that will run this effect and `other` concurrently,
+        returning the result of whichever completes first. When one completes,
+        the other is canceled
+
+        Example:
+            >>> from pfun import clock, DefaultModules
+            >>> clock.sleep(100).discard_and_then(success('slow')).race(success('fast')).run(DefaultModules())
+            'fast'
+        Args:
+            self (Effect[R, E, A])
+            other (Effect[R1, E1, A]): `Effect` to race against this effect
+        Return:
+            Effect[pfun.Intersection[R, R1], Union[E, E1], A]: `other` raced against this effect
+        """
         return Race(self, other)
 
     def timeout(self, duration):
+        """
+        Create an `Effect` that will fail it it hasn't succeeded within `duration`
+
+        Example:
+            >>> from pfun import clock, DefaultModules
+            >>> clock.sleep(10).timeout(1).run(DefaultModules())
+            TimeoutError: sleep(10) timed out after 1 seconds
+        Args:
+            duration (int): Max interval to wait for this effect to succeed in seconds
+        Return:
+            Effect[pfun.Intersection[R, pfun.clock.HasClock], Union[E, asyncio.TimeoutError], A]: `Effect` that will fail after `duration`
+        """
         return Timeout(self, duration)
+
+    def retry(self, schedule):
+        """
+        Create an `Effect` that retries this effect according to `schedule`. Succeeds when this effect does, or fails once the
+        `schedule` is exhausted.
+
+        Example:
+            >>> from datetime import timedelta
+            >>> from pfun import console, effect, scedule
+            >>> s = schedule.recurs(3, schedule.spaced(timedelta(seconds=1)))
+            >>> console.print_line('Try to do the thing')\\
+            ... .discard_and_then(effect.error('Whoops'))\\
+            ... .retry(s)\\
+            ... .run(DefaultModules)
+            Try to do the thing
+            Try to do the thing
+            Try to do the thing
+            RuntimeError: ('Whoops', 'Whoops', 'Whoops')
+        Args:
+            schedule (Effect[R1, NoReturn, Iterator[datetime.timedelta]]): Schedule to use for retry attempts
+        Return:
+            Effect[pfun.Intersection[R, R1, pfun.clock.HasClock], Tuple[E], A]: `Effect` that retries this effect according to `schedule`
+        """
+        return Retry(self, schedule)
+
+    def repeat(self, schedule):
+        """
+        Create an `Effect` that repeats this effect according to `schedule`. Succeeds when the schedule is exhausted, or fails
+        when this effect does
+
+        Example:
+            >>> from datetime import timedelta
+            >>> from pfun import effect, schedule, DefaultModules
+            >>> s = schedule.recurs(3, schedule.spaced(timedelta(seconds=1)))
+            >>> effect.success(0).repeat(s).run(DefaultModules)
+            (0, 0, 0)
+        Args:
+            schedule (Effect[R1, NoReturn, Iterator[datetime.timedelta]): Schedule to use for repetition
+        Return:
+            Effect[pfun.Intersection[R, R1, pfun.clock.HasClock], E, Tuple[A]]: This effect repeated according to `schedule`
+        """
+        return Repeat(self, schedule)
+
+
+cdef class Repeat(CEffect):
+    cdef CEffect effect
+    cdef CEffect schedule
+
+    def __cinit__(self, effect, schedule):
+        self.effect = effect
+        self.schedule = schedule
+
+    def __repr__(self):
+        return f'{repr(self.effect)}.repeat({repr(self.schedule)})'
+
+    async def resume(self, RuntimeEnv env):
+        results = []
+        async def thunk():
+            deltas = await self.schedule.do(env)
+            if isinstance(deltas, Error):
+                return deltas
+            for delta in deltas.result:
+                result = await self.effect.do(env)
+                if isinstance(result, Error):
+                    return result
+                results.append(result.result)
+                await env.r.clock.sleep(delta.total_seconds()).do(env)
+            return CSuccess(tuple(results))
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
+
+cdef class Retry(CEffect):
+    cdef CEffect effect
+    cdef CEffect schedule
+
+    def __cinit__(self, effect, schedule):
+        self.effect = effect
+        self.schedule = schedule
+
+    def __repr__(self):
+        return f'{repr(self.effect)}.retry({repr(self.schedule)})'
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            errors = []
+            deltas = await self.schedule.do(env)
+            if isinstance(deltas, Error):
+                return deltas
+            for delta in deltas.result:
+                result = await self.effect.do(env)
+                if isinstance(result, CSuccess):
+                    return result
+                errors.append(result.reason)
+                await env.r.clock.sleep(delta.total_seconds()).do(env)
+            return Error(tuple(errors))
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
 
 
 cdef class Timeout(CEffect):
@@ -334,10 +466,12 @@ cdef class Timeout(CEffect):
 
     async def resume(self, RuntimeEnv env):
         async def thunk():
-            try:
-                return await asyncio.wait_for(self.effect.do(env), timeout=self.duration.total_seconds())
-            except asyncio.TimeoutError as e:
-                return Error(e)
+            sleep_task = asyncio.create_task(env.r.clock.sleep(self.duration).do(env))
+            target_task = asyncio.create_task(self.effect.do(env))
+            await asyncio.wait({sleep_task, target_task}, return_when='FIRST_COMPLETED')
+            if not target_task.done():
+                return Error(asyncio.TimeoutError(f'{repr(self.effect)} timed out after {self.duration} seconds'))
+            return target_task.result()
         return Call(thunk)
 
     async def apply_continuation(self, object f, RuntimeEnv env):

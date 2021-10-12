@@ -156,128 +156,6 @@
 
     d = D(1, '')
     d.field = 2  # E: Property "field" defined in "D" is read-only
-- case: effect_and_then_combines_protocols
-  disable_cache: true
-  main: |
-    from typing_extensions import Protocol
-    from typing import NoReturn
-    from pfun.effect import Effect
-
-
-    class P1(Protocol):
-      p1_attr: str
-
-    class P2(Protocol):
-      p2_attr: int
-
-    e1: Effect[P1, NoReturn, str]
-    e2: Effect[P2, NoReturn, int]
-    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]"
-- case: effect_and_then_combines_protocols_variadically
-  disable_cache: true
-  main: |
-    from typing import NoReturn
-    from typing_extensions import Protocol
-    from pfun.effect import Effect
-
-    class P1(Protocol):
-      p1_attr: str
-
-    class P2(Protocol):
-      p2_attr: int
-
-    class P3(Protocol):
-      p3_attr: float
-
-    e1: Effect[P1, NoReturn, str]
-    e2: Effect[P2, NoReturn, int]
-    e3: Effect[P3, NoReturn, float]
-    reveal_type(e1.and_then(lambda _: e2).and_then(lambda _: e3))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]"
-    reveal_type(e1.and_then(lambda _: e2.and_then(lambda _: e3)))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2, main.P3], <nothing>, builtins.float*]"
-- case: effect_and_then_combines_protocols_for_type_aliases
-  disable_cache: true
-  main: |
-    from typing_extensions import Protocol
-    from pfun import Depends, Success
-
-    class P1(Protocol):
-      p1_attr: str
-
-    e1: Depends[P1, str]
-    e2: Success[str]
-
-    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[main.P1, <nothing>, builtins.str*]"
-- case: effect_and_then_does_not_combine_non_protocols
-  disable_cache: true
-  main: |
-    from typing import NoReturn
-    from pfun.effect import Effect
-
-    e1: Effect[int, NoReturn, str]
-    e2: Effect[str, NoReturn, int]
-
-    reveal_type(e1.and_then(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[Any, <nothing>, builtins.int*]"
-- case: effect_discard_and_then_combines_protocols
-  disable_cache: true
-  main: |
-    from typing_extensions import Protocol
-    from typing import NoReturn
-    from pfun.effect import Effect
-
-
-    class P1(Protocol):
-      p1_attr: str
-
-    class P2(Protocol):
-      p2_attr: int
-
-    e1: Effect[P1, NoReturn, str]
-    e2: Effect[P2, NoReturn, int]
-    reveal_type(e1.discard_and_then(e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.int*]"
-- case: effect_ensure_combines_protocols
-  disable_cache: true
-  main: |
-    from typing_extensions import Protocol
-    from typing import NoReturn
-    from pfun.effect import Effect
-
-
-    class P1(Protocol):
-      p1_attr: str
-
-    class P2(Protocol):
-      p2_attr: int
-
-    e1: Effect[P1, NoReturn, str]
-    e2: Effect[P2, NoReturn, int]
-    reveal_type(e1.ensure(e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str*]"
-- case: effect_recover_combines_protocols
-  disable_cache: true
-  main: |
-    from typing_extensions import Protocol
-    from typing import NoReturn
-    from pfun.effect import Effect
-
-
-    class P1(Protocol):
-      p1_attr: str
-
-    class P2(Protocol):
-      p2_attr: int
-
-    e1: Effect[P1, ValueError, str]
-    e2: Effect[P2, NoReturn, str]
-    reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P1, main.P2], <nothing>, builtins.str]"
-- case: effect_recover_does_not_combine_non_protocols
-  disable_cache: true
-  main: |
-    from typing import NoReturn
-    from pfun.effect import Effect
-
-    e1: Effect[int, ValueError, str]
-    e2: Effect[str, NoReturn, str]
-
-    reveal_type(e1.recover(lambda _: e2))  # N: Revealed type is "pfun.effect.Effect[Any, <nothing>, builtins.str]"
 - case: effect_combine_checks_args
   disable_cache: true
   main: |
@@ -507,3 +385,137 @@
         password: str
     
     reveal_type(lens(Person).name('')(User()))  # N: Revealed type is "main.User*"
+- case: intersection_of_one_argument_is_not_intersection
+  disable_cache: true
+  main: |
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+    class P1(Protocol):
+      pass
+
+    i: Intersection[P1]
+    reveal_type(i)  # N: Revealed type is "main.P1"
+- case: intersection_excludes_object
+  disable_cache: true
+  main: |
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+
+    class P1(Protocol):
+      pass
+
+    class P2(Protocol):
+          pass
+
+    i: Intersection[object, P1]
+    reveal_type(i)  # N: Revealed type is "main.P1"
+
+    i2: Intersection[object, P1, P2]
+    reveal_type(i2)  # N: Revealed type is "pfun.Intersection[main.P1, main.P2]"
+- case: intersection_flattens_nesting
+  disable_cache: true
+  main: |
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+    class P1(Protocol):
+      pass
+
+    class P2(Protocol):
+      pass
+
+    i: Intersection[Intersection[P1], P2]
+    reveal_type(i)  # N: Revealed type is "pfun.Intersection[main.P1, main.P2]"
+- case: intersection_of_two_arguments_is_subtype_of_both
+  disable_cache: true
+  main: |
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+    class P1(Protocol):
+      x: str
+
+    class P2(Protocol):
+      y: int
+
+    i: Intersection[P1, P2]
+    reveal_type(i)  # N: Revealed type is "pfun.Intersection[main.P1, main.P2]"
+
+    class C:
+      x: int
+
+    i = C()  # E: Incompatible types in assignment (expression has type "C", variable has type "Intersection[main.P1, main.P2]")
+- case: intersection_between_non_protocols_is_illegal
+  disable_cache: true
+  main: |
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+    class P1(Protocol):
+      pass
+
+    i: Intersection[P1, str]  # E: All arguments to "Intersection" must be protocols, but got "pfun.Intersection[main.P1, builtins.str]"
+- case: intersection_with_any_is_any
+  disable_cache: true
+  main: |
+    from typing import Any
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+    class P1(Protocol):
+      pass
+
+    i: Intersection[P1, Any]
+    reveal_type(i)  # N: Revealed type is "Any"
+- case: intersection_types_can_be_inferred
+  disable_cache: true
+  main: |
+    from typing import TypeVar
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+
+    class P1(Protocol):
+      pass
+
+    class P2(Protocol):
+      pass
+
+    class P3(Protocol):
+      pass
+
+
+    A = TypeVar('A')
+    B = TypeVar('B')
+
+
+    def f(a: A, b: B) -> Intersection[A, B, P1]:
+      pass
+
+    reveal_type(f)  # NR: Revealed type is "def \[A, B\] \(a: A`\-\d+, b: B`\-\d+\) \-> pfun\.Intersection\[A`\-\d, B`\-\d, test_types\.P1\]"
+
+    a1: object
+    b1: object
+    reveal_type(f(a1, b1))  # N: Revealed type is "main.P1"
+
+    a2: P1
+    b2: P1
+    reveal_type(f(a2, b2))  # N: Revealed type is "main.P1*"
+
+    a3: P2
+    b3: P3
+    reveal_type(f(a3, b3))  # N: Revealed type is "pfun.Intersection[main.P1, main.P2*, main.P3*]"
+
+    a4: object
+    b4: str
+    f(a4, b4)  # E: All arguments to "Intersection" must be protocols, but inferred "pfun.Intersection[builtins.object*, builtins.str*, main.P1]"
+
