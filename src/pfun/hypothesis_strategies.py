@@ -411,6 +411,8 @@ def effects(
         )
     )
 
+    purify = nullaries(value_strategy).map(lambda f: effect.purify(f)())
+
     base = (
         success
         | from_callable
@@ -420,6 +422,7 @@ def effects(
         | catch
         | catch_io_bound
         | catch_cpu_bound
+        | purify
     )
 
     if include_errors:

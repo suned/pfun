@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import NoReturn
 
-from typing_extensions import Protocol
+from typing_extensions import Protocol, Final
 
 from .effect import Effect, Success, add_repr, depend, from_callable
 from .either import Either, Right
@@ -59,7 +59,7 @@ class Console(Immutable):
         return from_callable(f)
 
 
-class HasConsole(Protocol):
+class HasConsole(Immutable, Protocol):
     """
     Module provider providing the `console` module
     """

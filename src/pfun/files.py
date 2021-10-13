@@ -152,7 +152,7 @@ class Files(Immutable):
         return f()
 
 
-class HasFiles(Protocol):
+class HasFiles(Immutable, Protocol):
     """
     Module provider that provides the files module
 

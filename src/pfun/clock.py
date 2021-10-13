@@ -3,7 +3,7 @@ import datetime
 
 from typing_extensions import Protocol
 
-from .effect import Depends, Success, depend, from_awaitable, purify
+from . import effect
 from .immutable import Immutable
 
 
@@ -11,7 +11,7 @@ class Clock(Immutable):
     """
     Module providing clock capabilities.
     """
-    def sleep(self, seconds: float) -> Success[None]:
+    def sleep(self, seconds: float) -> effect.Success[None]:
         """
         Create an `Effect` that Suspends execution for `seconds`.
         Args:
@@ -19,9 +19,9 @@ class Clock(Immutable):
         Return:
             `Effect` that suspends execution for `seconds`
         """
-        return from_awaitable(asyncio.sleep(seconds))
+        return effect.from_awaitable(asyncio.sleep(seconds))
 
-    def now(self, tz: datetime.tzinfo = None) -> Success[datetime.datetime]:
+    def now(self, tz: datetime.tzinfo = None) -> effect.Success[datetime.datetime]:
         """
         Create an `Effect` that succeeds with the current datetime
 
@@ -30,10 +30,10 @@ class Clock(Immutable):
         Return:
             `Effect` that succeeds with the current datetime
         """
-        return purify(datetime.datetime.now)(tz)
+        return effect.purify(datetime.datetime.now)(tz)
 
 
-class HasClock(Protocol):
+class HasClock(Immutable, Protocol):
     """
     Module provider for the clock capability.
 
@@ -43,7 +43,7 @@ class HasClock(Protocol):
     clock: Clock
 
 
-def sleep(seconds: float) -> Depends[HasClock, None]:
+def sleep(seconds: float) -> effect.Depends[HasClock, None]:
     """
     Create an `Effect` that Suspends execution for `seconds`.
     Example:
@@ -54,10 +54,10 @@ def sleep(seconds: float) -> Depends[HasClock, None]:
     Return:
         `Effect` that suspends execution for `seconds`
     """
-    return depend().and_then(lambda env: env.clock.sleep(seconds)).with_repr(f"sleep({seconds})")
+    return effect.depend().and_then(lambda env: env.clock.sleep(seconds)).with_repr(f"sleep({seconds})")
 
 
-def now(tz: datetime.tzinfo = None) -> Depends[HasClock, datetime.datetime]:
+def now(tz: datetime.tzinfo = None) -> effect.Depends[HasClock, datetime.datetime]:
     """
     Create an `Effect` that succeeds with the current datetime
     Example:
@@ -68,4 +68,4 @@ def now(tz: datetime.tzinfo = None) -> Depends[HasClock, datetime.datetime]:
     Return:
         `Effect` that succeeds with the current datetime
     """
-    return depend().and_then(lambda env: env.clock.now(tz)).with_repr(f"now({tz})")
+    return effect.depend().and_then(lambda env: env.clock.now(tz)).with_repr(f"now({tz})")

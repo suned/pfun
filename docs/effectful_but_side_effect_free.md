@@ -459,6 +459,13 @@ recovered: Effect[object, ZeroDivisionError, str] = e.recover(handle_errors)
 
 You will frequently handle errors by using `isinstance` to compare errors with types, so defining your own error types becomes even more important when using `pfun` to distinguish one error source from another.
 
+### Type Aliases
+Since the dependency type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
+
+- `pfun.effect.Success[A]` is a type-alias for `Effect[object, typing.NoReturn, A]`, which is useful for effects that can't fail and doesn't have dependencies
+- `pfun.effect.Try[E, A]` is a type-alias for `Effect[object, E, A]`, which is useful for effects that can fail but doesn't have dependencies
+- `pfun.effect.Depends[R, A]` is a type-alias for `Effect[R, typing.NoReturn, A]` which is useful for effects that can't fail but needs dependency `R`
+
 ### Concurrency
 `Effect` uses `asyncio` under the hood to run effects asynchronously.
 This can lead to significant speed ups.
@@ -690,12 +697,6 @@ def slow_function(a: int) -> int:
 lift_cpu_bound(slow_function)(success(2))
 ```
 Take a look at the api documentation for details.
-### Type Aliases
-Since the dependency type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
-
-- `pfun.effect.Success[A]` is a type-alias for `Effect[object, typing.NoReturn, A]`, which is useful for effects that can't fail and doesn't have dependencies
-- `pfun.effect.Try[E, A]` is a type-alias for `Effect[object, E, A]`, which is useful for effects that can fail but doesn't have dependencies
-- `pfun.effect.Depends[R, A]` is a type-alias for `Effect[R, typing.NoReturn, A]` which is useful for effects that can't fail but needs dependency `R`
 
 ### Combining effects
 Sometimes you need to keep the the result of two or more effects in scope to work with

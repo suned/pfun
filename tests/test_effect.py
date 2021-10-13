@@ -311,6 +311,10 @@ class TestEffect(MonadTest):
         s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
         assert effect.success(0).retry(s).run(MockModules()) == 0
 
+    @given(anything(), unaries(anything()))
+    def test_purify(self, x, f):
+        assert effect.purify(f)(x).run(None) == f(x)
+
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'
 
@@ -778,22 +782,22 @@ class TestSQL:
 class TestClock:
     def test_sleep(self):
         with asynctest.patch('pfun.effect.asyncio.sleep') as sleep_mock:
-            clock.sleep(0).run(DefaultModules)
+            clock.sleep(0).run(DefaultModules())
             sleep_mock.assert_called_with(0)
 
     def test_now(self):
         with mock.patch('pfun.clock.datetime.datetime') as datetime_mock:
             datetime_mock.now.return_value = datetime.datetime.utcfromtimestamp(0)
-            assert clock.now().run(DefaultModules) == datetime_mock.now.return_value
+            assert clock.now().run(DefaultModules()) == datetime_mock.now.return_value
 
 
 class TestRandom:
     def test_randint(self):
         with mock.patch('pfun.random.random_.randint') as randint_mock:
             randint_mock.return_value = 1
-            assert random.randint(0, 1).run(DefaultModules) == 1
+            assert random.randint(0, 1).run(DefaultModules()) == 1
 
     def test_random(self):
-        with mock.path('pfun.random.random_.random') as random_mock:
+        with mock.patch('pfun.random.random_.random') as random_mock:
             random_mock.return_value = 0.5
-            assert random.random().run(DefaultModules) == 0.5
+            assert random.random().run(DefaultModules()) == 0.5

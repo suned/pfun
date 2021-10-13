@@ -1,7 +1,8 @@
 """
 
 Attributes:
-    Schedule (TypeAlias): Type-alias for `Effect[TypeVar('R'), NoReturn, Iterator[datetime.timedelta]]`
+    Schedule (TypeAlias): Type-alias for \
+        `Effect[TypeVar('R'), NoReturn, Iterator[datetime.timedelta]]`
 """
 
 from __future__ import annotations
@@ -33,7 +34,8 @@ def spaced(delta: timedelta) -> Schedule[object]:
 
 def exponential(delta: timedelta) -> Schedule[object]:
     """
-    Create a schedule that increases time intervals exponentially forever, starting from `delta`
+    Create a schedule that increases time intervals exponentially forever,
+    starting from `delta`
 
     Args:
         delta: base interval to increase exponentially
@@ -47,7 +49,8 @@ def exponential(delta: timedelta) -> Schedule[object]:
 @curry
 def recurs(n: int, schedule: Schedule[R]) -> Schedule[R]:
     """
-    Create a schedule that consumes `n` steps from `schedule`. If `schedule` is exhausted in less than `n` steps,
+    Create a schedule that consumes `n` steps from `schedule`.
+    If `schedule` is exhausted in less than `n` steps,
     the resulting schedule is also exhausted.
 
     Args:
@@ -70,7 +73,8 @@ def take_while(p: Callable[[timedelta], bool], schedule: Schedule[R]) -> Schedul
     Return:
         Schedule that consumes intervals from `schedule` until `p` returns `False`
     """
-    return schedule.map(lambda deltas: itertools.takewhile(p, deltas)).with_repr(f'take_while({repr(p)}, {repr(schedule)})')
+    return schedule.map(lambda deltas: itertools.takewhile(p, deltas)).with_repr(
+        f'take_while({repr(p)}, {repr(schedule)})')
 
 
 @curry
