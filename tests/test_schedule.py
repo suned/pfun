@@ -1,9 +1,8 @@
-from datetime import timedelta
 import itertools
+from datetime import timedelta
 from unittest.mock import Mock
 
 from pfun import schedule, success
-
 
 two_seconds = timedelta(seconds=2)
 
@@ -44,4 +43,3 @@ def test_jitter():
 
     deltas = schedule.jitter(schedule.spaced(two_seconds)).run(modules)
     assert list(itertools.islice(deltas, 3)) == [timedelta(seconds=2.5)] * 3
-

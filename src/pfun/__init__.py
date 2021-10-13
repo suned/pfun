@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing_extensions import Protocol
+
 from dataclasses import dataclass
+
+from typing_extensions import Protocol
 
 from . import clock, console, files, logging, random, ref, subprocess  # noqa
 from .dict import Dict  # noqa
@@ -64,4 +66,3 @@ class DefaultModules(Immutable, init=False):
         object.__setattr__(self, 'console', console.Console())
         object.__setattr__(self, 'random', random.Random())
         object.__setattr__(self, 'clock', clock.Clock())
-

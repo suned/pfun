@@ -1,7 +1,7 @@
-from unittest.mock import Mock
 from datetime import datetime
+from unittest.mock import Mock
 
-from pfun import effect, clock, random
+from pfun import clock, effect, random
 
 
 class MockModules:

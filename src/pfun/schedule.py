@@ -5,14 +5,15 @@ Attributes:
 """
 
 from __future__ import annotations
-from datetime import timedelta
-from typing import Iterator, Callable, TypeVar, NoReturn
-import itertools
 
-from .effect import Effect, success, lift
-from .random import random, HasRandom
-from .functions import curry
+import itertools
+from datetime import timedelta
+from typing import Callable, Iterator, NoReturn, TypeVar
+
 from . import Intersection
+from .effect import Effect, lift, success
+from .functions import curry
+from .random import HasRandom, random
 
 R = TypeVar('R')
 
