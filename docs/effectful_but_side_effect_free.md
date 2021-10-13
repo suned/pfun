@@ -364,8 +364,27 @@ You can of course extend `DefaultModules` to implement module providers
 for you own modules:
 
 ```python
-class MyModuleProvider(DefaultModules):
+from typing import Protocol, NoReturn
+
+from pfun import Intersection
+from pfun.console import HasConsole
+
+
+class MyModule:
+    ...
+
+
+class HasMyModule(Protocol):
+    my_module: MyModule
+    
+effect: Effect[Intersection[HasConsole, HasMyModule], NoReturn, str]
+
+
+class Modules(DefaultModules):
     my_module = MyModule()
+
+    
+effect.run(Modules())
 ```
     
 ### Error Handling

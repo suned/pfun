@@ -16,12 +16,15 @@ nav:
         - Property-Based Testing: property_based_testing.md
     - Other Resources: other_resources.md
     - 'API Reference':
+        - 'pfun': pfun_api.md
         - 'pfun.functions': functions_api.md
         - 'pfun.effect': effect_api.md
         - 'pfun.schedule': schedule_api.md
         - 'pfun.ref': ref_api.md
         - 'pfun.console': console_api.md
         - 'pfun.files': files_api.md
+        - 'pfun.clock': clock_api.md
+        - 'pfun.random': random_api.md
         - 'pfun.logging': logging_api.md
         - 'pfun.subprocess': subprocess_api.md
         - 'pfun.http': http_api.md

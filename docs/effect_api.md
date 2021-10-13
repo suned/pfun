@@ -41,6 +41,7 @@
 ::: pfun.catch
 ::: pfun.catch_cpu_bound
 ::: pfun.catch_io_bound
+::: pfun.purify
 ::: pfun.from_awaitable
 ::: pfun.from_callable
 ::: pfun.from_cpu_bound_callable

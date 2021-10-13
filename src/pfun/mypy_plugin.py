@@ -415,7 +415,7 @@ def _immutable_hook(context: ClassDefContext):
     transformer = DataclassTransformer(context)
     transformer.transform()
     attributes = transformer.collect_attributes()
-    transformer._freeze(attributes)
+    transformer._freeze(attributes if attributes is not None else [])
 
 
 def _combine_error_types(ts: t.List[Type]) -> UnionType:
@@ -776,7 +776,7 @@ class PFun(Plugin):
         if fullname == _COMPOSE:
             return _compose_hook
         if fullname in (
-            _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all'
+            _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all', 'pfun.effect.purify'
         ):
             return _variadic_decorator_hook
         if fullname in ('pfun.effect.combine',

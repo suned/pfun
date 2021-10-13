@@ -1187,6 +1187,50 @@ def catch_cpu_bound(exception, *exceptions):
     return decorator1
 
 
+def purify(f):
+    """
+    Decorator to wrap side-effects of `f`.
+    Example:
+        >>> purify(print)('Hello!').run(None)
+        Hello!
+    Args:
+        f ( (*A, **B) -> C): Function to wrap side-effects of
+    Return:
+        (*A, **B) -> Success[C]: `f` decorated to wrap side-effects
+    """
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        return Purify(f, args, kwargs)
+    return decorator
+
+
+cdef class Purify(CEffect):
+    cdef object f
+    cdef tuple args
+    cdef object kwargs
+
+    def __cinit__(self, f, args, kwargs):
+        self.f = f
+        self.args = args
+        self.kwargs = kwargs
+
+    def __repr__(self):
+        sig_repr = _get_sig_repr(self.args, self.kwargs)
+        return f'purify({repr(self.f)})({sig_repr})'
+
+    async def resume(self, RuntimeEnv env):
+        if asyncio.iscoroutinefunction(self.f):
+            result = await self.f(*self.args, **self.kwargs)
+        else:
+            result = self.f(*self.args, **self.kwargs)
+        return CSuccess(result)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
+
 cdef class SequenceAsync(CEffect):
     cdef tuple effects
 
@@ -1655,6 +1699,7 @@ __all__ = [
     'catch',
     'catch_io_bound',
     'catch_cpu_bound',
+    'purify',
     'from_awaitable',
     'from_callable',
     'from_io_bound_callable',

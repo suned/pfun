@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from contextlib import ExitStack
 from datetime import timedelta
 from subprocess import CalledProcessError
@@ -9,9 +10,9 @@ import asynctest
 import pytest
 from hypothesis import assume, given, settings
 
-from pfun import (Dict, Immutable, List, compose, console, effect, either,
-                  files, http, identity, logging, ref, schedule, sql,
-                  subprocess)
+from pfun import (DefaultModules, Dict, Immutable, List, clock, compose,
+                  console, effect, either, files, http, identity, logging,
+                  random, ref, schedule, sql, subprocess)
 from pfun.effect import Resource
 from pfun.hypothesis_strategies import anything, effects, rights, unaries
 
@@ -772,3 +773,27 @@ class TestSQL:
         assert sql.as_type(User)(results).run(None) == List(
             (User('bob', 32), )
         )
+
+
+class TestClock:
+    def test_sleep(self):
+        with asynctest.patch('pfun.effect.asyncio.sleep') as sleep_mock:
+            clock.sleep(0).run(DefaultModules)
+            sleep_mock.assert_called_with(0)
+
+    def test_now(self):
+        with mock.patch('pfun.clock.datetime.datetime') as datetime_mock:
+            datetime_mock.now.return_value = datetime.datetime.utcfromtimestamp(0)
+            assert clock.now().run(DefaultModules) == datetime_mock.now.return_value
+
+
+class TestRandom:
+    def test_randint(self):
+        with mock.patch('pfun.random.random_.randint') as randint_mock:
+            randint_mock.return_value = 1
+            assert random.randint(0, 1).run(DefaultModules) == 1
+
+    def test_random(self):
+        with mock.path('pfun.random.random_.random') as random_mock:
+            random_mock.return_value = 0.5
+            assert random.random().run(DefaultModules) == 0.5
