@@ -6,7 +6,7 @@ from functools import reduce
 from mypy import checkmember, infer
 from mypy.checker import TypeChecker
 from mypy.expandtype import ExpandTypeVisitor
-from mypy.mro import calculate_mro
+from mypy.mro import calculate_mro, MroError
 from mypy.argmap import map_actuals_to_formals, map_formals_to_actuals
 from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
                         ARG_STAR2, COVARIANT, INVARIANT, Block, ClassDef,
@@ -84,10 +84,12 @@ class TranslateIntersection(TypeTranslator):
 
     def visit_instance(self, t: Instance) -> Type:
         if 'pfun.Intersection' in t.type.fullname:
-            args = t.args
+            args = [get_proper_type(arg) for arg in t.args]
             if any(isinstance(arg, AnyType) for arg in args):
                 return AnyType(TypeOfAny.special_form)
-            if not all(isinstance(arg, TypeVarType) or arg.type.is_protocol or arg.type.fullname == 'builtins.object' for arg in args):
+            if all(hasattr(arg, 'type') and arg.type.fullname == 'builtins.object' for arg in args):
+                return args[0]
+            if not all(isinstance(arg, TypeVarType) or (hasattr(arg, 'type') and (arg.type.is_protocol or arg.type.fullname == 'builtins.object')) for arg in args):
                 s = str(t)
                 if self.inferred:
                     msg = f'All arguments to "Intersection" must be protocols but inferred "{s}"'
@@ -95,6 +97,8 @@ class TranslateIntersection(TypeTranslator):
                     msg = f'All arguments to "Intersection" must be protocols, but got "{s}"'
                 self.api.msg.fail(msg, self.context)
                 return AnyType(TypeOfAny.special_form)
+            if not has_no_typevars(t):
+                return t
             bases = []
             for arg in args:
                 if arg in bases:
@@ -103,7 +107,7 @@ class TranslateIntersection(TypeTranslator):
             if len(bases) == 1:
                 return bases[0]
             bases_repr = ', '.join(sorted([repr(base) for base in bases]))
-            name = f'Intersection[{bases_repr}]' if has_no_typevars(t) else 'Intersection'
+            name = f'Intersection[{bases_repr}]'
             defn = ClassDef(
                 name,
                 Block([]),
@@ -116,15 +120,21 @@ class TranslateIntersection(TypeTranslator):
             info = TypeInfo({}, defn, '')
             info.is_protocol = True
             info.is_abstract = True
-            info.bases = [b for b in bases if not isinstance(b, TypeVarType)]
+            info.bases = bases
             attrs = []
             for base in bases:
                 if isinstance(base, TypeVarType):
                     continue
                 attrs.extend(base.type.abstract_attributes)
             info.abstract_attributes = attrs
-            calculate_mro(info)
-            return Instance(info, [] if has_no_typevars(t) else bases)
+            try:
+                calculate_mro(info)
+            except MroError:
+                self.api.msg.fail(
+                    'Cannot determine consistent method resolution '
+                    'order (MRO) for "%s"' % defn.fullname, self.context)
+                return AnyType(TypeOfAny.special_form)
+            return Instance(info, [])
 
 
         return super().visit_instance(t)
@@ -405,60 +415,6 @@ def _immutable_hook(context: ClassDefContext):
     transformer._freeze(attributes)
 
 
-def _combine_protocols(p1: Instance, p2: Instance) -> Instance:
-    def base_repr(base):
-        if 'pfun.Intersection' in base.type.fullname:
-            return ', '.join([repr(b) for b in base.type.bases])
-        return repr(base)
-
-    def get_bases(base):
-        if 'pfun.Intersection' in base.type.fullname:
-            bases = set()
-            for b in base.type.bases:
-                bases |= get_bases(b)
-            return bases
-        return set([base])
-
-    names = p1.type.names.copy()
-    names.update(p2.type.names)
-    keywords = p1.type.defn.keywords.copy()
-    keywords.update(p2.type.defn.keywords)
-    bases = get_bases(p1) | get_bases(p2)
-    bases_repr = ', '.join(sorted([repr(base) for base in bases]))
-    name = f'Intersection[{bases_repr}]'
-    defn = ClassDef(
-        name,
-        Block([]),
-        p1.type.defn.type_vars + p2.type.defn.type_vars,
-        [NameExpr(p1.type.fullname), NameExpr(p2.type.fullname)],
-        None,
-        list(keywords.items())
-    )
-    defn.fullname = f'pfun.{name}'
-    info = TypeInfo(names, defn, '')
-    info.is_protocol = True
-    info.is_abstract = True
-    info.bases = [p1, p2]
-    info.abstract_attributes = (
-        p1.type.abstract_attributes + p2.type.abstract_attributes
-    )
-    calculate_mro(info)
-    return Instance(info, p1.args + p2.args)
-
-
-def _combine_environments(r1: Type, r2: Type) -> Type:
-    if r1 == r2:
-        return r1.copy_modified()
-    elif isinstance(r1, Instance) and r1.type.fullname == 'builtins.object':
-        return r2.copy_modified()
-    elif isinstance(r2, Instance) and r2.type.fullname == 'builtins.object':
-        return r1.copy_modified()
-    elif r1.type.is_protocol and r2.type.is_protocol:
-        return _combine_protocols(r1, r2)
-    else:
-        return AnyType(TypeOfAny.special_form)
-
-
 def _combine_error_types(ts: t.List[Type]) -> UnionType:
     without_noreturn = list({e for e in ts
                              if not isinstance(e, UninhabitedType)})
@@ -525,7 +481,7 @@ def _combine_hook(context: FunctionContext):
             hasattr(env_type, 'type') and env_type.type.is_protocol
             for env_type in env_types
         ):
-            combined_env_type = reduce(_combine_protocols, env_types)
+            combined_env_type = _create_intersection(env_types, context.context, context.api)
         else:
             combined_env_type = ret_type_args[0]
         ret_type_args[0] = combined_env_type
@@ -538,7 +494,7 @@ def _combine_hook(context: FunctionContext):
             ret_type=ret_type,
             fallback=context.api.named_type('builtins.function')
         )
-    except AttributeError:
+    except AttributeError as e:
         return context.default_return_type
 
 
@@ -621,7 +577,7 @@ def _effect_lift_call_hook(context: MethodContext) -> Type:
         a = context.api.expr_checker.apply_inferred_arguments(
             f, inferred, context.context
         ).ret_type
-        r = reduce(_combine_environments, rs)
+        r = _create_intersection(rs, context.context, context.api)
         e = UnionType.make_union(sorted(set(es), key=str))
         return context.default_return_type.copy_modified(args=[r, e, a])
     except AttributeError:
@@ -768,16 +724,20 @@ def _lens_hook(context: FunctionContext) -> Type:
     )
 
 
-def _intersection_analyze_hook(context):
-    args = [context.api.anal_type(arg) for arg in context.type.args]
+def _create_intersection(args, context, api):
     defn = ClassDef('Intersection', Block([]))
     defn.fullname = 'pfun.Intersection'
     info = TypeInfo({}, defn, 'pfun')
     info.is_protocol = True
     calculate_mro(info)
-    i = Instance(info, args, line=context.context.line, column=context.context.column)
-    intersection_translator = TranslateIntersection(context.api.api, i)
+    i = Instance(info, args, line=context.line, column=context.column)
+    intersection_translator = TranslateIntersection(api, i)
     return i.accept(intersection_translator)
+
+
+def _intersection_analyze_hook(context):
+    args = [context.api.anal_type(arg) for arg in context.type.args]
+    return _create_intersection(args, context.context, context.api.api)
 
 
 def _intersection_hook(context: FunctionSigContext):
@@ -827,7 +787,7 @@ class PFun(Plugin):
 
     def get_function_signature_hook(self, fullname: str
                                     ) -> t.Optional[t.Callable[[FunctionSigContext], CallableType]]:
-            return _intersection_hook
+        return _intersection_hook
 
     def get_method_hook(self, fullname: str):
         if fullname in ('pfun.effect.catch.__call__',

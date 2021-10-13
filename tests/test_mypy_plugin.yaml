@@ -475,10 +475,50 @@
 
     i: Intersection[P1, Any]
     reveal_type(i)  # N: Revealed type is "Any"
+- case: intersection_arg_can_be_generic_protocol
+  disable_cache: true
+  main: |
+    from typing import TypeVar, Generic
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+    A = TypeVar('A', covariant=True)
+
+    class P1(Protocol[A]):
+      pass
+
+    class P2(Protocol[A]):
+      pass
+
+    i: Intersection[P1[str], P2[int]]
+    reveal_type(i)  # N: Revealed type is "pfun.Intersection[main.P1[builtins.str], main.P2[builtins.int]]"
+
+    i2: Intersection[P1[str], P1[int]]  # E: Cannot determine consistent method resolution order (MRO) for "pfun.Intersection[main.P1[builtins.int], main.P1[builtins.str]]"
+- case: intersection_arg_can_be_typealias
+  disable_cache: true
+  main: |
+    from typing import TypeVar, Generic
+    from typing_extensions import Protocol
+
+    from pfun import Intersection
+
+    A = TypeVar('A', covariant=True)
+
+    class P1(Protocol[A]):
+      pass
+
+    class P2(Protocol):
+      pass
+
+    Alias = P1[str]
+    i: Intersection[Alias, P2]
+    reveal_type(i) # N: Revealed type is "pfun.Intersection[main.P1[builtins.str], main.P2]"
+
 - case: intersection_types_can_be_inferred
   disable_cache: true
   main: |
-    from typing import TypeVar
+    from typing import TypeVar, Generic
     from typing_extensions import Protocol
 
     from pfun import Intersection
@@ -501,8 +541,6 @@
     def f(a: A, b: B) -> Intersection[A, B, P1]:
       pass
 
-    reveal_type(f)  # NR: Revealed type is "def \[A, B\] \(a: A`\-\d+, b: B`\-\d+\) \-> pfun\.Intersection\[A`\-\d, B`\-\d, test_types\.P1\]"
-
     a1: object
     b1: object
     reveal_type(f(a1, b1))  # N: Revealed type is "main.P1"
@@ -517,5 +555,22 @@
 
     a4: object
     b4: str
-    f(a4, b4)  # E: All arguments to "Intersection" must be protocols, but inferred "pfun.Intersection[builtins.object*, builtins.str*, main.P1]"
+    f(a4, b4)  # E: All arguments to "Intersection" must be protocols but inferred "pfun.Intersection[builtins.object*, builtins.str*, main.P1]"
+
+
+    class C(Generic[A]):
+        def f(self, a: A, b: B) -> Intersection[A, B, P1]:
+            pass
+
+    c1: C[object]
+    reveal_type(c1.f(a1, b1)) # N: Revealed type is "main.P1"
+
+    c2: C[P1]
+    reveal_type(c2.f(a2, b2)) # N: Revealed type is "main.P1"
+
+    c3: C[P2]
+    reveal_type(c3.f(a3, b3)) # N: Revealed type is "pfun.Intersection[main.P1, main.P2, main.P3*]"
+
+    c1.f(a4, b4) # E: All arguments to "Intersection" must be protocols but inferred "pfun.Intersection[builtins.object, builtins.str*, main.P1]"
+
 

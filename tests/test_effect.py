@@ -526,7 +526,7 @@ class TestFiles:
         with mock_open('content') as mocked_open:
             e = files.read('foo.txt')
             assert e.run(HasFiles()) == 'content'
-            mocked_open.assert_called_once_with('foo.txt')
+        mocked_open.assert_called_once_with('foo.txt')
 
     def test_write(self):
         with mock_open() as mocked_open:
