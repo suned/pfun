@@ -572,5 +572,3 @@
     reveal_type(c3.f(a3, b3)) # N: Revealed type is "pfun.Intersection[main.P1, main.P2, main.P3*]"
 
     c1.f(a4, b4) # E: All arguments to "Intersection" must be protocols but inferred "pfun.Intersection[builtins.object, builtins.str*, main.P1]"
-
-

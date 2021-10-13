@@ -4,21 +4,24 @@ import typing as t
 from functools import reduce
 
 from mypy import checkmember, infer
-from mypy.checker import TypeChecker
-from mypy.expandtype import ExpandTypeVisitor
-from mypy.mro import calculate_mro, MroError
 from mypy.argmap import map_actuals_to_formals, map_formals_to_actuals
+from mypy.checker import TypeChecker
+from mypy.expandtype import (ExpandTypeVisitor, expand_type,
+                             expand_type_by_instance,
+                             freshen_function_type_vars)
+from mypy.mro import MroError, calculate_mro
 from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
                         ARG_STAR2, COVARIANT, INVARIANT, Block, ClassDef,
                         NameExpr, TypeInfo)
-from mypy.plugin import (AttributeContext, ClassDefContext, FunctionContext,
-                         MethodContext, MethodSigContext, Plugin, AnalyzeTypeContext, FunctionSigContext)
+from mypy.plugin import (AnalyzeTypeContext, AttributeContext, ClassDefContext,
+                         FunctionContext, FunctionSigContext, MethodContext,
+                         MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
 from mypy.type_visitor import TypeTranslator, TypeVisitor
-from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
-                        TypeOfAny, TypeVarDef, TypeVarId, TypeVarType,
-                        UninhabitedType, UnionType, get_proper_type, LiteralType, Bogus, _dummy, TypeAliasType)
-from mypy.expandtype import expand_type, expand_type_by_instance, freshen_function_type_vars
+from mypy.types import (AnyType, Bogus, CallableType, Instance, LiteralType,
+                        Overloaded, Type, TypeAliasType, TypeOfAny, TypeVarDef,
+                        TypeVarId, TypeVarType, UninhabitedType, UnionType,
+                        _dummy, get_proper_type)
 from mypy.typevars import has_no_typevars
 
 from .functions import curry

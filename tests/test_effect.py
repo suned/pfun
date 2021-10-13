@@ -10,13 +10,14 @@ import pytest
 from hypothesis import assume, given, settings
 
 from pfun import (Dict, Immutable, List, compose, console, effect, either,
-                  files, http, identity, logging, ref, sql, subprocess, schedule)
+                  files, http, identity, logging, ref, schedule, sql,
+                  subprocess)
 from pfun.effect import Resource
 from pfun.hypothesis_strategies import anything, effects, rights, unaries
 
+from .mocks import MockModules
 from .monad_test import MonadTest
 from .utils import recursion_limit
-from .mocks import MockModules
 
 
 class TestEffect(MonadTest):
