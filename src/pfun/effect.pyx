@@ -389,6 +389,50 @@ cdef class CEffect:
         """
         return Repeat(self, schedule)
 
+    def provide(self, r):
+        return Provide(self, r)
+
+    def provide_effect(self, r):
+        return ProvideEffect(self, r)
+
+
+cdef class ProvideEffect(CEffect):
+    cdef CEffect effect
+    cdef CEffect r
+
+    def __cinit__(self, effect, r):
+        self.effect = effect
+        self.r = r
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            r = await self.r.do(env)
+            if isinstance(r, Error):
+                return r
+            r = r.result
+            new_env = RuntimeEnv(r, env.exit_stack, env.max_processes, env.max_threads)
+            return await self.effect.do(new_env)
+        return Call(thunk)
+
+
+cdef class Provide(CEffect):
+    cdef CEffect effect
+    cdef object r
+
+    def __cinit__(self, effect, r):
+        self.effect = effect
+        self.r = r
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            new_env = RuntimeEnv(self.r, env.exit_stack, env.max_processes, env.max_threads)
+            return await self.effect.do(new_env)
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
 
 cdef class Repeat(CEffect):
     cdef CEffect effect
