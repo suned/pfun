@@ -20,7 +20,7 @@ nav:
         - 'pfun.functions': functions_api.md
         - 'pfun.effect': effect_api.md
         - 'pfun.schedule': schedule_api.md
-        - 'pfun.ref': ref_api.md
+        - 'pfun.state': state_api.md
         - 'pfun.console': console_api.md
         - 'pfun.files': files_api.md
         - 'pfun.clock': clock_api.md

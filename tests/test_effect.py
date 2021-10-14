@@ -12,7 +12,7 @@ from hypothesis import assume, given, settings
 
 from pfun import (DefaultModules, Dict, Immutable, List, clock, compose,
                   console, effect, either, files, http, identity, logging,
-                  random, ref, schedule, sql, subprocess)
+                  random, schedule, sql, state, subprocess)
 from pfun.effect import Resource
 from pfun.hypothesis_strategies import anything, effects, rights, unaries
 
@@ -217,12 +217,13 @@ class TestEffect(MonadTest):
         assert effect.from_callable(g).run('env') == 'env'
 
     def test_memoize(self):
-        state = ref.Ref(())
-        e = state.modify(lambda t: t + ('modify was called', )
-                         ).discard_and_then(effect.success('result')).memoize()
+        s = state.State(())
+        e = s.modify(
+            lambda t: t + ('modify was called', )
+        ).discard_and_then(effect.success('result')).memoize()
         double_e = e.discard_and_then(e)
         assert double_e.run(None) == 'result'
-        assert state.value == ('modify was called', )
+        assert s.value == ('modify was called', )
 
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
@@ -583,21 +584,21 @@ class TestFiles:
 
 class TestRef:
     def test_get(self):
-        int_ref = ref.Ref(0)
+        int_ref = state.State(0)
         assert int_ref.get().run(None) == 0
 
     def test_put(self):
-        int_ref = ref.Ref(0)
+        int_ref = state.State(0)
         int_ref.put(1).run(None)
         assert int_ref.value == 1
 
     def test_modify(self):
-        int_ref = ref.Ref(0)
+        int_ref = state.State(0)
         int_ref.modify(lambda _: 1).run(None)
         assert int_ref.value == 1
 
     def test_try_modify(self):
-        int_ref = ref.Ref(0)
+        int_ref = state.State(0)
         int_ref.try_modify(lambda _: either.Left('')).either().run(None)
         assert int_ref.value == 0
         int_ref.try_modify(lambda _: either.Right(1)).run(None)
