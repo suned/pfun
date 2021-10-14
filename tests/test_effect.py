@@ -313,6 +313,7 @@ class TestEffect(MonadTest):
         s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
         assert effect.success(0).retry(s).run(MockModules()) == 0
 
+    @settings(deadline=None)
     @given(anything(), unaries(anything()))
     def test_purify(self, x, f):
         assert effect.purify(f)(x).run(None) == f(x)
