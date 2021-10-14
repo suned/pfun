@@ -11,7 +11,7 @@ A = TypeVar('A')
 E = TypeVar('E')
 
 
-class Ref(Immutable, Generic[A], init=False):
+class State(Immutable, Generic[A], init=False):
     """
     Wraps a value that can be mutated as an `Effect`
     """
@@ -44,8 +44,8 @@ class Ref(Immutable, Generic[A], init=False):
         Get an `Effect` that reads the current state of the value
 
         Example:
-            >>> ref = Ref('the state')
-            >>> ref.get().run(None)
+            >>> state = State('the state')
+            >>> state.get().run(None)
             'the state'
 
         Return:
@@ -58,7 +58,7 @@ class Ref(Immutable, Generic[A], init=False):
         return from_callable(f)
 
     def __repr__(self):
-        return f'Ref({repr(self.value)})'
+        return f'State({repr(self.value)})'
 
     @add_method_repr
     def put(self, value: A) -> Success[None]:
@@ -66,10 +66,10 @@ class Ref(Immutable, Generic[A], init=False):
         Get an `Effect` that updates the current state of the value
 
         Example:
-            >>> ref = Ref('initial state')
-            >>> ref.put('new state').run(None)
+            >>> state = State('initial state')
+            >>> state.put('new state').run(None)
             None
-            >>> ref.value
+            >>> state.value
             'new state'
 
         Args:
@@ -89,14 +89,14 @@ class Ref(Immutable, Generic[A], init=False):
     @add_method_repr
     def modify(self, f: Callable[[A], A]) -> Success[None]:
         """
-        Modify the value wrapped by this `Ref` by \
+        Modify the value wrapped by this `State` by \
             applying `f` in isolation
 
         Example:
-            >>> ref = Ref([])
-            >>> ref.modify(lambda l: l + [1]).run(None)
+            >>> state = State([])
+            >>> state.modify(lambda l: l + [1]).run(None)
             None
-            >>> ref.value
+            >>> state.value
             [1]
 
         Args:
@@ -123,14 +123,14 @@ class Ref(Immutable, Generic[A], init=False):
 
         Example:
             >>> from pfun.either import Left, Right
-            >>> ref = Ref('initial state')
-            >>> ref.try_modify(lambda _: Left('Whoops!')).either().run(None)
+            >>> state = State('initial state')
+            >>> state.try_modify(lambda _: Left('Whoops!')).either().run(None)
             Left('Whoops!')
-            >>> ref.value
+            >>> state.value
             'initial state'
-            >>> ref.try_modify(lambda _: Right('new state')).run(None)
+            >>> state.try_modify(lambda _: Right('new state')).run(None)
             None
-            >>> ref.value
+            >>> state.value
             'new state'
 
         Args:

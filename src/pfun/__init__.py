@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing_extensions import Protocol
 
-from . import clock, console, files, logging, random, ref, subprocess  # noqa
+from . import clock, console, files, logging, random, state, subprocess  # noqa
 from .dict import Dict  # noqa
 from .effect import *  # noqa
 from .either import Either, Left, Right  # noqa

@@ -593,40 +593,40 @@ s: Schedule[HasRandom] = jitter(spaced(timedelta(seconds=2)))
 ```
 
 ### Purely Functional State
-Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. `pfun.ref` provides exactly this. `pfun.ref` works by mutating state only by calling `Effect` instances.
+Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. `pfun.state` provides exactly this. `pfun.state` works by mutating state only by calling `Effect` instances.
 
 ```python
 from typing import Tuple, NoReturn
 
-from pfun.ref import Ref
+from pfun.state import State
 from pfun.effect import Effect
 
 
-ref: Ref[Tuple[int, ...]] = Ref(())
-add_1: Effect[object, NoReturn, None] = ref.modify(lambda old: return old + (1,))
+state: State[Tuple[int, ...]] = State(())
+add_1: Effect[object, NoReturn, None] = state.modify(lambda old: return old + (1,))
 # calling modify doesn't modify the state directly
-assert ref.value == ()
+assert state.value == ()
 # The state is modified only when the effect is called
 add_1.run(None)
-assert ref.value == (1,)
+assert state.value == (1,)
 ```
-`pfun.ref.Ref` protects access to the state using an `asyncio.Lock`, meaning that updating the state can be done atomically with the following methods:
+`pfun.state.State` protects access to the state using an `asyncio.Lock`, meaning that updating the state can be done atomically with the following methods:
 
-- `Ref.get()` read the current value of the state
-- `Ref.set(new_state)` update the state to `new_value` atomically, meaning no other effect can read the value of the state while the update is in progress. Note that if you first read the state using `Ref.get` and then set it with `Ref.set`, other effects may read the value in between which may lead to lost updates. _For this use case you should use `modify` or `try_modify`_
-- `Ref.modify(update_function)` read and update the state with `update_function` atomically, meaning no other effect can read or write the state before the effect produced by `modify` returns
-- `Ref.try_modify(update_function)` read and update the state with `update_function` atomically, if `update_funciton` succeeds. Success is signaled by the `update_function` by returning a `pfun.either.Right` instance, and error by returning a `pfun.either.Left` instance.
+- `State.get()` read the current value of the state
+- `State.set(new_state)` update the state to `new_value` atomically, meaning no other effect can read the value of the state while the update is in progress. Note that if you first read the state using `State.get` and then set it with `State.set`, other effects may read the value in between which may lead to lost updates. _For this use case you should use `modify` or `try_modify`_
+- `State.modify(update_function)` read and update the state with `update_function` atomically, meaning no other effect can read or write the state before the effect produced by `modify` returns
+- `State.try_modify(update_function)` read and update the state with `update_function` atomically, if `update_funciton` succeeds. Success is signaled by the `update_function` by returning a `pfun.either.Right` instance, and error by returning a `pfun.either.Left` instance.
 
-`pfun.ref` can of course be combined with the module pattern:
+`pfun.state` can of course be combined with the module pattern:
 ```python
 from typing import Tuple, NoReturn, Protocol
 
-from pfun.ref import Ref
+from pfun.state import State
 from pfun.effect import depend, Effect
 
 
 class HasState(Protocol):
-    state: Ref[Tuple[int, ...]]
+    state: State[Tuple[int, ...]]
 
 
 def set_state(state: Tuple[int, ...]) -> Effect[HasState, NoReturn, None]:
