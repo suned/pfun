@@ -115,7 +115,7 @@ cdef class CEffect:
             effect = await self.do(env)
             if isinstance(effect, CSuccess):
                 return effect.result
-            if isinstance(effect.reason, Exception):
+            if isinstance(effect.reason, Exception) or isinstance(effect.reason, BaseException):
                 raise effect.reason
             raise RuntimeError(effect.reason)
     
@@ -300,10 +300,10 @@ cdef class CEffect:
             RuntimeError: whoops!
         Args:
             self (Effect[R, E, A]):
-            effect (Effect[Any, NoReturn, Any]): `Effect` to run after this effect terminates \
+            effect (Effect[R1, NoReturn, Any]): `Effect` to run after this effect terminates \
             either successfully or with an error
         Return:
-            Effect[Any, E, A]: `Effect` that fails or succeeds with the result of \
+            Effect[pfun.Intersection[R, R1], E, A]: `Effect` that fails or succeeds with the result of \
             this effect, but always runs `effect`
         """
         return self.and_then(
@@ -313,6 +313,208 @@ cdef class CEffect:
             lambda reason: effect.
             discard_and_then(error(reason))
         ).with_repr(f'{repr(self)}.ensure({repr(effect)})')
+
+    def race(self, other):
+        """
+        Create an `Effect` that will run this effect and `other` concurrently,
+        returning the result of whichever completes first. When one completes,
+        the other is canceled
+
+        Example:
+            >>> from pfun import clock, DefaultModules
+            >>> clock.sleep(100).discard_and_then(success('slow')).race(success('fast')).run(DefaultModules())
+            'fast'
+        Args:
+            self (Effect[R, E, A])
+            other (Effect[R1, E1, A]): `Effect` to race against this effect
+        Return:
+            Effect[pfun.Intersection[R, R1], Union[E, E1], A]: `other` raced against this effect
+        """
+        return Race(self, other)
+
+    def timeout(self, duration):
+        """
+        Create an `Effect` that will fail it it hasn't succeeded within `duration`
+
+        Example:
+            >>> from pfun import clock, DefaultModules
+            >>> clock.sleep(10).timeout(1).run(DefaultModules())
+            TimeoutError: sleep(10) timed out after 1 seconds
+        Args:
+            duration (int): Max interval to wait for this effect to succeed in seconds
+        Return:
+            Effect[pfun.Intersection[R, pfun.clock.HasClock], Union[E, asyncio.TimeoutError], A]: `Effect` that will fail after `duration`
+        """
+        return Timeout(self, duration)
+
+    def retry(self, schedule):
+        """
+        Create an `Effect` that retries this effect according to `schedule`. Succeeds when this effect does, or fails once the
+        `schedule` is exhausted.
+
+        Example:
+            >>> from datetime import timedelta
+            >>> from pfun import console, effect, scedule
+            >>> s = schedule.recurs(3, schedule.spaced(timedelta(seconds=1)))
+            >>> console.print_line('Try to do the thing')\\
+            ... .discard_and_then(effect.error('Whoops'))\\
+            ... .retry(s)\\
+            ... .run(DefaultModules)
+            Try to do the thing
+            Try to do the thing
+            Try to do the thing
+            RuntimeError: ('Whoops', 'Whoops', 'Whoops')
+        Args:
+            schedule (Effect[R1, NoReturn, Iterator[datetime.timedelta]]): Schedule to use for retry attempts
+        Return:
+            Effect[pfun.Intersection[R, R1, pfun.clock.HasClock], Tuple[E], A]: `Effect` that retries this effect according to `schedule`
+        """
+        return Retry(self, schedule)
+
+    def repeat(self, schedule):
+        """
+        Create an `Effect` that repeats this effect according to `schedule`. Succeeds when the schedule is exhausted, or fails
+        when this effect does
+
+        Example:
+            >>> from datetime import timedelta
+            >>> from pfun import effect, schedule, DefaultModules
+            >>> s = schedule.recurs(3, schedule.spaced(timedelta(seconds=1)))
+            >>> effect.success(0).repeat(s).run(DefaultModules)
+            (0, 0, 0)
+        Args:
+            schedule (Effect[R1, NoReturn, Iterator[datetime.timedelta]): Schedule to use for repetition
+        Return:
+            Effect[pfun.Intersection[R, R1, pfun.clock.HasClock], E, Tuple[A]]: This effect repeated according to `schedule`
+        """
+        return Repeat(self, schedule)
+
+
+cdef class Repeat(CEffect):
+    cdef CEffect effect
+    cdef CEffect schedule
+
+    def __cinit__(self, effect, schedule):
+        self.effect = effect
+        self.schedule = schedule
+
+    def __repr__(self):
+        return f'{repr(self.effect)}.repeat({repr(self.schedule)})'
+
+    async def resume(self, RuntimeEnv env):
+        results = []
+        async def thunk():
+            deltas = await self.schedule.do(env)
+            if isinstance(deltas, Error):
+                return deltas
+            for delta in deltas.result:
+                result = await self.effect.do(env)
+                if isinstance(result, Error):
+                    return result
+                results.append(result.result)
+                await env.r.clock.sleep(delta.total_seconds()).do(env)
+            return CSuccess(tuple(results))
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
+
+cdef class Retry(CEffect):
+    cdef CEffect effect
+    cdef CEffect schedule
+
+    def __cinit__(self, effect, schedule):
+        self.effect = effect
+        self.schedule = schedule
+
+    def __repr__(self):
+        return f'{repr(self.effect)}.retry({repr(self.schedule)})'
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            errors = []
+            deltas = await self.schedule.do(env)
+            if isinstance(deltas, Error):
+                return deltas
+            for delta in deltas.result:
+                result = await self.effect.do(env)
+                if isinstance(result, CSuccess):
+                    return result
+                errors.append(result.reason)
+                await env.r.clock.sleep(delta.total_seconds()).do(env)
+            return Error(tuple(errors))
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
+cdef class Timeout(CEffect):
+    cdef CEffect effect
+    cdef object duration
+
+    def __cinit__(self, effect, duration):
+        self.effect = effect
+        self.duration = duration
+
+    def __repr__(self):
+        return f'{repr(self.effect)}.timeout({repr(self.duration)})'
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            sleep_task = asyncio.create_task(env.r.clock.sleep(self.duration).do(env))
+            target_task = asyncio.create_task(self.effect.do(env))
+            await asyncio.wait({sleep_task, target_task}, return_when='FIRST_COMPLETED')
+            if not target_task.done():
+                return Error(asyncio.TimeoutError(f'{repr(self.effect)} timed out after {self.duration} seconds'))
+            return target_task.result()
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
+def _cancel_tasks(tasks):
+    for t in tasks:
+        if not t.done:
+            t.cancel()
+
+
+cdef class Race(CEffect):
+    cdef CEffect first
+    cdef CEffect second
+
+    def __cinit__(self, first, second):
+        self.first = first
+        self.second = second
+
+    def __repr__(self):
+        return f'{repr(self.first)}.race({repr(self.second)})'
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            ts = [asyncio.create_task(c)
+                  for c in [self.first.do(env), self.second.do(env)]]
+            errors = []
+            for coro in asyncio.as_completed(ts):
+                result = await coro
+                if isinstance(result, CSuccess):
+                    _cancel_tasks(ts)
+                    return result
+                else:
+                    errors.append(result.reason)
+            return Error(tuple(errors))
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
 
 
 cdef class WithRepr(CEffect):
@@ -330,7 +532,8 @@ cdef class WithRepr(CEffect):
         return await self.effect.resume(env)
     
     async def apply_continuation(self, object f, RuntimeEnv env):
-        return await self.effect.apply_continuation(f, env)
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
 
 
 cdef class Memoize(CEffect):
@@ -984,6 +1187,112 @@ def catch_cpu_bound(exception, *exceptions):
     return decorator1
 
 
+def purify(f):
+    """
+    Decorator to wrap side-effects of `f`.
+    Example:
+        >>> purify(print)('Hello!').run(None)
+        Hello!
+    Args:
+        f ( (*A, **B) -> C): Function to wrap side-effects of
+    Return:
+        (*A, **B) -> Success[C]: `f` decorated to wrap side-effects
+    """
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        return Purify(f, args, kwargs)
+    return decorator
+
+
+def purify_io_bound(f):
+    """
+    Decorator to wrap side-effects of `f`.
+    Example:
+        >>> purify_io_bound(print)('Hello!').run(None)
+        Hello!
+    Args:
+        f ( (*A, **B) -> C): Function to wrap side-effects of
+    Return:
+        (*A, **B) -> Success[C]: `f` decorated to wrap side-effects
+    """
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'argument to purify_io_bound must not be async, got: {repr(f)}'
+        )
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        return PurifyIOBound(f, args, kwargs)
+    return decorator
+
+
+def purify_cpu_bound(f):
+    """
+    Decorator to wrap side-effects of `f`.
+    Example:
+        >>> purify_cpu_bound(print)('Hello!').run(None)
+        Hello!
+    Args:
+        f ( (*A, **B) -> C): Function to wrap side-effects of
+    Return:
+        (*A, **B) -> Success[C]: `f` decorated to wrap side-effects
+    """
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'argument to purify_cpu_bound must not be async, got: {repr(f)}'
+        )
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        return PurifyCPUBound(f, args, kwargs)
+    return decorator
+
+
+cdef class Purify(CEffect):
+    cdef object f
+    cdef tuple args
+    cdef object kwargs
+
+    def __cinit__(self, f, args, kwargs):
+        self.f = f
+        self.args = args
+        self.kwargs = kwargs
+
+    def __repr__(self):
+        sig_repr = _get_sig_repr(self.args, self.kwargs)
+        return f'purify({repr(self.f)})({sig_repr})'
+
+    async def _call_f(self, RuntimeEnv env):
+        if asyncio.iscoroutinefunction(self.f):
+            return await self.f(*self.args, **self.kwargs)
+        else:
+            return self.f(*self.args, **self.kwargs)
+
+    async def resume(self, RuntimeEnv env):
+        result = await self._call_f(env)
+        return CSuccess(result)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
+cdef class PurifyIOBound(Purify):
+    def __repr__(self):
+        sig_repr = _get_sig_repr(self.args, self.kwargs)
+        return f'purify_io_bound{repr(self.f)})({sig_repr})'
+
+    async def _call_f(self, RuntimeEnv env):
+        return await env.run_in_thread_executor(self.f, *self.args, **self.kwargs)
+
+
+cdef class PurifyCPUBound(Purify):
+    def __repr__(self):
+        sig_repr = _get_sig_repr(self.args, self.kwargs)
+        return f'purify_cpu_bound{repr(self.f)})({sig_repr})'
+
+    async def _call_f(self, RuntimeEnv env):
+        return await env.run_in_process_executor(self.f, *self.args, **self.kwargs)
+
+
 cdef class SequenceAsync(CEffect):
     cdef tuple effects
 
@@ -994,15 +1303,20 @@ cdef class SequenceAsync(CEffect):
         return f'sequence_async({repr(self.effects)})'
 
     async def sequence(self, object r):
+        async def with_index(awaitable, index):
+            return index, (await awaitable)
+
         async def thunk():
-            cdef CEffect effect
-            cdef list aws = [None]*len(self.effects)
-            cdef int i = 0
-            for effect in self.effects:
-                aws[i] = effect.do(r)
-                i += 1
-            effects = await asyncio.gather(*aws)
-            return sequence(effects)
+            tasks = [asyncio.create_task(with_index(e.do(r), i))
+                     for i, e in enumerate(self.effects)]
+            cdef list results = [None]*len(self.effects)
+            for coro in asyncio.as_completed(tasks):
+                i, result = await coro
+                if isinstance(result, Error):
+                    _cancel_tasks(tasks)
+                    return result
+                results[i] = result.result
+            return CSuccess(tuple(results))
         return Call.__new__(Call, thunk)
 
     async def resume(self, RuntimeEnv env):
@@ -1447,6 +1761,9 @@ __all__ = [
     'catch',
     'catch_io_bound',
     'catch_cpu_bound',
+    'purify',
+    'purify_io_bound',
+    'purify_cpu_bound',
     'from_awaitable',
     'from_callable',
     'from_io_bound_callable',

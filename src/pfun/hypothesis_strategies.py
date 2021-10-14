@@ -1,7 +1,9 @@
 from string import printable
-from typing import Any, Callable, Iterable, NoReturn, Tuple, TypeVar, Union
+from typing import (Any, Callable, Generic, Iterable, NoReturn, Tuple, TypeVar,
+                    Union)
 
-from . import Dict, List, aio_trampoline, effect, either, maybe, trampoline
+from . import (Dict, Immutable, List, aio_trampoline, effect, either, maybe,
+               trampoline)
 
 try:
     from hypothesis.strategies import (
@@ -47,6 +49,19 @@ def anything(allow_nan: bool = False
     return one_of(*_everything(allow_nan))
 
 
+CO = TypeVar('CO', covariant=True)
+
+
+class Unary(Immutable, Generic[CO]):
+    return_value: CO
+
+    def __repr__(self):
+        return f'lambda _: {repr(self.return_value)}'
+
+    def __call__(self, _: object) -> CO:
+        return self.return_value
+
+
 def unaries(return_strategy: SearchStrategy[A]
             ) -> SearchStrategy[Callable[[object], A]]:
     """
@@ -63,12 +78,7 @@ def unaries(return_strategy: SearchStrategy[A]
     Return:
         Search strategy that produces callables of 1 argument
     """
-    @composite
-    def _(draw):
-        a: A = draw(return_strategy)
-        return lambda _: a
-
-    return _()
+    return builds(Unary, return_strategy)
 
 
 def maybes(value_strategy: SearchStrategy[A]
@@ -273,6 +283,13 @@ def dicts(
 TestEffect = effect.Effect[object, Any, A]
 
 
+class TestException(Exception):
+    """
+    Dummy exception used to avoid catching any exceptions
+    unintentionally in tests.
+    """
+
+
 def effects(
     value_strategy: SearchStrategy[A],
     include_errors: bool = False,
@@ -348,6 +365,7 @@ def effects(
         combine_cpu_bound = unaries(value_strategy).flatmap(
             lambda f: children.map(lambda e: effect.combine_cpu_bound(e)(f))
         )
+        race = children.map(lambda e: e.race(e))
 
         return one_of(
             maps,
@@ -365,7 +383,8 @@ def effects(
             lift_cpu_bound,
             combine,
             combine_io_bound,
-            combine_cpu_bound
+            combine_cpu_bound,
+            race
         )
 
     success = builds(effect.success, value_strategy)
@@ -380,23 +399,28 @@ def effects(
     from_cpu_bound_callable: SearchStrategy[TestEffect[A]] = unaries(
         rights(value_strategy)
     ).map(effect.from_cpu_bound_callable)
-    catch: SearchStrategy[TestEffect[A]] = unaries(value_strategy).flatmap(
-        lambda f: value_strategy.map(lambda a: effect.catch(Exception)(f)(a))
+    catch: SearchStrategy[TestEffect[A]] = unaries(
+        value_strategy
+    ).flatmap(
+        lambda f: value_strategy.map(
+            lambda a: effect.catch(TestException)(f)(a))
     )
     catch_io_bound: SearchStrategy[TestEffect[A]] = unaries(
         value_strategy
     ).flatmap(
         lambda f: value_strategy.map(
-            lambda a: effect.catch_io_bound(Exception)(f)(a)
+            lambda a: effect.catch_io_bound(TestException)(f)(a)
         )
     )
     catch_cpu_bound: SearchStrategy[TestEffect[A]] = unaries(
         value_strategy
     ).flatmap(
         lambda f: value_strategy.map(
-            lambda a: effect.catch_cpu_bound(Exception)(f)(a)
+            lambda a: effect.catch_cpu_bound(TestException)(f)(a)
         )
     )
+
+    purify = nullaries(value_strategy).map(lambda f: effect.purify(f)())
 
     base = (
         success
@@ -407,10 +431,11 @@ def effects(
         | catch
         | catch_io_bound
         | catch_cpu_bound
+        | purify
     )
 
     if include_errors:
         errors = builds(effect.error, value_strategy)
         base = base | errors
 
-    return recursive(base, extend, max_leaves=10)
+    return recursive(base, extend, max_leaves=max_leaves)

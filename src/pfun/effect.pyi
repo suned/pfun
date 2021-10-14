@@ -1,6 +1,7 @@
+from datetime import timedelta
 from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
                     Iterable, NoReturn, Optional, Tuple, Type, TypeVar, Union,
-                    overload)
+                    overload, Iterator)
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
 import asyncio
@@ -9,6 +10,8 @@ from pfun.functions import curry
 from pfun.immutable import Immutable
 from pfun.either import Either, Left, Right
 from pfun.monad import Monad
+from pfun.clock import HasClock
+from pfun import Intersection
 
 
 R = TypeVar('R', contravariant=True)
@@ -20,6 +23,10 @@ B = TypeVar('B')
 C = TypeVar('C', bound=AsyncContextManager)
 
 F = TypeVar('F', bound=Callable[..., 'Effect'])
+
+R1 = TypeVar('R1')
+E1 = TypeVar('E1')
+A1 = TypeVar('A1')
 
 
 class Resource(Immutable, Generic[E, C]):
@@ -84,19 +91,19 @@ class Effect(Generic[R, E, A], Immutable, Monad):
     def and_then(
         self,
         f: Callable[[A],
-                    Union[Awaitable[Effect[Any, E2, B]], Effect[Any, E2, B]]]
-    ) -> Effect[Any, Union[E, E2], B]: ...
+                    Union[Awaitable[Effect[R1, E2, B]], Effect[R1, E2, B]]]
+    ) -> Effect[Intersection[R, R1], Union[E, E2], B]: ...
 
-    def discard_and_then(self, effect: Effect[Any, E2, B]
-                         ) -> Effect[Any, Union[E, E2], B]: ...
+    def discard_and_then(self, effect: Effect[R1, E2, B]
+                         ) -> Effect[Intersection[R, R1], Union[E, E2], B]: ...
 
     def memoize(self) -> Effect[R, E, A]: ...
 
-    def recover(self, f: Callable[[E], Effect[Any, E2, B]]
-                ) -> Effect[Any, E2, Union[A, B]]:
+    def recover(self, f: Callable[[E], Effect[R1, E2, B]]
+                ) -> Effect[Intersection[R, R1], E2, Union[A, B]]:
         ...
 
-    def ensure(self, effect: Effect[Any, NoReturn, Any]) -> Effect[Any, E, A]: ...
+    def ensure(self, effect: Effect[R1, NoReturn, Any]) -> Effect[Intersection[R, R1], E, A]: ...
 
     def either(self) -> Effect[R, NoReturn, Either[E, A]]: ...
 
@@ -116,10 +123,13 @@ class Effect(Generic[R, E, A], Immutable, Monad):
     @add_method_repr
     def map(self, f: Callable[[A], Union[Awaitable[B], B]]) -> Effect[R, E, B]: ...
 
+    def race(self, other: Effect[R1, E1, A]) -> Effect[Intersection[R, R1], Tuple[E, E1], A]: ...
 
-R1 = TypeVar('R1')
-E1 = TypeVar('E1')
-A1 = TypeVar('A1')
+    def timeout(self, duration: timedelta) -> Effect[Intersection[R, HasClock], Union[asyncio.TimeoutError, E], A]: ...
+
+    def retry(self, schedule: Effect[R1, NoReturn, Iterator[timedelta]]) -> Effect[Intersection[R, R1, HasClock], E, A]: ...
+
+    def repeat(self, schedule: Effect[R1, NoReturn, Iterator[timedelta]]) -> Effect[Intersection[R, R1, HasClock], E, Tuple[A]]: ...
 
 
 def success(value: A1) -> Effect[object, NoReturn, A1]: ...
@@ -291,6 +301,15 @@ class catch_cpu_bound(Immutable, Generic[EX], init=False):
     def __call__(self, f: Callable[..., B]
                  ) -> Callable[..., Try[EX, B]]:
         ...
+
+def purify(f: Callable[..., Union[Awaitable[B], B]]) -> Callable[..., Success[B]]:
+    ...
+
+def purify_io_bound(f: Callable[..., B]) -> Callable[..., Success[B]]:
+    ...
+
+def purify_cpu_bound(f: Callable[..., B]) -> Callable[..., Success[B]]:
+    ...
 
 
 def add_method_repr(f: F1) -> F1: ...

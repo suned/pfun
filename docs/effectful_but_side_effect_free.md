@@ -349,7 +349,44 @@ mock_env.requests.make_request.return_value = success(b'Mocked!')
 assert make_request([])(mock_env) == b'Mocked!'
 ```
 
+To save you from writing module provider implementations for all the modules that
+come with `pfun`, you can use `pfun.DefaultModules`, which provide live
+implementations of `Console`, `Files`, `Random` and `Clock`:
 
+```python
+from pfun import console, DefaultModules
+
+
+console.print_line("Hello!").run(DefaultModules())
+```
+
+You can of course extend `DefaultModules` to implement module providers
+for you own modules:
+
+```python
+from typing import Protocol, NoReturn
+
+from pfun import Intersection
+from pfun.console import HasConsole
+
+
+class MyModule:
+    ...
+
+
+class HasMyModule(Protocol):
+    my_module: MyModule
+    
+effect: Effect[Intersection[HasConsole, HasMyModule], NoReturn, str]
+
+
+class Modules(DefaultModules):
+    my_module = MyModule()
+
+    
+effect.run(Modules())
+```
+    
 ### Error Handling
 In this section, we'll look at how to handle errors of effects with type safety. In previous sections we have already spent some time looking at the `Effect` error type. In many of the examples so far, the error type was `typing.NoReturn`. An `Effect` with this error type can never return a value for an error, or in other words, it can never fail (as those effects returned by `pfun.effect.success`). In the rest of this section we'll of course be pre-occupied with effects that _can_ fail.
 
@@ -422,6 +459,13 @@ recovered: Effect[object, ZeroDivisionError, str] = e.recover(handle_errors)
 
 You will frequently handle errors by using `isinstance` to compare errors with types, so defining your own error types becomes even more important when using `pfun` to distinguish one error source from another.
 
+### Type Aliases
+Since the dependency type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
+
+- `pfun.effect.Success[A]` is a type-alias for `Effect[object, typing.NoReturn, A]`, which is useful for effects that can't fail and doesn't have dependencies
+- `pfun.effect.Try[E, A]` is a type-alias for `Effect[object, E, A]`, which is useful for effects that can fail but doesn't have dependencies
+- `pfun.effect.Depends[R, A]` is a type-alias for `Effect[R, typing.NoReturn, A]` which is useful for effects that can't fail but needs dependency `R`
+
 ### Concurrency
 `Effect` uses `asyncio` under the hood to run effects asynchronously.
 This can lead to significant speed ups.
@@ -449,6 +493,8 @@ effect.run(None)
 ```
 
 This program finishes in 0.78 seconds, according to `time`. The crucial difference is the function `pfun.effect.sequence_async` which returns a new effect that runs its argument effects asynchronously using `asyncio`. This means that one effect can yield to other effects while waiting for input from the `curl` subprocess. This ultimately saves a lot of time compared to the synchronous implementation where each call to `subprocess.run` can only start when the preceeding one has returned.
+If any of the effects given as arguments to `sequence_async` fails, any remaining effects that have not completed yet are canceled
+automatically to avoid resource waste.
 
 You can create an effect from a Python awaitable using `pfun.effect.from_awaitable`, allowing you to integrate with `asyncio` directly in your own code:
 ```python
@@ -489,6 +535,61 @@ When using `pfun` with async frameworks such as [ASGI web servers](https://asgi.
 async def f() -> str:
     e: Effect[object, NoReturn, str] = ...
     return await e(None)
+```
+
+`pfun` also allows you to race effects against each other concurrently. When one effect succeeds, the other
+is cancelled to minimize resource waste:
+
+```python
+from pfun import clock, effect, DefaultModules
+
+
+slow_effect = (clock
+               .sleep(5)
+               .discard_and_then(effect.success('Just woke up!')))
+fast_effect = effect.success('Born ready!')
+assert slow_effect.race(fast_effect).run(DefaultModules()) == 'Born ready!'
+```
+
+### Repeating And Retrying Effects
+
+`pfun.effect` supports powerful scheduling mechanisms for repeating or retrying effects.
+`Effect.repeat` and `Effect.retry` both take a schedule as an argument of type `pfun.schedule.Schedule`, which is 
+simply a type-alias:
+
+```python
+from typing import Iterator
+import datetime
+
+from pfun.effect import Depends
+
+
+Schedule = Depends[TypeVar('R'), Iterator[datetime.timedelta]]
+```
+In other words, a `Schedule` is simply an effect that  succeeds with a (potentially infinite) iterator
+of `datetime.timedelta` instances.
+
+
+The `pfun.schedule` module provides various helper methods for creating schedules:
+
+```python
+from datetime import timedelta
+
+from pfun import http, schedule
+
+
+s = schedule.exponential(timedelta(seconds=2))
+http.get('https://foo.com').retry(s)
+```
+Schedules are modeled as `Effect` instances because some schedules have
+module dependencies, for example to introduce randomness:
+
+```python
+from pfun.random import HasRandom
+from pfun.schedule import Schedule, jitter, spaced
+
+
+s: Schedule[HasRandom] = jitter(spaced(timedelta(seconds=2)))
 ```
 
 ### Purely Functional State
@@ -596,12 +697,6 @@ def slow_function(a: int) -> int:
 lift_cpu_bound(slow_function)(success(2))
 ```
 Take a look at the api documentation for details.
-### Type Aliases
-Since the dependency type of `Effect` is often parameterized with `object`, and the error type is often parameterized with `typing.NoReturn`, a number of type aliases for `Effect` are provided to save you from typing out `object` and `NoReturn` over and over. Specifically:
-
-- `pfun.effect.Success[A]` is a type-alias for `Effect[object, typing.NoReturn, A]`, which is useful for effects that can't fail and doesn't have dependencies
-- `pfun.effect.Try[E, A]` is a type-alias for `Effect[object, E, A]`, which is useful for effects that can fail but doesn't have dependencies
-- `pfun.effect.Depends[R, A]` is a type-alias for `Effect[R, typing.NoReturn, A]` which is useful for effects that can't fail but needs dependency `R`
 
 ### Combining effects
 Sometimes you need to keep the the result of two or more effects in scope to work with

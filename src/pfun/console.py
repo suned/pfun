@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import asyncio
 from typing import NoReturn
 
 from typing_extensions import Protocol
 
-from .effect import Effect, Success, add_repr, depend, from_callable
-from .either import Either, Right
+from .effect import Effect, Success, add_repr, depend, purify_io_bound
 from .immutable import Immutable
 
 
@@ -28,12 +26,7 @@ class Console(Immutable):
         Return:
             `Effect` that prints `msg` to stdout
         """
-        async def f(_) -> Either[NoReturn, None]:
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(None, print, msg)
-            return Right(None)
-
-        return from_callable(f)
+        return purify_io_bound(print)(msg)
 
     def input(self, prompt: str = '') -> Success[str]:
         """
@@ -51,12 +44,7 @@ class Console(Immutable):
         Return:
             `Effect` that reads from stdin
         """
-        async def f(_):
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(None, input, prompt)
-            return Right(result)
-
-        return from_callable(f)
+        return purify_io_bound(input)(prompt)
 
 
 class HasConsole(Protocol):

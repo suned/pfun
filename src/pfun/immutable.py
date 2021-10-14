@@ -1,7 +1,4 @@
 from dataclasses import dataclass
-from typing import TypeVar
-
-T = TypeVar('T')
 
 
 class Immutable:

@@ -1,4 +1,7 @@
+import asyncio
+import datetime
 from contextlib import ExitStack
+from datetime import timedelta
 from subprocess import CalledProcessError
 from unittest import mock
 
@@ -7,11 +10,13 @@ import asynctest
 import pytest
 from hypothesis import assume, given, settings
 
-from pfun import (Dict, Immutable, List, compose, console, effect, either,
-                  files, http, identity, logging, ref, sql, subprocess)
+from pfun import (DefaultModules, Dict, Immutable, List, clock, compose,
+                  console, effect, either, files, http, identity, logging,
+                  random, ref, schedule, sql, subprocess)
 from pfun.effect import Resource
 from pfun.hypothesis_strategies import anything, effects, rights, unaries
 
+from .mocks import MockModules
 from .monad_test import MonadTest
 from .utils import recursion_limit
 
@@ -64,6 +69,7 @@ class TestEffect(MonadTest):
     def test_equality(self, value, env):
         assert effect.success(value).run(env) == effect.success(value).run(env)
 
+    @settings(deadline=None)
     @given(anything(), anything(), anything())
     def test_inequality(self, first, second, env):
         assume(first != second)
@@ -268,6 +274,53 @@ class TestEffect(MonadTest):
             assert env.process_executor is None
             assert env.thread_executor is None
 
+    def test_race(self):
+        async def f():
+            await asyncio.sleep(10)
+            return 'f'
+
+        async def g():
+            return 'g'
+
+        e1 = effect.from_awaitable(f())
+        e2 = effect.from_awaitable(g())
+
+        assert e1.race(e2).run(None) == 'g'
+
+    def test_timeout(self):
+        async def f():
+            await asyncio.sleep(10)
+            return 'f'
+
+        e = effect.from_awaitable(f())
+        with pytest.raises(asyncio.TimeoutError):
+            e.timeout(timedelta(milliseconds=1)).run(MockModules())
+
+    def test_repeat(self):
+        s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
+        assert effect.success(0).repeat(s).run(MockModules()) == (0, 0)
+
+    def test_repeat_error(self):
+        s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
+        assert (effect.error('whoops').repeat(s).either().run(MockModules()) ==
+                either.Left('whoops'))
+
+    def test_retry(self):
+        s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
+        assert (effect.error('whoops').retry(s).either().run(MockModules()) ==
+                either.Left(('whoops', 'whoops')))
+
+    def test_retry_success(self):
+        s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
+        assert effect.success(0).retry(s).run(MockModules()) == 0
+
+    @settings(deadline=None)
+    @given(anything(), unaries(anything()))
+    def test_purify(self, x, f):
+        assert effect.purify(f)(x).run(None) == f(x)
+        assert effect.purify_io_bound(f)(x).run(None) == f(x)
+        assert effect.purify_cpu_bound(f)(x).run(None) == f(x)
+
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'
 
@@ -315,6 +368,7 @@ class TestEffect(MonadTest):
     def test_depend_repr(self):
         assert repr(effect.depend()) == 'depend()'
 
+    @pytest.mark.filterwarnings("ignore:coroutine .+ was never awaited")
     def test_from_awaitable_repr(self):
         async def f():
             pass
@@ -422,6 +476,14 @@ class TestEffect(MonadTest):
     def test_absolve_repr(self):
         assert repr(effect.absolve(effect.success(0))) == 'absolve(success(0))'
 
+    def test_race_repr(self):
+        assert (repr(effect.success(0).race(effect.success(0))) ==
+                'success(0).race(success(0))')
+
+    def test_timeout_repr(self):
+        assert (repr(effect.success(0).timeout(timedelta(seconds=1))) ==
+                'success(0).timeout(datetime.timedelta(seconds=1))')
+
 
 class TestResource:
     def test_get(self):
@@ -477,7 +539,7 @@ class TestFiles:
         with mock_open('content') as mocked_open:
             e = files.read('foo.txt')
             assert e.run(HasFiles()) == 'content'
-            mocked_open.assert_called_once_with('foo.txt')
+        mocked_open.assert_called_once_with('foo.txt')
 
     def test_write(self):
         with mock_open() as mocked_open:
@@ -722,3 +784,29 @@ class TestSQL:
         assert sql.as_type(User)(results).run(None) == List(
             (User('bob', 32), )
         )
+
+
+class TestClock:
+    def test_sleep(self):
+        with asynctest.patch('pfun.effect.asyncio.sleep') as sleep_mock:
+            clock.sleep(0).run(DefaultModules())
+            sleep_mock.assert_called_with(0)
+
+    def test_now(self):
+        with mock.patch('pfun.clock.datetime.datetime') as datetime_mock:
+            datetime_mock.now.return_value = (datetime
+                                              .datetime.utcfromtimestamp(0))
+            assert (clock.now().run(DefaultModules()) ==
+                    datetime_mock.now.return_value)
+
+
+class TestRandom:
+    def test_randint(self):
+        with mock.patch('pfun.random.random_.randint') as randint_mock:
+            randint_mock.return_value = 1
+            assert random.randint(0, 1).run(DefaultModules()) == 1
+
+    def test_random(self):
+        with mock.patch('pfun.random.random_.random') as random_mock:
+            random_mock.return_value = 0.5
+            assert random.random().run(DefaultModules()) == 0.5
