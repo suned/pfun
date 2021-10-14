@@ -1,12 +1,7 @@
 from dataclasses import dataclass
-from typing import TypeVar
-
-from typing_extensions import Protocol
-
-T = TypeVar('T')
 
 
-class Immutable(Protocol):
+class Immutable:
     """
     Super class that makes subclasses immutable using dataclasses
 
