@@ -69,6 +69,7 @@ class TestEffect(MonadTest):
     def test_equality(self, value, env):
         assert effect.success(value).run(env) == effect.success(value).run(env)
 
+    @settings(deadline=None)
     @given(anything(), anything(), anything())
     def test_inequality(self, first, second, env):
         assume(first != second)

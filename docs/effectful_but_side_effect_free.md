@@ -566,7 +566,7 @@ from pfun.effect import Depends
 
 Schedule = Depends[TypeVar('R'), Iterator[datetime.timedelta]]
 ```
-In other words, a `Schedule` is is simply an effect that  succeeds with a (potentially infinite) iterator
+In other words, a `Schedule` is simply an effect that  succeeds with a (potentially infinite) iterator
 of `datetime.timedelta` instances.
 
 
