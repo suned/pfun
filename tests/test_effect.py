@@ -85,19 +85,24 @@ class TestEffect(MonadTest):
 
         assert effect.from_awaitable(f()).run(None) == 1
 
-    def test_sequence(self):
-        assert effect.sequence_async([effect.success(v) for v in range(3)]
-                                     ).run(None) == (0, 1, 2)
+    def test_gather(self):
+        assert effect.gather_async(
+            [effect.success(v) for v in range(3)]
+        ).run(None) == (0, 1, 2)
 
-    def test_sequence_generator(self):
-        e = effect.sequence_async(effect.success(v) for v in range(3))
+        assert effect.gather(
+            [effect.success(v) for v in range(3)]
+        ).run(None) == (0, 1, 2)
+
+    def test_gather_generator(self):
+        e = effect.gather_async(effect.success(v) for v in range(3))
         assert e.run(None) == (0, 1, 2)
         assert e.run(None) == (0, 1, 2)
 
     def test_stack_safety(self):
         with recursion_limit(100):
-            effect.sequence_async([effect.success(v)
-                                   for v in range(500)]).run(None)
+            effect.gather_async([effect.success(v)
+                                 for v in range(500)]).run(None)
 
         e = effect.error('')
         for _ in range(500):
@@ -415,13 +420,13 @@ class TestEffect(MonadTest):
                  ) == f'catch_cpu_bound(<class \'Exception\'>)({repr(f)})(0)'
         )
 
-    def test_sequence_async_repr(self):
-        e = effect.sequence_async([effect.success(0)])
-        assert (repr(e)) == 'sequence_async((success(0),))'
+    def test_gather_async_repr(self):
+        e = effect.gather_async([effect.success(0)])
+        assert (repr(e)) == 'gather_async((success(0),))'
 
-    def test_sequence_repr(self):
-        e = effect.sequence([effect.success(0)])
-        assert (repr(e)) == 'sequence((success(0),))'
+    def test_gather_repr(self):
+        e = effect.gather([effect.success(0)])
+        assert (repr(e)) == 'gather((success(0),))'
 
     def test_lift_repr(self):
         f = lambda _: _
@@ -498,7 +503,7 @@ class TestResource:
     def test_resources_are_unique(self):
         mock_resource = asynctest.MagicMock()
         resource = Resource(lambda: either.Right(mock_resource))
-        r1, r2 = effect.sequence_async(
+        r1, r2 = effect.gather_async(
             (resource.get(), resource.get())
         ).run(None)
         assert r1 is r2

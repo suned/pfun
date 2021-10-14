@@ -840,14 +840,14 @@ def depend(r_type=None):
     return CDepends()
 
 
-cdef class Sequence(CEffect):
+cdef class Gather(CEffect):
     cdef tuple effects
 
     def __cinit__(self, effects):
         self.effects = effects
     
     def __repr__(self):
-        return f'sequence({repr(self.effects)})'
+        return f'gather({repr(self.effects)})'
 
     async def resume(self, RuntimeEnv env):
         async def thunk():
@@ -870,19 +870,19 @@ cdef class Sequence(CEffect):
         return effect.c_and_then(f)
 
 
-cpdef CEffect sequence(effects):
+cpdef CEffect gather(effects):
     """
     Evaluate each `Effect` in `iterable`
     and collect the results
     Example:
-        >>> sequence([success(v) for v in range(3)]).run(None)
+        >>> gather([success(v) for v in range(3)]).run(None)
         (0, 1, 2)
     Args:
         iterable (Iterable[Effect[R, E, A]]): The iterable to collect results from
     Return:
         Effect[R, E, Iterable[A]]: `Effect` that produces collected results
     """
-    return Sequence(tuple(effects))
+    return Gather(tuple(effects))
 
 
 cdef class FromAwaitable(CEffect):
@@ -1293,14 +1293,14 @@ cdef class PurifyCPUBound(Purify):
         return await env.run_in_process_executor(self.f, *self.args, **self.kwargs)
 
 
-cdef class SequenceAsync(CEffect):
+cdef class GatherAsync(CEffect):
     cdef tuple effects
 
     def __cinit__(self, effects):
         self.effects = effects
     
     def __repr__(self):
-        return f'sequence_async({repr(self.effects)})'
+        return f'gather_async({repr(self.effects)})'
 
     async def sequence(self, object r):
         async def with_index(awaitable, index):
@@ -1327,19 +1327,19 @@ cdef class SequenceAsync(CEffect):
         return sequenced.c_and_then(f)
 
 
-def sequence_async(effects):
+def gather_async(effects):
     """
     Evaluate each `Effect` in `iterable` asynchronously
     and collect the results
     Example:
-        >>> sequence_async([success(v) for v in range(3)]).run(None)
+        >>> gather_async([success(v) for v in range(3)]).run(None)
         (0, 1, 2)
     Args:
         iterable (Iterable[Effect[R, E, A]]): The iterable to collect results from
     Return:
         Effect[R, E, Iterable[A]]: `Effect` that produces collected results
     """
-    return SequenceAsync.__new__(SequenceAsync, tuple(effects))
+    return GatherAsync.__new__(SequenceAsync, tuple(effects))
 
 
 def lift(f):
@@ -1358,7 +1358,7 @@ def lift(f):
     """
     @wraps(f)
     def decorator(*effects):
-        effect = sequence(effects)
+        effect = gather(effects)
         args_repr = ', '.join(repr(e) for e in effects)
         return effect.map(lambda xs: f(*xs)).with_repr(f'lift({repr(f)})({args_repr})')
     return decorator
@@ -1380,7 +1380,7 @@ def lift_async(f):
     """
     @wraps(f)
     def decorator(*effects):
-        effect = sequence_async(effects)
+        effect = gather_async(effects)
         args_repr = ', '.join(repr(e) for e in effects)
         return effect.map(lambda xs: f(*xs)).with_repr(f'lift_async({repr(f)})({args_repr})')
     return decorator
@@ -1401,7 +1401,7 @@ cdef class LiftIOBound(CEffect):
     async def resume(self, RuntimeEnv env):
         async def call_f(xs):
             return await env.run_in_thread_executor(self.f, *xs)
-        effect = sequence(self.effects)
+        effect = gather(self.effects)
         return effect.map(call_f)
 
 def lift_io_bound(f):
@@ -1443,7 +1443,7 @@ cdef class LiftCPUBound(CEffect):
     async def resume(self, RuntimeEnv env):
         async def call_f(xs):
             return await env.run_in_process_executor(self.f, *xs)
-        effect = sequence(self.effects)
+        effect = gather(self.effects)
         return effect.map(call_f)
 
 def lift_cpu_bound(f):
@@ -1565,7 +1565,7 @@ def filter_(f, iterable):
         Effect[R, E, Iterable[A]]: `iterable` mapped and filtered by `f`
     """
     iterable = tuple(iterable)
-    bools = sequence(f(a) for a in iterable)
+    bools = gather(f(a) for a in iterable)
     return bools.map(
         lambda bs: tuple(a for b, a in zip(bs, iterable) if b)
     ).with_repr(
@@ -1589,7 +1589,7 @@ def filter_async(f, iterable):
         Effect[R, E, Iterable[A]]: `iterable` mapped and filtered by `f`
     """
     iterable = tuple(iterable)
-    bools = sequence_async(f(a) for a in iterable)
+    bools = gather_async(f(a) for a in iterable)
     return bools.map(
         lambda bs: tuple(a for b, a in zip(bs, iterable) if b)
     ).with_repr(
@@ -1614,7 +1614,7 @@ def for_each(f, iterable):
         Effect[R, E, Iterable[B]]: `f` mapped over `iterable` and combined from left to right.
     """
     iterable = tuple(iterable)
-    return sequence(f(x) for x in iterable).with_repr(f'for_each({repr(f)})({repr(iterable)})')
+    return gather(f(x) for x in iterable).with_repr(f'for_each({repr(f)})({repr(iterable)})')
 
 
 @curry
@@ -1634,7 +1634,7 @@ def for_each_async(f, iterable):
         Effect[R, E, Iterable[B]]: `f` mapped over `iterable` and combined from left to right.
     """
     iterable = tuple(iterable)
-    return sequence_async(f(x) for x in iterable).with_repr(f'for_each_async({repr(f)})({repr(iterable)})')
+    return gather_async(f(x) for x in iterable).with_repr(f'for_each_async({repr(f)})({repr(iterable)})')
 
 
 def absolve(effect):
@@ -1741,8 +1741,8 @@ __all__ = [
     'Depends',
     'success',
     'depend',
-    'sequence_async',
-    'sequence',
+    'gather_async',
+    'gather',
     'filter_',
     'filter_async',
     'for_each',

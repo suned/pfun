@@ -5,7 +5,7 @@ from hypothesis import assume, given
 from pfun import List, Unary, compose, identity
 from pfun.hypothesis_strategies import anything, lists, maybes, unaries
 from pfun.maybe import (Just, Maybe, Nothing, filter_, flatten, for_each,
-                        maybe, sequence)
+                        gather, maybe)
 
 from .monad_test import MonadTest
 from .utils import recursion_limit
@@ -99,12 +99,12 @@ class TestMaybe(MonadTest):
     def test_flatten(self, maybe_list):
         assert flatten(maybe_list) == List(m.get for m in maybe_list if m)
 
-    def test_sequence(self):
-        assert sequence([Just(v) for v in range(3)]) == Just((0, 1, 2))
+    def test_gather(self):
+        assert gather([Just(v) for v in range(3)]) == Just((0, 1, 2))
 
     def test_stack_safety(self):
         with recursion_limit(100):
-            sequence([Just(v) for v in range(500)])
+            gather([Just(v) for v in range(500)])
 
     def test_filter(self):
         assert filter_(lambda v: Just(v % 2 == 0), range(3)) == Just((0, 2))

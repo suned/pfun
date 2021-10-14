@@ -484,16 +484,16 @@ Timing the execution using the unix `time` informs me this takes 5.15 seconds on
 ```python
 # call_google_async.py
 from pfun.subprocess import Subprocess
-from pfun.effect import sequence_async
+from pfun.effect import gather_async
 
 
 sp = Subprocess()
-effect = sequence_async(sp.run_in_shell('curl http://www.google.com') for _ in range(50)
+effect = gather_async(sp.run_in_shell('curl http://www.google.com') for _ in range(50)
 effect.run(None)
 ```
 
-This program finishes in 0.78 seconds, according to `time`. The crucial difference is the function `pfun.effect.sequence_async` which returns a new effect that runs its argument effects asynchronously using `asyncio`. This means that one effect can yield to other effects while waiting for input from the `curl` subprocess. This ultimately saves a lot of time compared to the synchronous implementation where each call to `subprocess.run` can only start when the preceeding one has returned.
-If any of the effects given as arguments to `sequence_async` fails, any remaining effects that have not completed yet are canceled
+This program finishes in 0.78 seconds, according to `time`. The crucial difference is the function `pfun.effect.gather_async` which returns a new effect that runs its argument effects asynchronously using `asyncio`. This means that one effect can yield to other effects while waiting for input from the `curl` subprocess. This ultimately saves a lot of time compared to the synchronous implementation where each call to `subprocess.run` can only start when the preceeding one has returned.
+If any of the effects given as arguments to `gather_async` fails, any remaining effects that have not completed yet are canceled
 automatically to avoid resource waste.
 
 You can create an effect from a Python awaitable using `pfun.effect.from_awaitable`, allowing you to integrate with `asyncio` directly in your own code:

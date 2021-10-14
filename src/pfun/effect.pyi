@@ -147,12 +147,12 @@ def from_awaitable(awaitable: Awaitable[A1]) -> Effect[object, NoReturn, A1]:
     ...
 
 
-def sequence_async(iterable: Iterable[Effect[R1, E1, A1]]
+def gather_async(iterable: Iterable[Effect[R1, E1, A1]]
                    ) -> Effect[R1, E1, Iterable[A1]]:
     ...
 
 
-def sequence(iterable: Iterable[Effect[R1, E1, A1]]
+def gather(iterable: Iterable[Effect[R1, E1, A1]]
              ) -> Effect[R1, E1, Iterable[A1]]:
     ...
 

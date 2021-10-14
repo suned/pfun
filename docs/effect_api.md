@@ -23,8 +23,8 @@
 ::: pfun.success
 ::: pfun.error
 ::: pfun.depend
-::: pfun.sequence
-::: pfun.sequence_async
+::: pfun.gather
+::: pfun.gather_async
 ::: pfun.filter_
 ::: pfun.filter_async
 ::: pfun.for_each

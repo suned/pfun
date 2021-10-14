@@ -17,6 +17,6 @@
             - or_else
 ::: pfun.either.either
 ::: pfun.either.for_each
-::: pfun.either.sequence
+::: pfun.either.gather
 ::: pfun.either.filter_
 ::: pfun.either.catch
