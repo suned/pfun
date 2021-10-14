@@ -283,6 +283,13 @@ def dicts(
 TestEffect = effect.Effect[object, Any, A]
 
 
+class TestException(Exception):
+    """
+    Dummy exception used to avoid catching any exceptions
+    unintentionally in tests.
+    """
+
+
 def effects(
     value_strategy: SearchStrategy[A],
     include_errors: bool = False,
@@ -392,21 +399,24 @@ def effects(
     from_cpu_bound_callable: SearchStrategy[TestEffect[A]] = unaries(
         rights(value_strategy)
     ).map(effect.from_cpu_bound_callable)
-    catch: SearchStrategy[TestEffect[A]] = unaries(value_strategy).flatmap(
-        lambda f: value_strategy.map(lambda a: effect.catch(Exception)(f)(a))
+    catch: SearchStrategy[TestEffect[A]] = unaries(
+        value_strategy
+    ).flatmap(
+        lambda f: value_strategy.map(
+            lambda a: effect.catch(TestException)(f)(a))
     )
     catch_io_bound: SearchStrategy[TestEffect[A]] = unaries(
         value_strategy
     ).flatmap(
         lambda f: value_strategy.map(
-            lambda a: effect.catch_io_bound(Exception)(f)(a)
+            lambda a: effect.catch_io_bound(TestException)(f)(a)
         )
     )
     catch_cpu_bound: SearchStrategy[TestEffect[A]] = unaries(
         value_strategy
     ).flatmap(
         lambda f: value_strategy.map(
-            lambda a: effect.catch_cpu_bound(Exception)(f)(a)
+            lambda a: effect.catch_cpu_bound(TestException)(f)(a)
         )
     )
 
