@@ -1339,7 +1339,7 @@ def gather_async(effects):
     Return:
         Effect[R, E, Iterable[A]]: `Effect` that produces collected results
     """
-    return GatherAsync.__new__(SequenceAsync, tuple(effects))
+    return GatherAsync.__new__(GatherAsync, tuple(effects))
 
 
 def lift(f):
