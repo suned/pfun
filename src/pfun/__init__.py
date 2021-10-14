@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from typing_extensions import Protocol
 
 from . import clock, console, files, logging, random, ref, subprocess  # noqa

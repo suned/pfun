@@ -12,7 +12,8 @@ class Random(Immutable):
     """
     def randint(self, a: int, b: int) -> Success[int]:
         """
-        Create an `Effect` that succeeds with a random integer `n` in the range `a <= n <= b`.
+        Create an `Effect` that succeeds with a random integer `n` \
+        in the range `a <= n <= b`.
 
         Args:
             a: lower bound
@@ -24,7 +25,8 @@ class Random(Immutable):
 
     def random(self) -> Success[float]:
         """
-        Create an `Effect` that succeeds with a random float between 0.0 and 1.0
+        Create an `Effect` that succeeds with a random float between \
+        0.0 and 1.0
 
         Return:
             `Effect` that succeeds with a random float
@@ -44,11 +46,12 @@ class HasRandom(Protocol):
 
 def randint(a, b) -> Depends[HasRandom, int]:
     """
-    Create an `Effect` that succeeds with a random integer `n` in the range `a <= n <= b`.
+    Create an `Effect` that succeeds with a random integer `n` in the range \
+    `a <= n <= b`.
 
     Example:
         >>> from pfun import DefaultModules
-        >>> randint(0, 1).run(DefaultModules)
+        >>> randint(0, 1).run(DefaultModules())
         0
     Args:
         a: lower bound
@@ -56,7 +59,9 @@ def randint(a, b) -> Depends[HasRandom, int]:
     Return:
         `Effect` that succeeds with a random integer
     """
-    return depend(HasRandom).and_then(lambda env: env.random.randint(a, b)).with_repr(f'randint({repr(a)}, {repr(b)})')
+    return depend(HasRandom).and_then(
+        lambda env: env.random.randint(a, b)
+    ).with_repr(f'randint({repr(a)}, {repr(b)})')
 
 
 def random() -> Depends[HasRandom, float]:
@@ -70,4 +75,6 @@ def random() -> Depends[HasRandom, float]:
     Return:
         `Effect` that succeeds with a random float
     """
-    return depend().and_then(lambda env: env.random.random()).with_repr(f'random()')
+    return depend().and_then(
+        lambda env: env.random.random()
+    ).with_repr('random()')

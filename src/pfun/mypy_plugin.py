@@ -1,14 +1,11 @@
 #  type: ignore
 
 import typing as t
-from functools import reduce
 
 from mypy import checkmember, infer
-from mypy.argmap import map_actuals_to_formals, map_formals_to_actuals
+from mypy.argmap import map_actuals_to_formals
 from mypy.checker import TypeChecker
-from mypy.expandtype import (ExpandTypeVisitor, expand_type,
-                             expand_type_by_instance,
-                             freshen_function_type_vars)
+from mypy.expandtype import freshen_function_type_vars
 from mypy.mro import MroError, calculate_mro
 from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
                         ARG_STAR2, COVARIANT, INVARIANT, Block, ClassDef,
@@ -17,11 +14,11 @@ from mypy.plugin import (AnalyzeTypeContext, AttributeContext, ClassDefContext,
                          FunctionContext, FunctionSigContext, MethodContext,
                          MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
-from mypy.type_visitor import TypeTranslator, TypeVisitor
-from mypy.types import (AnyType, Bogus, CallableType, Instance, LiteralType,
-                        Overloaded, Type, TypeAliasType, TypeOfAny, TypeVarDef,
-                        TypeVarId, TypeVarType, UninhabitedType, UnionType,
-                        _dummy, get_proper_type)
+from mypy.type_visitor import TypeTranslator
+from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
+                        TypeAliasType, TypeOfAny, TypeVarDef, TypeVarId,
+                        TypeVarType, UninhabitedType, UnionType,
+                        get_proper_type)
 from mypy.typevars import has_no_typevars
 
 from .functions import curry
@@ -90,14 +87,24 @@ class TranslateIntersection(TypeTranslator):
             args = [get_proper_type(arg) for arg in t.args]
             if any(isinstance(arg, AnyType) for arg in args):
                 return AnyType(TypeOfAny.special_form)
-            if all(hasattr(arg, 'type') and arg.type.fullname == 'builtins.object' for arg in args):
+            if all(hasattr(arg, 'type') and
+                   arg.type.fullname == 'builtins.object' for arg in args):
                 return args[0]
-            if not all(isinstance(arg, TypeVarType) or (hasattr(arg, 'type') and (arg.type.is_protocol or arg.type.fullname == 'builtins.object')) for arg in args):
+            is_typevar = lambda arg: isinstance(arg, TypeVarType)
+            has_type_attr = lambda arg: hasattr(arg, 'type')
+            is_protocol = lambda arg: arg.type.is_protocol
+            is_object = lambda arg: arg.type.fullname == 'builtins.object'
+            if not all(is_typevar(arg) or
+                       has_type_attr(arg) and
+                       (is_protocol(arg) or is_object(arg))
+                       for arg in args):
                 s = str(t)
                 if self.inferred:
-                    msg = f'All arguments to "Intersection" must be protocols but inferred "{s}"'
+                    msg = (f'All arguments to "Intersection" '
+                           f'must be protocols but inferred "{s}"')
                 else:
-                    msg = f'All arguments to "Intersection" must be protocols, but got "{s}"'
+                    msg = (f'All arguments to "Intersection" '
+                           f'must be protocols, but got "{s}"')
                 self.api.msg.fail(msg, self.context)
                 return AnyType(TypeOfAny.special_form)
             if not has_no_typevars(t):
@@ -115,7 +122,9 @@ class TranslateIntersection(TypeTranslator):
                 name,
                 Block([]),
                 [],
-                [NameExpr(arg.name) if isinstance(arg, TypeVarType) else NameExpr(arg.type.fullname) for arg in args],
+                [NameExpr(arg.name)
+                 if isinstance(arg, TypeVarType)
+                 else NameExpr(arg.type.fullname) for arg in args],
                 None,
                 []
             )
@@ -138,7 +147,6 @@ class TranslateIntersection(TypeTranslator):
                     'order (MRO) for "%s"' % defn.fullname, self.context)
                 return AnyType(TypeOfAny.special_form)
             return Instance(info, [])
-
 
         return super().visit_instance(t)
 
@@ -484,7 +492,9 @@ def _combine_hook(context: FunctionContext):
             hasattr(env_type, 'type') and env_type.type.is_protocol
             for env_type in env_types
         ):
-            combined_env_type = _create_intersection(env_types, context.context, context.api)
+            combined_env_type = _create_intersection(env_types,
+                                                     context.context,
+                                                     context.api)
         else:
             combined_env_type = ret_type_args[0]
         ret_type_args[0] = combined_env_type
@@ -497,7 +507,7 @@ def _combine_hook(context: FunctionContext):
             ret_type=ret_type,
             fallback=context.api.named_type('builtins.function')
         )
-    except AttributeError as e:
+    except AttributeError:
         return context.default_return_type
 
 
@@ -744,7 +754,9 @@ def _intersection_analyze_hook(context):
 
 
 def _intersection_hook(context: FunctionSigContext):
-    if 'pfun.Intersection' not in str(context.default_signature) or not context.default_signature.is_generic():
+    has_intersection = 'pfun.Intersection' in str(context.default_signature)
+    is_generic = context.default_signature.is_generic()
+    if not has_intersection or not is_generic:
         return context.default_signature
     formal_to_actual = map_actuals_to_formals(
         context.context.arg_kinds,
@@ -754,19 +766,33 @@ def _intersection_hook(context: FunctionSigContext):
         lambda i: context.api.expr_checker.accept(context.args[0][i])
     )
     callee = freshen_function_type_vars(context.default_signature)
-    callee = context.api.expr_checker.infer_function_type_arguments_using_context(
-        callee, context.context)
+    callee = (context
+              .api
+              .expr_checker
+              .infer_function_type_arguments_using_context(callee,
+                                                           context.context))
     args = [arg for args in context.args for arg in args]
     callee = context.api.expr_checker.infer_function_type_arguments(
-        callee, args, context.context.arg_kinds, formal_to_actual, context.context)
-    intersection_translator = TranslateIntersection(context.api, context.context, inferred=True)
+        callee, args,
+        context.context.arg_kinds,
+        formal_to_actual,
+        context.context
+    )
+    intersection_translator = TranslateIntersection(context.api,
+                                                    context.context,
+                                                    inferred=True)
     translated = callee.accept(intersection_translator)
     return translated
 
 
+C = t.TypeVar('C')
+T = t.TypeVar('T')
+Hook = t.Optional[t.Callable[[C], T]]
+
+
 class PFun(Plugin):
     def get_function_hook(self, fullname: str
-                          ) -> t.Optional[t.Callable[[FunctionContext], Type]]:
+                          ) -> Hook[FunctionContext, Type]:
         if fullname in ('pfun.effect.catch',
                         'pfun.effect.catch_cpu_bound',
                         'pfun.effect.catch_io_bound'):
@@ -776,7 +802,14 @@ class PFun(Plugin):
         if fullname == _COMPOSE:
             return _compose_hook
         if fullname in (
-            _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all', 'pfun.effect.purify', 'pfun.effect.purify_io_bound', 'pfun.effect.purify_cpu_bound'
+            _MAYBE,
+            _RESULT,
+            _EITHER,
+            _EITHER_CATCH,
+            'pfun.effect.catch_all',
+            'pfun.effect.purify',
+            'pfun.effect.purify_io_bound',
+            'pfun.effect.purify_cpu_bound'
         ):
             return _variadic_decorator_hook
         if fullname in ('pfun.effect.combine',
@@ -789,7 +822,8 @@ class PFun(Plugin):
         return None
 
     def get_function_signature_hook(self, fullname: str
-                                    ) -> t.Optional[t.Callable[[FunctionSigContext], CallableType]]:
+                                    ) -> Hook[FunctionSigContext,
+                                              CallableType]:
         return _intersection_hook
 
     def get_method_hook(self, fullname: str):
@@ -824,7 +858,7 @@ class PFun(Plugin):
         return _immutable_hook
 
     def get_type_analyze_hook(self, fullname: str
-                              ) -> t.Optional[t.Callable[[AnalyzeTypeContext], Type]]:
+                              ) -> Hook[AnalyzeTypeContext, Type]:
         if fullname == 'pfun.Intersection':
             return _intersection_analyze_hook
 

@@ -21,7 +21,8 @@ class Clock(Immutable):
         """
         return effect.from_awaitable(asyncio.sleep(seconds))
 
-    def now(self, tz: datetime.tzinfo = None) -> effect.Success[datetime.datetime]:
+    def now(self, tz: datetime.tzinfo = None
+            ) -> effect.Success[datetime.datetime]:
         """
         Create an `Effect` that succeeds with the current datetime
 
@@ -54,10 +55,13 @@ def sleep(seconds: float) -> effect.Depends[HasClock, None]:
     Return:
         `Effect` that suspends execution for `seconds`
     """
-    return effect.depend().and_then(lambda env: env.clock.sleep(seconds)).with_repr(f"sleep({seconds})")
+    return effect.depend().and_then(
+        lambda env: env.clock.sleep(seconds)
+    ).with_repr(f"sleep({seconds})")
 
 
-def now(tz: datetime.tzinfo = None) -> effect.Depends[HasClock, datetime.datetime]:
+def now(tz: datetime.tzinfo = None
+        ) -> effect.Depends[HasClock, datetime.datetime]:
     """
     Create an `Effect` that succeeds with the current datetime
     Example:
@@ -68,4 +72,6 @@ def now(tz: datetime.tzinfo = None) -> effect.Depends[HasClock, datetime.datetim
     Return:
         `Effect` that succeeds with the current datetime
     """
-    return effect.depend().and_then(lambda env: env.clock.now(tz)).with_repr(f"now({tz})")
+    return effect.depend().and_then(
+        lambda env: env.clock.now(tz)
+    ).with_repr(f"now({tz})")

@@ -302,11 +302,13 @@ class TestEffect(MonadTest):
 
     def test_repeat_error(self):
         s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
-        assert effect.error('whoops').repeat(s).either().run(MockModules()) == either.Left('whoops')
+        assert (effect.error('whoops').repeat(s).either().run(MockModules()) ==
+                either.Left('whoops'))
 
     def test_retry(self):
         s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
-        assert effect.error('whoops').retry(s).either().run(MockModules()) == either.Left(('whoops', 'whoops'))
+        assert (effect.error('whoops').retry(s).either().run(MockModules()) ==
+                either.Left(('whoops', 'whoops')))
 
     def test_retry_success(self):
         s = schedule.recurs(2, schedule.spaced(timedelta(seconds=1)))
@@ -791,8 +793,10 @@ class TestClock:
 
     def test_now(self):
         with mock.patch('pfun.clock.datetime.datetime') as datetime_mock:
-            datetime_mock.now.return_value = datetime.datetime.utcfromtimestamp(0)
-            assert clock.now().run(DefaultModules()) == datetime_mock.now.return_value
+            datetime_mock.now.return_value = (datetime
+                                              .datetime.utcfromtimestamp(0))
+            assert (clock.now().run(DefaultModules()) ==
+                    datetime_mock.now.return_value)
 
 
 class TestRandom:

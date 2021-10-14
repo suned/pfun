@@ -1,4 +1,3 @@
-from datetime import timedelta
 from string import printable
 from typing import (Any, Callable, Generic, Iterable, NoReturn, Tuple, TypeVar,
                     Union)
