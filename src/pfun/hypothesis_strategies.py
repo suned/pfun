@@ -303,7 +303,7 @@ def effects(
         value_strategy: search strategy used to draw success values
         include_errors: whether to include effects that fail
         max_size: max size of effects that produces iterables \
-            (such as `pfun.effect.sequence`)
+            (such as `pfun.effect.gather`)
         max_leaves: max number of leaf effects \
             (`pfun.effect.success`, `pfun.effect.from_callable` etc) \
             to be drawn
@@ -338,14 +338,16 @@ def effects(
         with_repr = children.flatmap(
             lambda e: text(printable).map(lambda s: e.with_repr(s))
         )
-        sequence: SearchStrategy[TestEffect[Iterable[A]]
-                                 ] = lists_(children,
-                                            max_size=10).map(effect.sequence)
-        sequence_async: SearchStrategy[TestEffect[Iterable[A]]] = lists_(
+        gather: SearchStrategy[TestEffect[Iterable[A]]] = lists_(
+            children,
+            max_size=10).map(
+            effect.gather
+        )
+        gather_async: SearchStrategy[TestEffect[Iterable[A]]] = lists_(
             children,
             max_size=max_size
         ).map(
-            effect.sequence_async
+            effect.gather_async
         )
         lift = unaries(value_strategy).flatmap(
             lambda f: children.map(lambda e: effect.lift(f)(e))
@@ -376,8 +378,8 @@ def effects(
             memoize,
             ensure,
             with_repr,
-            sequence,
-            sequence_async,
+            gather,
+            gather_async,
             lift,
             lift_io_bound,
             lift_cpu_bound,

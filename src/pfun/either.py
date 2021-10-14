@@ -220,7 +220,7 @@ def either(f: Callable[..., A]) -> Callable[..., Either[A, B]]:
     return decorator
 
 
-def sequence(iterable: Iterable[Either[A, B]]) -> Either[A, Iterable[B]]:
+def gather(iterable: Iterable[Either[A, B]]) -> Either[A, Iterable[B]]:
     """
     Evaluate each ``Either`` in `iterable` from left to right
     and collect the results
@@ -350,7 +350,7 @@ __all__ = [
     'Right',
     'either',
     'for_each',
-    'sequence',
+    'gather',
     'filter_',
     'catch'
 ]

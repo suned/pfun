@@ -185,13 +185,13 @@ def for_each(f: Callable[[A], List[B]], iterable: Iterable[A]
     return cast(List[Iterable[B]], map_m_(value, f, iterable))
 
 
-def sequence(iterable: Iterable[List[A]]) -> List[Iterable[A]]:
+def gather(iterable: Iterable[List[A]]) -> List[Iterable[A]]:
     """
     Evaluate each `List` in `iterable` from left to right
     and collect the results
 
     Example:
-        >>> sequence([List([v]) for v in range(3)])
+        >>> gather([List([v]) for v in range(3)])
         List(((0, 1, 2),))
 
     Args:
@@ -223,5 +223,5 @@ def filter_(f: Callable[[A], List[bool]], iterable: Iterable[A]
 
 
 __all__ = [
-    'List', 'value', 'for_each', 'sequence', 'filter_'
+    'List', 'value', 'for_each', 'gather', 'filter_'
 ]

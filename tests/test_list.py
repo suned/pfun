@@ -8,7 +8,7 @@ from hypothesis.strategies import lists as lists_
 
 from pfun import List, compose, identity
 from pfun.hypothesis_strategies import anything, lists, unaries
-from pfun.list import filter_, for_each, sequence, value
+from pfun.list import filter_, for_each, gather, value
 
 from .monad_test import MonadTest
 from .utils import recursion_limit
@@ -111,12 +111,12 @@ class TestList(MonadTest):
     def test_zip(self, l1, l2):
         assert List(l1.zip(l2)) == List(zip(l1, l2))
 
-    def test_sequence(self):
-        assert sequence([value(v) for v in range(3)]) == value((0, 1, 2))
+    def test_gather(self):
+        assert gather([value(v) for v in range(3)]) == value((0, 1, 2))
 
     def test_stack_safety(self):
         with recursion_limit(100):
-            sequence([value(v) for v in range(500)])
+            gather([value(v) for v in range(500)])
 
     def test_filter_(self):
         assert filter_(lambda v: value(v % 2 == 0), range(3)) == value((0, 2))

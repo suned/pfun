@@ -171,13 +171,13 @@ def for_each(f: Callable[[A], Maybe[B]], iterable: Iterable[A]
     return cast(Maybe[Iterable[B]], map_m_(Just, f, iterable))
 
 
-def sequence(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
+def gather(iterable: Iterable[Maybe[A]]) -> Maybe[Iterable[A]]:
     """
     Evaluate each `Maybe` in `iterable` from left to right
     and collect the results
 
     Example:
-        >>> sequence([Just(v) for v in range(3)])
+        >>> gather([Just(v) for v in range(3)])
         Just((0, 1, 2))
     Args:
         iterable: The iterable to collect results from
@@ -272,7 +272,7 @@ __all__ = [
     'maybe',
     'flatten',
     'for_each',
-    'sequence',
+    'gather',
     'filter_',
     'from_optional'
 ]
