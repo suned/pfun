@@ -776,7 +776,7 @@ class PFun(Plugin):
         if fullname == _COMPOSE:
             return _compose_hook
         if fullname in (
-            _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all', 'pfun.effect.purify'
+            _MAYBE, _RESULT, _EITHER, _EITHER_CATCH, 'pfun.effect.catch_all', 'pfun.effect.purify', 'pfun.effect.purify_io_bound', 'pfun.effect.purify_cpu_bound'
         ):
             return _variadic_decorator_hook
         if fullname in ('pfun.effect.combine',

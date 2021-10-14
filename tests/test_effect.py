@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import warnings
 from contextlib import ExitStack
 from datetime import timedelta
 from subprocess import CalledProcessError
@@ -314,6 +315,8 @@ class TestEffect(MonadTest):
     @given(anything(), unaries(anything()))
     def test_purify(self, x, f):
         assert effect.purify(f)(x).run(None) == f(x)
+        assert effect.purify_io_bound(f)(x).run(None) == f(x)
+        assert effect.purify_cpu_bound(f)(x).run(None) == f(x)
 
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'
@@ -362,6 +365,7 @@ class TestEffect(MonadTest):
     def test_depend_repr(self):
         assert repr(effect.depend()) == 'depend()'
 
+    @pytest.mark.filterwarnings("ignore:coroutine .+ was never awaited")
     def test_from_awaitable_repr(self):
         async def f():
             pass

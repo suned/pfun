@@ -1204,6 +1204,48 @@ def purify(f):
     return decorator
 
 
+def purify_io_bound(f):
+    """
+    Decorator to wrap side-effects of `f`.
+    Example:
+        >>> purify_io_bound(print)('Hello!').run(None)
+        Hello!
+    Args:
+        f ( (*A, **B) -> C): Function to wrap side-effects of
+    Return:
+        (*A, **B) -> Success[C]: `f` decorated to wrap side-effects
+    """
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'argument to purify_io_bound must not be async, got: {repr(f)}'
+        )
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        return PurifyIOBound(f, args, kwargs)
+    return decorator
+
+
+def purify_cpu_bound(f):
+    """
+    Decorator to wrap side-effects of `f`.
+    Example:
+        >>> purify_cpu_bound(print)('Hello!').run(None)
+        Hello!
+    Args:
+        f ( (*A, **B) -> C): Function to wrap side-effects of
+    Return:
+        (*A, **B) -> Success[C]: `f` decorated to wrap side-effects
+    """
+    if asyncio.iscoroutinefunction(f):
+        raise ValueError(
+            f'argument to purify_cpu_bound must not be async, got: {repr(f)}'
+        )
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        return PurifyCPUBound(f, args, kwargs)
+    return decorator
+
+
 cdef class Purify(CEffect):
     cdef object f
     cdef tuple args
@@ -1218,17 +1260,37 @@ cdef class Purify(CEffect):
         sig_repr = _get_sig_repr(self.args, self.kwargs)
         return f'purify({repr(self.f)})({sig_repr})'
 
-    async def resume(self, RuntimeEnv env):
+    async def _call_f(self, RuntimeEnv env):
         if asyncio.iscoroutinefunction(self.f):
-            result = await self.f(*self.args, **self.kwargs)
+            return await self.f(*self.args, **self.kwargs)
         else:
-            result = self.f(*self.args, **self.kwargs)
+            return self.f(*self.args, **self.kwargs)
+
+    async def resume(self, RuntimeEnv env):
+        result = await self._call_f(env)
         return CSuccess(result)
 
     async def apply_continuation(self, object f, RuntimeEnv env):
         cdef CEffect effect = await self.resume(env)
         return effect.c_and_then(f)
 
+
+cdef class PurifyIOBound(Purify):
+    def __repr__(self):
+        sig_repr = _get_sig_repr(self.args, self.kwargs)
+        return f'purify_io_bound{repr(self.f)})({sig_repr})'
+
+    async def _call_f(self, RuntimeEnv env):
+        return await env.run_in_thread_executor(self.f, *self.args, **self.kwargs)
+
+
+cdef class PurifyCPUBound(Purify):
+    def __repr__(self):
+        sig_repr = _get_sig_repr(self.args, self.kwargs)
+        return f'purify_cpu_bound{repr(self.f)})({sig_repr})'
+
+    async def _call_f(self, RuntimeEnv env):
+        return await env.run_in_process_executor(self.f, *self.args, **self.kwargs)
 
 
 cdef class SequenceAsync(CEffect):
@@ -1700,6 +1762,8 @@ __all__ = [
     'catch_io_bound',
     'catch_cpu_bound',
     'purify',
+    'purify_io_bound',
+    'purify_cpu_bound',
     'from_awaitable',
     'from_callable',
     'from_io_bound_callable',

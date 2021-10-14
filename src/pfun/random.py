@@ -32,7 +32,7 @@ class Random(Immutable):
         return purify(random_.random)()
 
 
-class HasRandom(Immutable, Protocol):
+class HasRandom(Protocol):
     """
     Module provider for the random module
 

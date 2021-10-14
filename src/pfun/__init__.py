@@ -41,14 +41,14 @@ class Intersection(Protocol):
     pass
 
 
-class DefaultModules(Immutable, init=False):
+class DefaultModules:
     """
     Module provider that provides live implementations
     of default pfun modules.
 
     Example:
         >>> from pfun import console, random, DefaultModules
-        >>> random.random().and_then(console.print).run(DefaultModules)
+        >>> random.random().and_then(console.print).run(DefaultModules())
         0.51351531
     Attributes:
         files: The files module
@@ -62,7 +62,7 @@ class DefaultModules(Immutable, init=False):
     clock: 'clock.Clock'
 
     def __init__(self):
-        object.__setattr__(self, 'files', files.Files())
-        object.__setattr__(self, 'console', console.Console())
-        object.__setattr__(self, 'random', random.Random())
-        object.__setattr__(self, 'clock', clock.Clock())
+        self.files = files.Files()
+        self.console = console.Console()
+        self.random = random.Random()
+        self.clock = clock.Clock()

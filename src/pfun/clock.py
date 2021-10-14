@@ -33,7 +33,7 @@ class Clock(Immutable):
         return effect.purify(datetime.datetime.now)(tz)
 
 
-class HasClock(Immutable, Protocol):
+class HasClock(Protocol):
     """
     Module provider for the clock capability.
 
