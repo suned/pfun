@@ -14,7 +14,9 @@ def test_spaced():
 
 def test_exponential():
     deltas = schedule.exponential(two_seconds).run(None)
-    assert list(itertools.islice(deltas, 3)) == [two_seconds, two_seconds * 2, two_seconds * 4]
+    assert list(itertools.islice(deltas, 3)) == [two_seconds,
+                                                 two_seconds * 2,
+                                                 two_seconds * 4]
 
 
 def test_recurs():
@@ -31,7 +33,10 @@ def test_take_while():
 
 
 def test_until():
-    deltas = schedule.until(timedelta(seconds=8), schedule.exponential(two_seconds)).run(None)
+    deltas = schedule.until(
+        timedelta(seconds=8),
+        schedule.exponential(two_seconds)
+    ).run(None)
     assert list(deltas) == [two_seconds, two_seconds * 2]
 
 
