@@ -44,7 +44,7 @@ class HasRandom(Protocol):
     random: Random
 
 
-def randint(a, b) -> Depends[HasRandom, int]:
+def randint(a: int, b: int) -> Depends[HasRandom, int]:
     """
     Create an `Effect` that succeeds with a random integer `n` in the range \
     `a <= n <= b`.

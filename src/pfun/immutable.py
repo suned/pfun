@@ -16,13 +16,16 @@ class Immutable:
 
     """
 
-    def __init_subclass__(
-        cls, init=True, repr=True, eq=True, order=False, unsafe_hash=False
-    ):
+    def __init_subclass__(cls,
+                          init: bool = True,
+                          repr: bool = True,
+                          eq: bool = True,
+                          order: bool = False,
+                          unsafe_hash: bool = False) -> None:
         super().__init_subclass__()
         if not hasattr(cls, '__annotations__'):
             cls.__annotations__ = {}
-        return dataclass(
+        dataclass(
             frozen=True, init=init, repr=repr, eq=eq, order=order
         )(cls)
 

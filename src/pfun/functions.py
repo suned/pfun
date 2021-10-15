@@ -46,7 +46,7 @@ class Always(Generic[A], Immutable):
     """
     value: A
 
-    def __call__(self, *args, **kwargs) -> A:
+    def __call__(self, *args: object, **kwargs: object) -> A:
         return self.value
 
 
@@ -78,7 +78,7 @@ class Composition(Immutable):
         functions_repr = ', '.join(repr(f) for f in self.functions)
         return f'compose({functions_repr})'
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: object, **kwargs: object) -> Any:
         fs = reversed(self.functions)
         first, *rest = fs
         last_result = first(*args, **kwargs)
@@ -123,7 +123,7 @@ def pipeline(
     first: Callable[[Any], Any],
     second: Callable[[Any], Any],
     *rest: Callable[[Any], Any]
-):
+) -> Callable[[Any], Any]:
     """
     Compose functions from right to left
 
@@ -135,8 +135,8 @@ def pipeline(
 
     Args:
         first: the innermost function in the composition
-        g: the function to compose with f
-        functions: functions to compose with `first` and \
+        second: The second-innermost function in the composition
+        rest: functions to compose with `first` and \
         `second` from right to left
 
     Return:
@@ -153,10 +153,10 @@ class Curry:
         functools.wraps(f)(self)
         self._f = f  # type: ignore
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'curry({repr(self._f)})'
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: object, **kwargs: object) -> Any:
         signature = inspect.signature(self._f)
         bound = signature.bind_partial(*args, **kwargs)
         bound.apply_defaults()
@@ -194,7 +194,7 @@ def curry(f: Callable) -> Callable:
         Curried version of ``f``
     """
     @functools.wraps(f)
-    def decorator(*args, **kwargs):
+    def decorator(*args: object, **kwargs: object) -> Any:
         return Curry(f)(*args, **kwargs)
 
     return decorator

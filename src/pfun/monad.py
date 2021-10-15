@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Tuple
 
 from .functions import curry
 from .functor import Functor
@@ -50,7 +50,7 @@ def filter_m_(
     f: Callable[[Any], Monad],
     iterable: Iterable
 ) -> Monad:
-    def combine(ms, mbx):
+    def combine(ms: Monad, mbx: Tuple) -> Monad:
         mb, x = mbx
         return ms.and_then(
             lambda xs: mb.and_then(lambda b: value(xs + (x, ) if b else xs))
