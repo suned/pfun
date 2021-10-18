@@ -20,6 +20,8 @@ from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
                         TypeVarType, UninhabitedType, UnionType,
                         get_proper_type)
 from mypy.typevars import has_no_typevars
+from mypy.subtypes import is_protocol_implementation
+from mypy.messages import format_type_distinctly
 
 from .functions import curry
 
@@ -785,6 +787,21 @@ def _intersection_hook(context: FunctionSigContext):
     return translated
 
 
+def _provide_hook(ctx: MethodContext) -> Type:
+    arg = ctx.arg_types[0][0]
+    intersection: Instance = ctx.default_return_type
+    satisfied = [b for b in intersection.type.bases
+                 if is_protocol_implementation(arg, b)]
+    if satisfied == []:
+        union = UnionType.make_union(intersection.type.bases)
+        arg_type_str, union_str = format_type_distinctly(arg, union)
+        msg = f'Argument 1 to "f" has incompatible type {arg_type_str}; expected {union_str}'
+        ctx.api.fail(msg, ctx.context)
+        return ctx.default_return_type
+    new_bases = [b for b in intersection.type.bases if b not in satisfied]
+    return _create_intersection(new_bases, ctx.context, ctx.api)
+
+
 C = t.TypeVar('C')
 T = t.TypeVar('T')
 Hook = t.Optional[t.Callable[[C], T]]
@@ -840,6 +857,8 @@ class PFun(Plugin):
             'pfun.lens.RootLens.__getitem__', 'pfun.lens.Lens.__getitem__'
         ):
             return _lens_getitem_hook
+        if fullname == 'pfun.effect.Effect.provide':
+            return _provide_hook
 
     def get_attribute_hook(self, fullname: str):
         if fullname.startswith('pfun.lens.RootLens'
