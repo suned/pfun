@@ -558,7 +558,7 @@ assert slow_effect.race(fast_effect).run(DefaultModules()) == 'Born ready!'
 simply a type-alias:
 
 ```python
-from typing import Iterator
+from typing import TypeVar, Iterator
 import datetime
 
 from pfun.effect import Depends
