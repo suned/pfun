@@ -25,10 +25,10 @@ class Dict(Immutable, Mapping[K, V], init=False):
             d = d._d
         object.__setattr__(self, '_d', dict(d))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Dict({repr(self._d)})'
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Compare `self` with `other`
 

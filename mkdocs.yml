@@ -44,13 +44,14 @@ theme:
         primary: blue
     logo: nav_logo.svg
     favicon: nav_logo.svg
+    custom_dir: docs/overrides
 markdown_extensions:
     - codehilite
     - admonition
 plugins:
     - search
     - mkdocstrings:
-        custom_templates: templates
+        custom_templates: docs/templates
         handlers:
             python:
               rendering:

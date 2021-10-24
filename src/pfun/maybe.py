@@ -54,7 +54,7 @@ class Just(Generic[A], Maybe_):
             return False
         return other.get == self.get
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Just({repr(self.get)})'
 
     def __bool__(self) -> Literal[True]:
@@ -121,7 +121,7 @@ def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
 
     """
     @wraps(f)
-    def dec(*args, **kwargs):
+    def dec(*args: object, **kwargs: object) -> Maybe[B]:
         try:
             return Just(f(*args, **kwargs))
         except:  # noqa

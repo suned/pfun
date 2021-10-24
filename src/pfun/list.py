@@ -11,7 +11,7 @@ B = TypeVar('B')
 
 class List(Monad, Tuple[A, ...]):
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"List({super().__repr__()})"
 
     def empty(self) -> 'List[A]':

@@ -83,7 +83,7 @@ class TranslateIntersection(TypeTranslator):
         return t.accept(self)
 
     def visit_instance(self, t: Instance) -> Type:
-        if 'pfun.Intersection' in t.type.fullname:
+        if 'pfun.Intersection' == t.type.fullname:
             args = [get_proper_type(arg) for arg in t.args]
             if any(isinstance(arg, AnyType) for arg in args):
                 return AnyType(TypeOfAny.special_form)
@@ -116,7 +116,7 @@ class TranslateIntersection(TypeTranslator):
                 bases.extend(self.get_bases(arg, []))
             if len(bases) == 1:
                 return bases[0]
-            bases_repr = ', '.join(sorted([repr(base) for base in bases]))
+            bases_repr = ', '.join([repr(base) for base in bases])
             name = f'Intersection[{bases_repr}]'
             defn = ClassDef(
                 name,
