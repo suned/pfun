@@ -16,7 +16,7 @@
       
       
       <link rel="shortcut icon" href="../nav_logo.svg">
-      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-5.5.14">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-5.5.14">
     
     
       
@@ -348,6 +348,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../pfun_api/" title="pfun" class="md-nav__link">
+      pfun
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../functions_api/" title="pfun.functions" class="md-nav__link">
       pfun.functions
     </a>
@@ -372,8 +384,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../ref_api/" title="pfun.ref" class="md-nav__link">
-      pfun.ref
+    <a href="../schedule_api/" title="pfun.schedule" class="md-nav__link">
+      pfun.schedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../state_api/" title="pfun.state" class="md-nav__link">
+      pfun.state
     </a>
   </li>
 
@@ -398,6 +422,30 @@
   <li class="md-nav__item">
     <a href="../files_api/" title="pfun.files" class="md-nav__link">
       pfun.files
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../clock_api/" title="pfun.clock" class="md-nav__link">
+      pfun.clock
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../random_api/" title="pfun.random" class="md-nav__link">
+      pfun.random
     </a>
   </li>
 
@@ -536,22 +584,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#pfun.maybe.Just.and_then" class="md-nav__link">
-    and_then()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#pfun.maybe.Just.map" class="md-nav__link">
     map()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pfun.maybe.Just.or_else" class="md-nav__link">
-    or_else()
   </a>
   
 </li>
@@ -577,22 +611,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#pfun.maybe.Nothing.and_then" class="md-nav__link">
-    and_then()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#pfun.maybe.Nothing.map" class="md-nav__link">
     map()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pfun.maybe.Nothing.or_else" class="md-nav__link">
-    or_else()
   </a>
   
 </li>
@@ -624,8 +644,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pfun.maybe.sequence" class="md-nav__link">
-    sequence()
+  <a href="#pfun.maybe.gather" class="md-nav__link">
+    gather()
   </a>
   
 </li>
@@ -779,22 +799,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#pfun.maybe.Just.and_then" class="md-nav__link">
-    and_then()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#pfun.maybe.Just.map" class="md-nav__link">
     map()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pfun.maybe.Just.or_else" class="md-nav__link">
-    or_else()
   </a>
   
 </li>
@@ -820,22 +826,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#pfun.maybe.Nothing.and_then" class="md-nav__link">
-    and_then()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#pfun.maybe.Nothing.map" class="md-nav__link">
     map()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pfun.maybe.Nothing.or_else" class="md-nav__link">
-    or_else()
   </a>
   
 </li>
@@ -867,8 +859,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pfun.maybe.sequence" class="md-nav__link">
-    sequence()
+  <a href="#pfun.maybe.gather" class="md-nav__link">
+    gather()
   </a>
   
 </li>
@@ -1012,68 +1004,6 @@
 
 
 
-  <div class="doc doc-object doc-method">
-
-
-
-<h2 class="doc doc-heading" id="pfun.maybe.Just.and_then">
-<code class="codehilite language-python"><span class="n">and_then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></code>
-        
-
-</h2>
-
-    <div class="doc doc-contents ">
-
-      <p>Chain together functional calls, carrying along the state of the
-computation that may fail.</p>
-
-<p><strong>Examples:</strong></p>
-    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">Just</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">i</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">Nothing</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-<span class="n">Just</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-<span class="n">Nothing</span><span class="p">()</span>
-</code></pre></div>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>f</code></td>
-        <td><code>Callable[[+A], Maybe[B]]</code></td>
-        <td><p>the function to call</p></td>
-        <td><em>required</em></td>
-      </tr>
-  </tbody>
-</table>
-<p><strong>Returns:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Maybe[B]</code></td>
-      <td><p><code>Just</code> wrapping a value of type A if             the computation was successful, <code>Nothing</code> otherwise.</p></td>
-    </tr>
-  </tbody>
-</table>
-    </div>
-
-  </div>
-
-
 
   <div class="doc doc-object doc-method">
 
@@ -1087,115 +1017,14 @@ computation that may fail.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Map the result of a possibly failed computation</p>
+      <p>Map function <code>f</code> over the value wrapped by this functor</p>
+<p>:param f: The function to apply to the value wrapped by this Functor
+:return: The result of applying <code>f</code> to the wrapped value</p>
 
-<p><strong>Examples:</strong></p>
-    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">Just</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">i</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">Nothing</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="n">Just</span><span class="p">(</span><span class="s1">&#39;0.5&#39;</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="n">Nothing</span><span class="p">()</span>
-</code></pre></div>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>f</code></td>
-        <td><code>Callable[[+A], ~B]</code></td>
-        <td><p>Function to apply to the result</p></td>
-        <td><em>required</em></td>
-      </tr>
-  </tbody>
-</table>
-<p><strong>Returns:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Maybe[B]</code></td>
-      <td><p><code>Just</code> wrapping result of type B if the computation was</p></td>
-    </tr>
-  </tbody>
-</table>
     </div>
 
   </div>
 
-
-
-  <div class="doc doc-object doc-method">
-
-
-
-<h2 class="doc doc-heading" id="pfun.maybe.Just.or_else">
-<code class="codehilite language-python"><span class="n">or_else</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span></code>
-        
-
-</h2>
-
-    <div class="doc doc-contents ">
-
-      <p>Try to get the result of the possibly failed computation if it was
-successful.</p>
-
-<p><strong>Examples:</strong></p>
-    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">or_else</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="mi">1</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Nothing</span><span class="p">()</span><span class="o">.</span><span class="n">or_else</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="mi">2</span>
-</code></pre></div>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>default</code></td>
-        <td><code>~B</code></td>
-        <td><p>Value to return if computation has failed</p></td>
-        <td><em>required</em></td>
-      </tr>
-  </tbody>
-</table>
-<p><strong>Returns:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Union[+A, ~B]</code></td>
-      <td><p><code>value</code> if this is <code>Just(value)</code>, <code>default_value</code> if this <code>Nothing</code></p></td>
-    </tr>
-  </tbody>
-</table>
-    </div>
-
-  </div>
 
 
 
@@ -1294,68 +1123,6 @@ successful.</p>
 
 
 
-  <div class="doc doc-object doc-method">
-
-
-
-<h2 class="doc doc-heading" id="pfun.maybe.Nothing.and_then">
-<code class="codehilite language-python"><span class="n">and_then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></code>
-        
-
-</h2>
-
-    <div class="doc doc-contents ">
-
-      <p>Chain together functional calls, carrying along the state of the
-computation that may fail.</p>
-
-<p><strong>Examples:</strong></p>
-    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">Just</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">i</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">Nothing</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-<span class="n">Just</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-<span class="n">Nothing</span><span class="p">()</span>
-</code></pre></div>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>f</code></td>
-        <td><code>Callable[[+A], Maybe[B]]</code></td>
-        <td><p>the function to call</p></td>
-        <td><em>required</em></td>
-      </tr>
-  </tbody>
-</table>
-<p><strong>Returns:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Maybe[B]</code></td>
-      <td><p><code>Just</code> wrapping a value of type A if             the computation was successful, <code>Nothing</code> otherwise.</p></td>
-    </tr>
-  </tbody>
-</table>
-    </div>
-
-  </div>
-
-
 
   <div class="doc doc-object doc-method">
 
@@ -1369,115 +1136,14 @@ computation that may fail.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Map the result of a possibly failed computation</p>
+      <p>Map function <code>f</code> over the value wrapped by this functor</p>
+<p>:param f: The function to apply to the value wrapped by this Functor
+:return: The result of applying <code>f</code> to the wrapped value</p>
 
-<p><strong>Examples:</strong></p>
-    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">Just</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">i</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">Nothing</span><span class="p">()</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="n">Just</span><span class="p">(</span><span class="s1">&#39;0.5&#39;</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">and_then</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="n">Nothing</span><span class="p">()</span>
-</code></pre></div>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>f</code></td>
-        <td><code>Callable[[Any], ~B]</code></td>
-        <td><p>Function to apply to the result</p></td>
-        <td><em>required</em></td>
-      </tr>
-  </tbody>
-</table>
-<p><strong>Returns:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Maybe[B]</code></td>
-      <td><p><code>Just</code> wrapping result of type B if the computation was</p></td>
-    </tr>
-  </tbody>
-</table>
     </div>
 
   </div>
 
-
-
-  <div class="doc doc-object doc-method">
-
-
-
-<h2 class="doc doc-heading" id="pfun.maybe.Nothing.or_else">
-<code class="codehilite language-python"><span class="n">or_else</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span></code>
-        
-
-</h2>
-
-    <div class="doc doc-contents ">
-
-      <p>Try to get the result of the possibly failed computation if it was
-successful.</p>
-
-<p><strong>Examples:</strong></p>
-    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">Just</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">or_else</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="mi">1</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Nothing</span><span class="p">()</span><span class="o">.</span><span class="n">or_else</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="mi">2</span>
-</code></pre></div>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>default</code></td>
-        <td><code>~B</code></td>
-        <td><p>Value to return if computation has failed</p></td>
-        <td><em>required</em></td>
-      </tr>
-  </tbody>
-</table>
-<p><strong>Returns:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Union[+A, ~B]</code></td>
-      <td><p><code>value</code> if this is <code>Just(value)</code>, <code>default_value</code> if this <code>Nothing</code></p></td>
-    </tr>
-  </tbody>
-</table>
-    </div>
-
-  </div>
 
 
 
@@ -1687,8 +1353,8 @@ from left to right and collect the results</p>
 
 
 
-<h1 class="doc doc-heading" id="pfun.maybe.sequence">
-<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">maybe</span><span class="o">.</span><span class="n">sequence</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span></code>
+<h1 class="doc doc-heading" id="pfun.maybe.gather">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">maybe</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span></code>
 
 
 </h1>
@@ -1699,7 +1365,7 @@ from left to right and collect the results</p>
 and collect the results</p>
 
 <p><strong>Examples:</strong></p>
-    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">sequence</span><span class="p">([</span><span class="n">Just</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)])</span>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">gather</span><span class="p">([</span><span class="n">Just</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)])</span>
 <span class="n">Just</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 </code></pre></div>
 
@@ -1881,56 +1547,6 @@ and combine from left to right.</p>
       </main>
       
         
-<footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
-        
-          <a href="../dict_api/" title="pfun.dict" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-            </div>
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                pfun.dict
-              </div>
-            </div>
-          </a>
-        
-        
-          <a href="../either_api/" title="pfun.either" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                pfun.either
-              </div>
-            </div>
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-        Made with
-        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-          Material for MkDocs
-        </a>
-      </div>
-      
-    </div>
-  </div>
-</footer>
       
     </div>
     

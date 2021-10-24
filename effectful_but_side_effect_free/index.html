@@ -16,7 +16,7 @@
       
       
       <link rel="shortcut icon" href="../nav_logo.svg">
-      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-5.5.14">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-5.5.14">
     
     
       
@@ -346,8 +346,22 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#type-aliases" class="md-nav__link">
+    Type Aliases
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#concurrency" class="md-nav__link">
     Concurrency
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repeating-and-retrying-effects" class="md-nav__link">
+    Repeating And Retrying Effects
   </a>
   
 </li>
@@ -362,13 +376,6 @@
           <li class="md-nav__item">
   <a href="#creating-your-own-effects" class="md-nav__link">
     Creating Your Own Effects
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#type-aliases" class="md-nav__link">
-    Type Aliases
   </a>
   
 </li>
@@ -472,6 +479,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../pfun_api/" title="pfun" class="md-nav__link">
+      pfun
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../functions_api/" title="pfun.functions" class="md-nav__link">
       pfun.functions
     </a>
@@ -496,8 +515,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../ref_api/" title="pfun.ref" class="md-nav__link">
-      pfun.ref
+    <a href="../schedule_api/" title="pfun.schedule" class="md-nav__link">
+      pfun.schedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../state_api/" title="pfun.state" class="md-nav__link">
+      pfun.state
     </a>
   </li>
 
@@ -522,6 +553,30 @@
   <li class="md-nav__item">
     <a href="../files_api/" title="pfun.files" class="md-nav__link">
       pfun.files
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../clock_api/" title="pfun.clock" class="md-nav__link">
+      pfun.clock
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../random_api/" title="pfun.random" class="md-nav__link">
+      pfun.random
     </a>
   </li>
 
@@ -766,8 +821,22 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#type-aliases" class="md-nav__link">
+    Type Aliases
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#concurrency" class="md-nav__link">
     Concurrency
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repeating-and-retrying-effects" class="md-nav__link">
+    Repeating And Retrying Effects
   </a>
   
 </li>
@@ -782,13 +851,6 @@
           <li class="md-nav__item">
   <a href="#creating-your-own-effects" class="md-nav__link">
     Creating Your Own Effects
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#type-aliases" class="md-nav__link">
-    Type Aliases
   </a>
   
 </li>
@@ -1034,7 +1096,7 @@
 </code></pre></div>
 
 <p>To call the <code>response.run</code> function, we need an instance of a type that is a <code>str</code> and a <code>Credentials</code> instance <em>at the same time</em>, because that argument must be passed to both the effect returned by <code>execute</code> and by <code>make_request</code>. Ideally, we want <code>response</code> to have the type <code>Effect[Intersection[Credentials, str], IOError, bytes]</code>, where <code>Intersection[Credentials, str]</code> indicates that the dependency type must be both of type <code>Credentials</code> and of type <code>str</code>.</p>
-<p>In theory such an object could exist (defined as <code>class MyEnv(Credentials, str): ...</code>), but there are no straight-forward way of expressing that type dynamically in the Python type system. As a consequence, <code>pfun</code> infers the resulting effect with the <code>R</code> parameterized as <code>typing.Any</code>, which in this case means that <code>pfun</code> could not assign a meaningful type to <code>R</code>.</p>
+<p>In theory such an object could exist (defined as <code>class MyEnv(Credentials, str): ...</code>), but there is no straight-forward way of expressing that type dynamically in the Python type system. As a consequence, <code>pfun</code> infers the resulting effect with the <code>R</code> parameterized as <code>typing.Any</code>, which in this case means that <code>pfun</code> could not assign a meaningful type to <code>R</code>.</p>
 <p>If you use the <code>pfun</code> MyPy plugin, you can however redesign the program to follow a pattern that enables <code>pfun</code> to infer a meaningful combined type
 in much the same way that the error type resulting from combining two effects using <code>and_then</code> can be inferred. This pattern is called <em>the module pattern</em>.</p>
 <p>In its most basic form, the module pattern simply involves defining a <a href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a> that serves as the dependency type of an <code>Effect</code>. <code>pfun</code> can combine dependency types of two effects whose dependency types are both protocols, because the combined dependency type is simply a new protocol that inherits from both. This combined protocol is called <code>pfun.Intersection</code>.</p>
@@ -1042,9 +1104,9 @@ in much the same way that the error type resulting from combining two effects us
 <ul>
 <li>A <em>module</em> class that provides the actual implementation</li>
 <li>A <em>module provider</em> that is a <code>typing.Protocol</code> that provides the module class as an attribute</li>
-<li>Functions that return effects with the module provider class as the dependency type.</li>
+<li>Functions that return effects with the module provider class as the dependency type. (Although these functions are only for convenience and can be omitted)</li>
 </ul>
-<p>Lets rewrite our example from before to follow the module pattern:</p>
+<p>Let's rewrite our example from before to follow the module pattern:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Protocol</span>
 <span class="kn">from</span> <span class="nn">http.client</span> <span class="kn">import</span> <span class="n">HTTPError</span>
 
@@ -1135,6 +1197,40 @@ in much the same way that the error type resulting from combining two effects us
 <span class="k">assert</span> <span class="n">make_request</span><span class="p">([])(</span><span class="n">mock_env</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;Mocked!&#39;</span>
 </code></pre></div>
 
+<p>To save you from writing module provider implementations for all the modules that
+come with <code>pfun</code>, you can use <code>pfun.DefaultModules</code>, which provide live
+implementations of <code>Console</code>, <code>Files</code>, <code>Random</code> and <code>Clock</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">console</span><span class="p">,</span> <span class="n">DefaultModules</span>
+
+
+<span class="n">console</span><span class="o">.</span><span class="n">print_line</span><span class="p">(</span><span class="s2">&quot;Hello!&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">DefaultModules</span><span class="p">())</span>
+</code></pre></div>
+
+<p>You can of course extend <code>DefaultModules</code> to implement module providers
+for you own modules:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">NoReturn</span>
+
+<span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">Intersection</span>
+<span class="kn">from</span> <span class="nn">pfun.console</span> <span class="kn">import</span> <span class="n">HasConsole</span>
+
+
+<span class="k">class</span> <span class="nc">MyModule</span><span class="p">:</span>
+    <span class="o">...</span>
+
+
+<span class="k">class</span> <span class="nc">HasMyModule</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">my_module</span><span class="p">:</span> <span class="n">MyModule</span>
+
+<span class="n">effect</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="n">Intersection</span><span class="p">[</span><span class="n">HasConsole</span><span class="p">,</span> <span class="n">HasMyModule</span><span class="p">],</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Modules</span><span class="p">(</span><span class="n">DefaultModules</span><span class="p">):</span>
+    <span class="n">my_module</span> <span class="o">=</span> <span class="n">MyModule</span><span class="p">()</span>
+
+
+<span class="n">effect</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Modules</span><span class="p">())</span>
+</code></pre></div>
+
 <h3 id="error-handling">Error Handling</h3>
 <p>In this section, we'll look at how to handle errors of effects with type safety. In previous sections we have already spent some time looking at the <code>Effect</code> error type. In many of the examples so far, the error type was <code>typing.NoReturn</code>. An <code>Effect</code> with this error type can never return a value for an error, or in other words, it can never fail (as those effects returned by <code>pfun.effect.success</code>). In the rest of this section we'll of course be pre-occupied with effects that <em>can</em> fail.</p>
 <p>When you combine side effects using <code>Effect.and_then</code>, <code>pfun</code> uses <code>typing.Union</code> to combine error types, in order that the resulting effect captures all potential errors in its error type:</p>
@@ -1201,6 +1297,13 @@ in much the same way that the error type resulting from combining two effects us
 </code></pre></div>
 
 <p>You will frequently handle errors by using <code>isinstance</code> to compare errors with types, so defining your own error types becomes even more important when using <code>pfun</code> to distinguish one error source from another.</p>
+<h3 id="type-aliases">Type Aliases</h3>
+<p>Since the dependency type of <code>Effect</code> is often parameterized with <code>object</code>, and the error type is often parameterized with <code>typing.NoReturn</code>, a number of type aliases for <code>Effect</code> are provided to save you from typing out <code>object</code> and <code>NoReturn</code> over and over. Specifically:</p>
+<ul>
+<li><code>pfun.effect.Success[A]</code> is a type-alias for <code>Effect[object, typing.NoReturn, A]</code>, which is useful for effects that can't fail and doesn't have dependencies</li>
+<li><code>pfun.effect.Try[E, A]</code> is a type-alias for <code>Effect[object, E, A]</code>, which is useful for effects that can fail but doesn't have dependencies</li>
+<li><code>pfun.effect.Depends[R, A]</code> is a type-alias for <code>Effect[R, typing.NoReturn, A]</code> which is useful for effects that can't fail but needs dependency <code>R</code></li>
+</ul>
 <h3 id="concurrency">Concurrency</h3>
 <p><code>Effect</code> uses <code>asyncio</code> under the hood to run effects asynchronously.
 This can lead to significant speed ups.</p>
@@ -1216,15 +1319,17 @@ This can lead to significant speed ups.</p>
 <p>Timing the execution using the unix <code>time</code> informs me this takes 5.15 seconds on a normal consumer laptop. Compare this to the program below which does more or less the same thing, but using <code>pfun.subprocess</code>:</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># call_google_async.py</span>
 <span class="kn">from</span> <span class="nn">pfun.subprocess</span> <span class="kn">import</span> <span class="n">Subprocess</span>
-<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">sequence_async</span>
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">gather_async</span>
 
 
 <span class="n">sp</span> <span class="o">=</span> <span class="n">Subprocess</span><span class="p">()</span>
-<span class="n">effect</span> <span class="o">=</span> <span class="n">sequence_async</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">run_in_shell</span><span class="p">(</span><span class="s1">&#39;curl http://www.google.com&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">effect</span> <span class="o">=</span> <span class="n">gather_async</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">run_in_shell</span><span class="p">(</span><span class="s1">&#39;curl http://www.google.com&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
 <span class="n">effect</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
-<p>This program finishes in 0.78 seconds, according to <code>time</code>. The crucial difference is the function <code>pfun.effect.sequence_async</code> which returns a new effect that runs its argument effects asynchronously using <code>asyncio</code>. This means that one effect can yield to other effects while waiting for input from the <code>curl</code> subprocess. This ultimately saves a lot of time compared to the synchronous implementation where each call to <code>subprocess.run</code> can only start when the preceeding one has returned.</p>
+<p>This program finishes in 0.78 seconds, according to <code>time</code>. The crucial difference is the function <code>pfun.effect.gather_async</code> which returns a new effect that runs its argument effects asynchronously using <code>asyncio</code>. This means that one effect can yield to other effects while waiting for input from the <code>curl</code> subprocess. This ultimately saves a lot of time compared to the synchronous implementation where each call to <code>subprocess.run</code> can only start when the preceeding one has returned.
+If any of the effects given as arguments to <code>gather_async</code> fails, any remaining effects that have not completed yet are canceled
+automatically to avoid resource waste.</p>
 <p>You can create an effect from a Python awaitable using <code>pfun.effect.from_awaitable</code>, allowing you to integrate with <code>asyncio</code> directly in your own code:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">asyncio</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NoReturn</span>
@@ -1262,39 +1367,85 @@ This can lead to significant speed ups.</p>
     <span class="k">return</span> <span class="k">await</span> <span class="n">e</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
+<p><code>pfun</code> also allows you to race effects against each other concurrently. When one effect succeeds, the other
+is cancelled to minimize resource waste:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">clock</span><span class="p">,</span> <span class="n">effect</span><span class="p">,</span> <span class="n">DefaultModules</span>
+
+
+<span class="n">slow_effect</span> <span class="o">=</span> <span class="p">(</span><span class="n">clock</span>
+               <span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+               <span class="o">.</span><span class="n">discard_and_then</span><span class="p">(</span><span class="n">effect</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="s1">&#39;Just woke up!&#39;</span><span class="p">)))</span>
+<span class="n">fast_effect</span> <span class="o">=</span> <span class="n">effect</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="s1">&#39;Born ready!&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">slow_effect</span><span class="o">.</span><span class="n">race</span><span class="p">(</span><span class="n">fast_effect</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">DefaultModules</span><span class="p">())</span> <span class="o">==</span> <span class="s1">&#39;Born ready!&#39;</span>
+</code></pre></div>
+
+<h3 id="repeating-and-retrying-effects">Repeating And Retrying Effects</h3>
+<p><code>pfun.effect</code> supports powerful scheduling mechanisms for repeating or retrying effects.
+<code>Effect.repeat</code> and <code>Effect.retry</code> both take a schedule as an argument of type <code>pfun.schedule.Schedule</code>, which is 
+simply a type-alias:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Iterator</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">Depends</span>
+
+
+<span class="n">Schedule</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">[</span><span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">),</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">]]</span>
+</code></pre></div>
+
+<p>In other words, a <code>Schedule</code> is simply an effect that  succeeds with a (potentially infinite) iterator
+of <code>datetime.timedelta</code> instances.</p>
+<p>The <code>pfun.schedule</code> module provides various helper methods for creating schedules:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+
+<span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">http</span><span class="p">,</span> <span class="n">schedule</span>
+
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">schedule</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="n">http</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://foo.com&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Schedules are modeled as <code>Effect</code> instances because some schedules have
+module dependencies, for example to introduce randomness:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">pfun.random</span> <span class="kn">import</span> <span class="n">HasRandom</span>
+<span class="kn">from</span> <span class="nn">pfun.schedule</span> <span class="kn">import</span> <span class="n">Schedule</span><span class="p">,</span> <span class="n">jitter</span><span class="p">,</span> <span class="n">spaced</span>
+
+
+<span class="n">s</span><span class="p">:</span> <span class="n">Schedule</span><span class="p">[</span><span class="n">HasRandom</span><span class="p">]</span> <span class="o">=</span> <span class="n">jitter</span><span class="p">(</span><span class="n">spaced</span><span class="p">(</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">2</span><span class="p">)))</span>
+</code></pre></div>
+
 <h3 id="purely-functional-state">Purely Functional State</h3>
-<p>Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. <code>pfun.ref</code> provides exactly this. <code>pfun.ref</code> works by mutating state only by calling <code>Effect</code> instances.</p>
+<p>Mutating non-local state is a side-effect that we want to avoid when doing functional programming. This means that we need a mechanism for managing state as an effect. <code>pfun.state</code> provides exactly this. <code>pfun.state</code> works by mutating state only by calling <code>Effect</code> instances.</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">NoReturn</span>
 
-<span class="kn">from</span> <span class="nn">pfun.ref</span> <span class="kn">import</span> <span class="n">Ref</span>
+<span class="kn">from</span> <span class="nn">pfun.state</span> <span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">Effect</span>
 
 
-<span class="n">ref</span><span class="p">:</span> <span class="n">Ref</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="n">Ref</span><span class="p">(())</span>
-<span class="n">add_1</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="k">lambda</span> <span class="n">old</span><span class="p">:</span> <span class="k">return</span> <span class="n">old</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+<span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="n">State</span><span class="p">(())</span>
+<span class="n">add_1</span><span class="p">:</span> <span class="n">Effect</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="k">lambda</span> <span class="n">old</span><span class="p">:</span> <span class="k">return</span> <span class="n">old</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
 <span class="c1"># calling modify doesn&#39;t modify the state directly</span>
-<span class="k">assert</span> <span class="n">ref</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="p">()</span>
+<span class="k">assert</span> <span class="n">state</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="p">()</span>
 <span class="c1"># The state is modified only when the effect is called</span>
 <span class="n">add_1</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">ref</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
+<span class="k">assert</span> <span class="n">state</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
 </code></pre></div>
 
-<p><code>pfun.ref.Ref</code> protects access to the state using an <code>asyncio.Lock</code>, meaning that updating the state can be done atomically with the following methods:</p>
+<p><code>pfun.state.State</code> protects access to the state using an <code>asyncio.Lock</code>, meaning that updating the state can be done atomically with the following methods:</p>
 <ul>
-<li><code>Ref.get()</code> read the current value of the state</li>
-<li><code>Ref.set(new_state)</code> update the state to <code>new_value</code> atomically, meaning no other effect can read the value of the state while the update is in progress. Note that if you first read the state using <code>Ref.get</code> and then set it with <code>Ref.set</code>, other effects may read the value in between which may lead to lost updates. <em>For this use case you should use <code>modify</code> or <code>try_modify</code></em></li>
-<li><code>Ref.modify(update_function)</code> read and update the state with <code>update_function</code> atomically, meaning no other effect can read or write the state before the effect produced by <code>modify</code> returns</li>
-<li><code>Ref.try_modify(update_function)</code> read and update the state with <code>update_function</code> atomically, if <code>update_funciton</code> succeeds. Success is signaled by the <code>update_function</code> by returning a <code>pfun.either.Right</code> instance, and error by returning a <code>pfun.either.Left</code> instance.</li>
+<li><code>State.get()</code> read the current value of the state</li>
+<li><code>State.set(new_state)</code> update the state to <code>new_value</code> atomically, meaning no other effect can read the value of the state while the update is in progress. Note that if you first read the state using <code>State.get</code> and then set it with <code>State.set</code>, other effects may read the value in between which may lead to lost updates. <em>For this use case you should use <code>modify</code> or <code>try_modify</code></em></li>
+<li><code>State.modify(update_function)</code> read and update the state with <code>update_function</code> atomically, meaning no other effect can read or write the state before the effect produced by <code>modify</code> returns</li>
+<li><code>State.try_modify(update_function)</code> read and update the state with <code>update_function</code> atomically, if <code>update_funciton</code> succeeds. Success is signaled by the <code>update_function</code> by returning a <code>pfun.either.Right</code> instance, and error by returning a <code>pfun.either.Left</code> instance.</li>
 </ul>
-<p><code>pfun.ref</code> can of course be combined with the module pattern:</p>
+<p><code>pfun.state</code> can of course be combined with the module pattern:</p>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">Protocol</span>
 
-<span class="kn">from</span> <span class="nn">pfun.ref</span> <span class="kn">import</span> <span class="n">Ref</span>
+<span class="kn">from</span> <span class="nn">pfun.state</span> <span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span> <span class="nn">pfun.effect</span> <span class="kn">import</span> <span class="n">depend</span><span class="p">,</span> <span class="n">Effect</span>
 
 
 <span class="k">class</span> <span class="nc">HasState</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
-    <span class="n">state</span><span class="p">:</span> <span class="n">Ref</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
 
 
 <span class="k">def</span> <span class="nf">set_state</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Effect</span><span class="p">[</span><span class="n">HasState</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
@@ -1363,13 +1514,6 @@ that takes a dependency type and returns a <code>pfun.either.Either</code> and t
 </code></pre></div>
 
 <p>Take a look at the api documentation for details.</p>
-<h3 id="type-aliases">Type Aliases</h3>
-<p>Since the dependency type of <code>Effect</code> is often parameterized with <code>object</code>, and the error type is often parameterized with <code>typing.NoReturn</code>, a number of type aliases for <code>Effect</code> are provided to save you from typing out <code>object</code> and <code>NoReturn</code> over and over. Specifically:</p>
-<ul>
-<li><code>pfun.effect.Success[A]</code> is a type-alias for <code>Effect[object, typing.NoReturn, A]</code>, which is useful for effects that can't fail and doesn't have dependencies</li>
-<li><code>pfun.effect.Try[E, A]</code> is a type-alias for <code>Effect[object, E, A]</code>, which is useful for effects that can fail but doesn't have dependencies</li>
-<li><code>pfun.effect.Depends[R, A]</code> is a type-alias for <code>Effect[R, typing.NoReturn, A]</code> which is useful for effects that can't fail but needs dependency <code>R</code></li>
-</ul>
 <h3 id="combining-effects">Combining effects</h3>
 <p>Sometimes you need to keep the the result of two or more effects in scope to work with
 both at the same time. This can lead to code like the following:</p>
@@ -1410,56 +1554,6 @@ both at the same time. This can lead to code like the following:</p>
       </main>
       
         
-<footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
-        
-          <a href="../useful_functions/" title="Useful Functions" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-            </div>
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                Useful Functions
-              </div>
-            </div>
-          </a>
-        
-        
-          <a href="../curried_and_typesafe_operators/" title="Curried And Type-Safe Operators" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Curried And Type-Safe Operators
-              </div>
-            </div>
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-        Made with
-        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-          Material for MkDocs
-        </a>
-      </div>
-      
-    </div>
-  </div>
-</footer>
       
     </div>
     

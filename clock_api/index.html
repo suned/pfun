@@ -12,7 +12,7 @@
         <meta name="description" content="Purely functional, Statically Typed Python">
       
       
-        <link rel="canonical" href="https://pfun.dev/what_is_this/">
+        <link rel="canonical" href="https://pfun.dev/clock_api/">
       
       
       <link rel="shortcut icon" href="../nav_logo.svg">
@@ -20,7 +20,7 @@
     
     
       
-        <title>What Is This? - pfun</title>
+        <title>pfun.clock - pfun</title>
       
     
     
@@ -64,6 +64,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#pfun.clock.Clock" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -87,7 +92,7 @@
           </span>
           <span class="md-header-nav__topic md-ellipsis">
             
-              What Is This?
+              pfun.clock
             
           </span>
         </div>
@@ -184,12 +189,10 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1" checked>
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1">
     
     <label class="md-nav__link" for="nav-1">
       Guide
@@ -207,18 +210,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="What Is This?" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../what_is_this/" title="What Is This?" class="md-nav__link">
       What Is This?
     </a>
-    
   </li>
 
         
@@ -327,10 +323,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
     
     <label class="md-nav__link" for="nav-3">
       API Reference
@@ -432,11 +430,86 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../clock_api/" title="pfun.clock" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        pfun.clock
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="pfun.clock" class="md-nav__link md-nav__link--active">
       pfun.clock
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.clock.Clock" class="md-nav__link">
+    Clock
+  </a>
+  
+    <nav class="md-nav" aria-label="Clock">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfun.clock.Clock.now" class="md-nav__link">
+    now()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.clock.Clock.sleep" class="md-nav__link">
+    sleep()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.clock.HasClock" class="md-nav__link">
+    HasClock
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.clock.sleep" class="md-nav__link">
+    sleep()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.clock.now" class="md-nav__link">
+    now()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -620,6 +693,75 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.clock.Clock" class="md-nav__link">
+    Clock
+  </a>
+  
+    <nav class="md-nav" aria-label="Clock">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfun.clock.Clock.now" class="md-nav__link">
+    now()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfun.clock.Clock.sleep" class="md-nav__link">
+    sleep()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.clock.HasClock" class="md-nav__link">
+    HasClock
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.clock.sleep" class="md-nav__link">
+    sleep()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pfun.clock.now" class="md-nav__link">
+    now()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
@@ -629,22 +771,333 @@
                   
                 
                 
-                  <h1>What Is This?</h1>
-                
-                <p><code>pfun</code> is a Python library that aims to make <a href="https://en.wikipedia.org/wiki/Functional_programming">functional programming</a> in Python fun and easy. On its own, Python has all the features necessary to write code in functional style. However, many programmers find functional programming in Python difficult and tedious because it lacks features supporting common functional design patterns. <code>pfun</code> supplies the last few puzzle pieces that make functional programming in Python ergonomical. Specifically:</p>
-<ul>
-<li><code>pfun</code> provides a simple, unified api for working with any side-effect in functional style through a full-fledged <a href="https://en.wikipedia.org/wiki/Effect_system">functional effect system</a> that doesn't rely on complex solutions such as <a href="https://en.wikipedia.org/wiki/Monad_transformer">monad transformers</a>.</li>
-<li>Python doesn't perform <a href="https://en.wikipedia.org/wiki/Tail_call">tail call optimization</a> which is a problem for many functional design patterns that rely on recursion. <code>pfun</code> solves this by building <a href="https://cython.readthedocs.io/en/latest/">Cython</a> optimized <a href="https://en.wikipedia.org/wiki/Trampoline_(computing)">trampolining</a> into its effect system.</li>
-<li><code>pfun</code> provides immutable data structures with a functional api, as well as tools for building your own immutable data types.</li>
-<li>The Python type annotations are often too limited to accurately type common functional design patterns. <code>pfun</code> solves this by including a <a href="http://mypy-lang.org/">MyPy</a> plugin that provides very precise typing.</li>
-<li><code>pfun</code> integrates functional patterns for async programming with the <code>asyncio</code> module.</li>
-</ul>
-<p><code>pfun</code> differs from other libraries for functional Python programming in that</p>
-<ul>
-<li><code>pfun</code> takes a modern approach to functional programming inspired by state of the art solutions to working with side-effects from functional programming languages (specifically the <a href="https://zio.dev/">Zio</a> Scala libary)</li>
-<li><code>pfun</code> was designed with a strong emphasis on static type checking</li>
-<li><code>pfun</code> is designed to be "pythonic", using Python conventions and best practices when possible, favouring easy to understand names over functional programming jargon, and integrating with the Python standard library as much as possible.</li>
-</ul>
+                <div class="doc doc-object doc-class">
+
+
+
+<h1 class="doc doc-heading" id="pfun.clock.Clock">
+        <code>pfun.clock.Clock</code>
+
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Module providing clock capabilities.</p>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.clock.Clock.now">
+<code class="codehilite language-python"><span class="n">now</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tz</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Create an <code>Effect</code> that succeeds with the current datetime</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>tz</code></td>
+        <td><code>tzinfo</code></td>
+        <td><p>timezone info</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pfun.effect.Effect[object, NoReturn, datetime.datetime]</code></td>
+      <td><p><code>Effect</code> that succeeds with the current datetime</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 class="doc doc-heading" id="pfun.clock.Clock.sleep">
+<code class="codehilite language-python"><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seconds</span><span class="p">)</span></code>
+        
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Create an <code>Effect</code> that Suspends execution for <code>seconds</code>.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>seconds</code></td>
+        <td><code>float</code></td>
+        <td><p>interval to suspend execution</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pfun.effect.Effect[object, NoReturn, NoneType]</code></td>
+      <td><p><code>Effect</code> that suspends execution for <code>seconds</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h1 class="doc doc-heading" id="pfun.clock.HasClock">
+        <code>pfun.clock.HasClock</code>
+
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Module provider for the clock capability.</p>
+
+<p><strong>Attributes:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>clock</code></td>
+        <td><code>Clock</code></td>
+        <td><p>The clock module</p></td>
+      </tr>
+  </tbody>
+</table>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.clock.sleep">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">seconds</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Create an <code>Effect</code> that Suspends execution for <code>seconds</code>.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">DefaultModules</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">DefaultModules</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>seconds</code></td>
+        <td><code>float</code></td>
+        <td><p>interval to suspend execution</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pfun.effect.Effect[pfun.clock.HasClock, NoReturn, NoneType]</code></td>
+      <td><p><code>Effect</code> that suspends execution for <code>seconds</code></p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h1 class="doc doc-heading" id="pfun.clock.now">
+<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h1>
+
+    <div class="doc doc-contents first">
+
+      <p>Create an <code>Effect</code> that succeeds with the current datetime</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="codehilite"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">pfun</span> <span class="kn">import</span> <span class="n">DefaultModules</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">DefaultModules</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>tz</code></td>
+        <td><code>tzinfo</code></td>
+        <td><p>timezone info</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pfun.effect.Effect[pfun.clock.HasClock, NoReturn, datetime.datetime]</code></td>
+      <td><p><code>Effect</code> that succeeds with the current datetime</p></td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+
+  </div>
                 
               
               
