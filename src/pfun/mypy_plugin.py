@@ -6,6 +6,7 @@ from mypy import checkmember, infer
 from mypy.argmap import map_actuals_to_formals
 from mypy.checker import TypeChecker
 from mypy.expandtype import freshen_function_type_vars
+from mypy.messages import format_type_distinctly
 from mypy.mro import MroError, calculate_mro
 from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
                         ARG_STAR2, COVARIANT, INVARIANT, Block, ClassDef,
@@ -14,15 +15,14 @@ from mypy.plugin import (AnalyzeTypeContext, AttributeContext, ClassDefContext,
                          FunctionContext, FunctionSigContext, MethodContext,
                          MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
+from mypy.subtypes import is_protocol_implementation
 from mypy.type_visitor import TypeTranslator
+from mypy.typeops import make_simplified_union
 from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
                         TypeAliasType, TypeOfAny, TypeVarDef, TypeVarId,
                         TypeVarType, UninhabitedType, UnionType,
                         get_proper_type)
 from mypy.typevars import has_no_typevars
-from mypy.subtypes import is_protocol_implementation
-from mypy.messages import format_type_distinctly
-from mypy.typeops import make_simplified_union
 
 from .functions import curry
 
