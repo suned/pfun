@@ -2,7 +2,7 @@ import builtins
 import random
 
 import pytest
-from hypothesis import assume, given
+from hypothesis import assume, given, settings
 from hypothesis.strategies import integers
 from hypothesis.strategies import lists as lists_
 
@@ -39,6 +39,7 @@ class TestList(MonadTest):
     def test_append_associativity_law(self, x, y, z):
         assert (x + y) + z == x + (y + z)
 
+    @settings(deadline=None)
     @given(
         lists(anything()),
         unaries(lists(anything())),
