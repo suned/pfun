@@ -61,6 +61,12 @@ cdef class RuntimeEnv:
             self.thread_executor, lambda: f(*args, **kwargs)
         )
 
+cdef class CompositeR:
+    cdef readonly tuple rs
+
+    def __cinit__(self, rs):
+        self.rs = rs
+
 
 def run_dill_encoded(payload):
     fun, args, kwargs = dill.loads(payload)
@@ -405,7 +411,11 @@ cdef class Provide(CEffect):
 
     async def resume(self, RuntimeEnv env):
         async def thunk():
-            new_env = RuntimeEnv(self.r, env.exit_stack, env.max_processes, env.max_threads)
+            if isinstance(env.r, CompositeR):
+                new_r = CompositeR((self.r,) + env.r.rs)
+            else:
+                new_r = CompositeR((self.r, env.r))
+            new_env = RuntimeEnv(new_r, env.exit_stack, env.max_processes, env.max_threads)
             return await self.effect.do(new_env)
         return Call(thunk)
 
@@ -837,7 +847,18 @@ cdef class Call(CEffect):
 
 
 cdef class CDepends(CEffect):
+    cdef object t
+
+    def __cinit__(self, t):
+        self.t = t
+
     async def resume(self, RuntimeEnv env):
+        if isinstance(env.r, CompositeR) and self.t is not None:
+            for r in env.r.rs:
+                if isinstance(r, self.t):
+                    return CSuccess(r)
+            type_reprs = ', '.join([repr(r) for r in env.r.rs])
+            return Error(TypeError(f'Could not satisfy dependency of type "{self.t}" with provided arguments: {type_reprs}'))
         return CSuccess(env.r)
 
     async def apply_continuation(self, object f, RuntimeEnv env):
@@ -861,7 +882,7 @@ def depend(r_type=None):
     Return:
         Effect[R, NoReturn, R]: `Effect` that produces the dependency passed to `run`
     """
-    return CDepends()
+    return CDepends(r_type)
 
 
 cdef class Gather(CEffect):
