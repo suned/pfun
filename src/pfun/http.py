@@ -5,7 +5,7 @@ import json
 import ssl
 from typing import Any, Callable
 from typing import Dict as Dict_
-from typing import Iterable, Mapping, NoReturn, Union
+from typing import Iterable, Mapping, Union
 
 from typing_extensions import Protocol
 
@@ -69,7 +69,7 @@ class HTTP(Immutable, init=False):
     """
     Module for making HTTP requests.
     """
-    session: 'Resource[NoReturn, aiohttp.ClientSession]'
+    session: Resource
 
     def __init__(
         self,
