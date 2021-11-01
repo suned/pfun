@@ -43,17 +43,16 @@ class PostgresConnection(Immutable):
         await self.connection.close()
 
 
-Results = List[Dict[str, Any]]
 """
 Type-alias for `pfun.list.List[pfun.dict.Dict[str, typing.Any]]`
 """
-Results.__module__ = __name__
 
 T = TypeVar('T')
 
 
 @curry
-def as_type(type_: Type[T], results: Results) -> Try[TypeError, List[T]]:
+def as_type(type_: Type[T],
+            results: List[Dict[str, Any]]) -> Try[TypeError, List[T]]:
     """
     Convert database results to `type_`
 
@@ -91,7 +90,7 @@ class SQL(Immutable, init=False):
     """
     Module providing postgres sql client capability
     """
-    connection: 'Resource[asyncpg.PostgresError, PostgresConnection]'
+    connection: Resource
 
     def __init__(self, connection_str: str):
         """
@@ -194,7 +193,8 @@ class SQL(Immutable, init=False):
         return self.get_connection().and_then(execute_many)
 
     def fetch(self, query: str, *args: Any,
-              timeout: float = None) -> Try[asyncpg.PostgresError, Results]:
+              timeout: float = None
+              ) -> Try[asyncpg.PostgresError, List[Dict[str, Any]]]:
         """
         Get an `Effect` that executes `query` and returns the results
         as a `List` of `Dict`
@@ -213,7 +213,8 @@ class SQL(Immutable, init=False):
             `Effect` that retrieves rows returned by `query` as `Results`
         """
         @catch(asyncpg.PostgresError)
-        async def fetch(connection: asyncpg.Connection) -> Results:
+        async def fetch(connection: asyncpg.Connection
+                        ) -> List[Dict[str, Any]]:
             result = await connection.fetch(query, *args, timeout=timeout)
             return List(Dict(record) for record in result)
 
@@ -344,7 +345,7 @@ def execute_many(query: str, args: Iterable[Any], timeout: float = None
 @curry
 @add_repr
 def fetch(query: str, *args: Any, timeout: float = None
-          ) -> Effect[HasSQL, asyncpg.PostgresError, Results]:
+          ) -> Effect[HasSQL, asyncpg.PostgresError, List[Dict[str, Any]]]:
     """
     Get an `Effect` that executes `query` and returns the results
     as a `List` of `Dict`

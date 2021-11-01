@@ -1,7 +1,6 @@
 !!! note
     This module requires optional dependencies. You can install them together with `pfun` using `pip install pfun[sql]`
 
-::: pfun.sql.Results
 ::: pfun.sql.SQL
 ::: pfun.sql.MalformedConnectionStr
 ::: pfun.sql.HasSQL
