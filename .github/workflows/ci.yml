@@ -25,7 +25,7 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5
+        pip install poetry==1.1.11
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -50,7 +50,7 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5
+        pip install poetry==1.1.11
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -75,7 +75,7 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5
+        pip install poetry==1.1.11
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -94,7 +94,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8]
+        python-version: ['3.7', '3.8', '3.9']
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
@@ -110,7 +110,7 @@ jobs:
         key: py${{ matrix.python-version }}-${{ matrix.os }}-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5
+        pip install poetry==1.1.11
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -143,7 +143,7 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.5
+        pip install poetry==1.1.11
         poetry config virtualenvs.in-project true
     - name: Download wheels and sdist
       uses: actions/download-artifact@v2

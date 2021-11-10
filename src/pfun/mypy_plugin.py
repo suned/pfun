@@ -119,7 +119,7 @@ class TranslateIntersection(TypeTranslator):
                 bases.extend(self.get_bases(arg, []))
             if len(bases) == 1:
                 return bases[0]
-            bases_repr = ', '.join(sorted([repr(base) for base in bases]))
+            bases_repr = ', '.join([repr(base) for base in bases])
             name = f'Intersection[{bases_repr}]'
             defn = ClassDef(
                 name,

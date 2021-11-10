@@ -239,7 +239,7 @@ response.run(...)  # What could this argument be?
 ```
 To call the `response.run` function, we need an instance of a type that is a `str` and a `Credentials` instance _at the same time_, because that argument must be passed to both the effect returned by `execute` and by `make_request`. Ideally, we want `response` to have the type `Effect[Intersection[Credentials, str], IOError, bytes]`, where `Intersection[Credentials, str]` indicates that the dependency type must be both of type `Credentials` and of type `str`.
 
-In theory such an object could exist (defined as `class MyEnv(Credentials, str): ...`), but there are no straight-forward way of expressing that type dynamically in the Python type system. As a consequence, `pfun` infers the resulting effect with the `R` parameterized as `typing.Any`, which in this case means that `pfun` could not assign a meaningful type to `R`.
+In theory such an object could exist (defined as `class MyEnv(Credentials, str): ...`), but there is no straight-forward way of expressing that type dynamically in the Python type system. As a consequence, `pfun` infers the resulting effect with the `R` parameterized as `typing.Any`, which in this case means that `pfun` could not assign a meaningful type to `R`.
 
 If you use the `pfun` MyPy plugin, you can however redesign the program to follow a pattern that enables `pfun` to infer a meaningful combined type
 in much the same way that the error type resulting from combining two effects using `and_then` can be inferred. This pattern is called _the module pattern_.
@@ -250,9 +250,9 @@ In many cases the api for effects involved in the module pattern is split into t
 
 - A _module_ class that provides the actual implementation
 - A _module provider_ that is a `typing.Protocol` that provides the module class as an attribute
-- Functions that return effects with the module provider class as the dependency type.
+- Functions that return effects with the module provider class as the dependency type. (Although these functions are only for convenience and can be omitted)
 
-Lets rewrite our example from before to follow the module pattern:
+Let's rewrite our example from before to follow the module pattern:
 ```python
 from typing import Protocol
 from http.client import HTTPError
@@ -558,7 +558,7 @@ assert slow_effect.race(fast_effect).run(DefaultModules()) == 'Born ready!'
 simply a type-alias:
 
 ```python
-from typing import Iterator
+from typing import TypeVar, Iterator
 import datetime
 
 from pfun.effect import Depends

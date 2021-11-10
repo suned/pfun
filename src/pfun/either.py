@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Any, Callable, Generic, Iterable, TypeVar, Union, cast
+from typing import (Any, Callable, Generic, Iterable, NoReturn, TypeVar, Union,
+                    cast)
 
 from typing_extensions import Literal
 
@@ -24,7 +25,7 @@ class Either_(Immutable, Monad, ABC):
     use `Left` or `Right` instead
     """
     @abstractmethod
-    def and_then(self, f):
+    def and_then(self, f: Callable[[Any], 'Either']) -> 'Either':
         """
         Chain together functions of either computations, keeping
         track of whether or not any of them have failed
@@ -63,7 +64,7 @@ class Either_(Immutable, Monad, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def or_else(self, default):
+    def or_else(self, default: Any) -> Any:
         """
         Try to get the result of this either computation, return default
         if this is a ``Left`` value
@@ -83,7 +84,7 @@ class Either_(Immutable, Monad, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map(self, f):
+    def map(self, f: Callable[[Any], Any]) -> 'Either':
         """
         Map the result of this either computation
 
@@ -145,7 +146,7 @@ class Right(Either_, Generic[A]):
     def __bool__(self) -> Literal[True]:
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Right({repr(self.get)})'
 
 
@@ -188,7 +189,7 @@ class Left(Either_, Generic[B]):
     def and_then(self, f: Callable[[A], Either[B, C]]) -> Either[B, C]:
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Left({repr(self.get)})'
 
 
@@ -199,7 +200,7 @@ Type-alias for `Union[Left[TypeVar('L')], Right[TypeVar('R')]]`
 Either.__module__ = __name__
 
 
-def either(f: Callable[..., A]) -> Callable[..., Either[A, B]]:
+def either(f: Callable[..., A]) -> Callable[..., Either[NoReturn, A]]:
     """
     Turn ``f`` into a monadic function in the ``Either`` monad by wrapping
     in it a `Right`
@@ -214,7 +215,7 @@ def either(f: Callable[..., A]) -> Callable[..., Either[A, B]]:
         ``f`` wrapped with a ``Right``
     """
     @wraps(f)
-    def decorator(*args, **kwargs):
+    def decorator(*args: object, **kwargs: object) -> Either[NoReturn, A]:
         return Right(f(*args, **kwargs))
 
     return decorator
@@ -335,7 +336,7 @@ def catch(f: Callable[..., A]) -> Callable[..., Either[Exception, A]]:
         decorated function
     """
     @wraps(f)
-    def decorator(*args, **kwargs) -> Either[Exception, A]:
+    def decorator(*args: object, **kwargs: object) -> Either[Exception, A]:
         try:
             return Right(f(*args, **kwargs))
         except Exception as e:

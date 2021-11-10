@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pfun"
-version = "0.12.3"
+version = "0.13.0"
 description = "Functional, composable, asynchronous, type-safe Python."
 authors = ["Sune Debel"]
 readme = "README.md"
@@ -8,7 +8,7 @@ build = "build.py"
 include = ["src/pfun/py.typed", "src/pfun/*.c"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">= 3.7, < 3.10"
 typing-extensions = "^3.10.0.0"
 aiohttp = {extras = ["speedups"], version = "^3.7.4", optional = true}
 asyncpg = {version = "^0.21.0", optional = true}

@@ -345,13 +345,13 @@
     main:13: error: "pfun.lens.Lens[main.User]" has no attribute "foo"
     main:14: error: "pfun.lens.Lens[main.User, main.Organization]" has no attribute "foo"
     main:15: error: No overload variant of "__getitem__" of "list" matches argument type "str"
+    main:15: note: Possible overload variants:
     main:15: note:     def __getitem__(self, SupportsIndex) -> str
     main:15: note:     def __getitem__(self, slice) -> List[str]
-    main:15: note: Possible overload variants:
     main:16: error: No overload variant of "__getitem__" of "list" matches argument type "str"
+    main:16: note: Possible overload variants:
     main:16: note:     def __getitem__(self, SupportsIndex) -> str
     main:16: note:     def __getitem__(self, slice) -> List[str]
-    main:16: note: Possible overload variants:
     main:17: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
     main:18: error: Argument 1 to "__call__" of "Lens" has incompatible type "int"; expected "str"
     main:20: note: Revealed type is "pfun.lens.Lens[main.User, main.Organization]"
@@ -429,8 +429,11 @@
     class P2(Protocol):
       pass
 
-    i: Intersection[Intersection[P1], P2]
-    reveal_type(i)  # N: Revealed type is "pfun.Intersection[main.P1, main.P2]"
+    class P3(Protocol):
+      pass
+
+    i: Intersection[Intersection[P1, P2], P3]
+    reveal_type(i)  # N: Revealed type is "pfun.Intersection[main.P1, main.P2, main.P3]"
 - case: intersection_of_two_arguments_is_subtype_of_both
   disable_cache: true
   main: |
@@ -448,9 +451,13 @@
     reveal_type(i)  # N: Revealed type is "pfun.Intersection[main.P1, main.P2]"
 
     class C:
-      x: int
+      x: str
 
-    i = C()  # E: Incompatible types in assignment (expression has type "C", variable has type "Intersection[main.P1, main.P2]")
+    i = C()
+  out: |
+    main:17: error: Incompatible types in assignment (expression has type "C", variable has type "Intersection[main.P1, main.P2]")
+    main:17: note: "C" is missing following "Intersection[main.P1, main.P2]" protocol member:
+    main:17: note:     y
 - case: intersection_between_non_protocols_is_illegal
   disable_cache: true
   main: |
@@ -494,7 +501,7 @@
     i: Intersection[P1[str], P2[int]]
     reveal_type(i)  # N: Revealed type is "pfun.Intersection[main.P1[builtins.str], main.P2[builtins.int]]"
 
-    i2: Intersection[P1[str], P1[int]]  # E: Cannot determine consistent method resolution order (MRO) for "pfun.Intersection[main.P1[builtins.int], main.P1[builtins.str]]"
+    i2: Intersection[P1[str], P1[int]]  # E: Cannot determine consistent method resolution order (MRO) for "pfun.Intersection[main.P1[builtins.str], main.P1[builtins.int]]"
 - case: intersection_arg_can_be_typealias
   disable_cache: true
   main: |
@@ -514,7 +521,28 @@
     Alias = P1[str]
     i: Intersection[Alias, P2]
     reveal_type(i) # N: Revealed type is "pfun.Intersection[main.P1[builtins.str], main.P2]"
+- case: intersection_can_be_argument
+  disable_cache: true
+  main: |
+    from pfun import Depends, Intersection, files, console
 
+    e: Depends[Intersection[files.HasFiles, console.HasConsole], str]
+    reveal_type(e)  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[pfun.files.HasFiles, pfun.console.HasConsole], <nothing>, builtins.str]"
+- case: intersection_is_order_invariant
+  disable_cache: true
+  main: |
+    from typing_extensions import Protocol
+    from pfun import Intersection
+
+    class P1(Protocol):
+      pass
+
+    class P2(Protocol):
+      pass
+
+    i: Intersection[P1, P2]
+    i2: Intersection[P2, P1] = i
+    reveal_type(i2)  # N: Revealed type is "pfun.Intersection[main.P2, main.P1]"
 - case: intersection_types_can_be_inferred
   disable_cache: true
   main: |
@@ -551,7 +579,7 @@
 
     a3: P2
     b3: P3
-    reveal_type(f(a3, b3))  # N: Revealed type is "pfun.Intersection[main.P1, main.P2*, main.P3*]"
+    reveal_type(f(a3, b3))  # N: Revealed type is "pfun.Intersection[main.P2*, main.P3*, main.P1]"
 
     a4: object
     b4: str
@@ -569,6 +597,6 @@
     reveal_type(c2.f(a2, b2)) # N: Revealed type is "main.P1"
 
     c3: C[P2]
-    reveal_type(c3.f(a3, b3)) # N: Revealed type is "pfun.Intersection[main.P1, main.P2, main.P3*]"
+    reveal_type(c3.f(a3, b3)) # N: Revealed type is "pfun.Intersection[main.P2, main.P3*, main.P1]"
 
     c1.f(a4, b4) # E: All arguments to "Intersection" must be protocols but inferred "pfun.Intersection[builtins.object, builtins.str*, main.P1]"
