@@ -75,6 +75,6 @@ def random() -> Depends[HasRandom, float]:
     Return:
         `Effect` that succeeds with a random float
     """
-    return depend().and_then(
+    return depend(HasRandom).and_then(
         lambda env: env.random.random()
     ).with_repr('random()')

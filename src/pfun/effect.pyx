@@ -13,6 +13,7 @@ from contextlib import AsyncExitStack
 from functools import wraps
 
 import dill
+from typing_extensions import Protocol, runtime_checkable
 
 from .either import Right, Left
 from .functions import curry
@@ -66,6 +67,14 @@ cdef class CompositeR:
 
     def __cinit__(self, rs):
         self.rs = rs
+
+    def __reduce__(self):
+        return (CompositeR, (self.rs,))
+
+    def __eq__(self, other):
+        if not isinstance(other, CompositeR):
+            return False
+        return self.rs == other.rs
 
 
 def run_dill_encoded(payload):
@@ -850,10 +859,15 @@ cdef class CDepends(CEffect):
     cdef object t
 
     def __cinit__(self, t):
+        if issubclass(t, Protocol):
+            t = runtime_checkable(t)
         self.t = t
 
+    def __reduce__(self):
+        return (depend, (self.t,))
+
     async def resume(self, RuntimeEnv env):
-        if isinstance(env.r, CompositeR) and self.t is not None:
+        if isinstance(env.r, CompositeR):
             for r in env.r.rs:
                 if isinstance(r, self.t):
                     return CSuccess(r)
@@ -865,10 +879,10 @@ cdef class CDepends(CEffect):
         return await f(env.r)
     
     def __repr__(self):
-        return 'depend()'
+        return f'depend({repr(self.t)})'
 
 
-def depend(r_type=None):
+def depend(r_type):
     """
     Get an `Effect` that produces the dependency passed to `run` \
     when executed

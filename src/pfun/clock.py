@@ -55,7 +55,7 @@ def sleep(seconds: float) -> effect.Depends[HasClock, None]:
     Return:
         `Effect` that suspends execution for `seconds`
     """
-    return effect.depend().and_then(
+    return effect.depend(HasClock).and_then(
         lambda env: env.clock.sleep(seconds)
     ).with_repr(f"sleep({seconds})")
 
@@ -72,6 +72,6 @@ def now(tz: datetime.tzinfo = None
     Return:
         `Effect` that succeeds with the current datetime
     """
-    return effect.depend().and_then(
+    return effect.depend(HasClock).and_then(
         lambda env: env.clock.now(tz)
     ).with_repr(f"now({tz})")

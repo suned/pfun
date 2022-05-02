@@ -368,6 +368,7 @@ def effects(
             lambda f: children.map(lambda e: effect.combine_cpu_bound(e)(f))
         )
         race = children.map(lambda e: e.race(e))
+        provide = children.map(lambda e: e.provide(None))
 
         return one_of(
             maps,
@@ -386,12 +387,13 @@ def effects(
             combine,
             combine_io_bound,
             combine_cpu_bound,
-            race
+            race,
+            provide
         )
 
     success = builds(effect.success, value_strategy)
     depends: SearchStrategy[effect.Effect[Any, NoReturn, Any]
-                            ] = builds(effect.depend)
+                            ] = builds(effect.depend, just(object))
     from_callable: SearchStrategy[TestEffect[A]
                                   ] = unaries(rights(value_strategy)
                                               ).map(effect.from_callable)

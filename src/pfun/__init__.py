@@ -58,9 +58,13 @@ class DefaultModules:
     console: 'console.Console'
     random: 'random.Random'
     clock: 'clock.Clock'
+    logging: 'logging.Logging'
+    subprocess: 'subprocess.Subprocess'
 
     def __init__(self):
         self.files = files.Files()
         self.console = console.Console()
         self.random = random.Random()
         self.clock = clock.Clock()
+        self.logging = logging.Logging()
+        self.subprocess = subprocess.Subprocess()

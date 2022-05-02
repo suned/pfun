@@ -4,7 +4,9 @@ from contextlib import ExitStack
 from datetime import timedelta
 from subprocess import CalledProcessError
 from unittest import mock
+from dataclasses import dataclass
 
+from typing_extensions import Protocol
 import aiohttp
 import asynctest
 import pytest
@@ -77,7 +79,7 @@ class TestEffect(MonadTest):
                                                                 ).run(env)
 
     def test_depend(self):
-        assert effect.depend().run('env') == 'env'
+        assert effect.depend(str).run('env') == 'env'
 
     def test_from_awaitable(self):
         async def f():
@@ -327,6 +329,38 @@ class TestEffect(MonadTest):
         assert effect.purify_io_bound(f)(x).run(None) == f(x)
         assert effect.purify_cpu_bound(f)(x).run(None) == f(x)
 
+    def test_provide(self):
+        assert effect.depend(str).provide('test').run(None) == 'test'
+
+    def test_provide_provides_first_matching_instance(self):
+        assert effect.depend(str).provide('first').run('second') == 'first'
+
+    def test_provide_with_arg(self):
+        assert effect.depend(str).provide('test').run(None) == 'test'
+
+    def test_provide_with_protocol(self):
+        class P(Protocol):
+            x: int
+
+            def f(self):
+                pass
+
+        class C:
+            x: int
+            y: str
+
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+            def f(self):
+                pass
+
+            def __eq__(self, other):
+                return self.x == other.x and self.y == other.y
+
+        assert effect.depend(P).provide(C(0, '')).run(None) == C(0, '')
+
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'
 
@@ -372,7 +406,7 @@ class TestEffect(MonadTest):
         assert repr(e.ensure(e)) == 'success(0).ensure(success(0))'
 
     def test_depend_repr(self):
-        assert repr(effect.depend()) == 'depend()'
+        assert repr(effect.depend(str)) == f'depend({repr(str)})'
 
     @pytest.mark.filterwarnings("ignore:coroutine .+ was never awaited")
     def test_from_awaitable_repr(self):

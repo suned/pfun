@@ -141,12 +141,7 @@ class Effect(Generic[R, E, A], Immutable, Monad):
 def success(value: A1) -> Effect[object, NoReturn, A1]: ...
 
 
-@overload
-def depend(r_type: None = None) -> Depends: ...
-
-
-@overload
-def depend(r_type: Type[R1] = None) -> Depends[R1, R1]: ...
+def depend(r_type: Type[R1]) -> Depends[R1, R1]: ...
 
 
 def from_awaitable(awaitable: Awaitable[A1]) -> Effect[object, NoReturn, A1]:

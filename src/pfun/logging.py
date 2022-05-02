@@ -420,7 +420,7 @@ def get_logger(name: Optional[str] = None) -> Depends[HasLogging, Logger]:
         `Effect` that produces a `Logger`
 
     """
-    return depend().map(lambda env: env.logging.get_logger(name))
+    return depend(HasLogging).map(lambda env: env.logging.get_logger(name))
 
 
 @curry
@@ -445,7 +445,7 @@ def debug(
     Return:
         `Effect` that calls `logging.debug` with `msg`
     """
-    return depend().and_then(
+    return depend(HasLogging).and_then(
         lambda env: env.logging.
         debug(msg, stack_info=stack_info, exc_info=exc_info)
     )
@@ -473,7 +473,7 @@ def info(
     Return:
         `Effect` that calls `logging.info` with `msg`
     """
-    return depend().and_then(
+    return depend(HasLogging).and_then(
         lambda env: env.logging.
         info(msg, stack_info=stack_info, exc_info=exc_info)
     )
@@ -501,7 +501,7 @@ def warning(
     Return:
         `Effect` that calls `logging.warning` with `msg`
     """
-    return depend().and_then(
+    return depend(HasLogging).and_then(
         lambda env: env.logging.
         warning(msg, stack_info=stack_info, exc_info=exc_info)
     )
@@ -529,7 +529,7 @@ def error(
     Return:
         `Effect` that calls `logging.error` with `msg`
     """
-    return depend().and_then(
+    return depend(HasLogging).and_then(
         lambda env: env.logging.
         error(msg, stack_info=stack_info, exc_info=exc_info)
     )
@@ -557,7 +557,7 @@ def critical(
     Return:
         `Effect` that calls `logging.critical` with `msg`
     """
-    return depend().and_then(
+    return depend(HasLogging).and_then(
         lambda env: env.logging.
         critical(msg, stack_info=stack_info, exc_info=exc_info)
     )
@@ -585,7 +585,7 @@ def exception(
     Return:
         `Effect` that calls `logging.exception` with `msg`
     """
-    return depend().and_then(
+    return depend(HasLogging).and_then(
         lambda env: env.logging.
         exception(msg, stack_info=stack_info, exc_info=exc_info)
     )
