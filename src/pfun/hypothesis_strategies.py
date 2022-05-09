@@ -236,7 +236,7 @@ def aio_trampolines(value_strategy: SearchStrategy[A]
     return one_of(dones, call(), and_then())
 
 
-def lists(elements: SearchStrategy[A], min_size=0):
+def lists(elements: SearchStrategy[A], min_size=0) -> SearchStrategy[List[A]]:
     """
     Create a search strategy that produces `pfun.list.List` instances
 

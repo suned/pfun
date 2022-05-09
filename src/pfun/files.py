@@ -65,7 +65,7 @@ class Files(Immutable):
 
         Args:
             path: the path of the file to be written
-            content the content to write
+            content: the content to write
         Return:
             `Effect` that that writes `content` to file at `path`
         """
@@ -90,7 +90,7 @@ class Files(Immutable):
 
         Args:
             path: the path of the file to be written
-            content the content to write
+            content: the content to write
         Return:
             `Effect` that that writes `content` to file at `path`
         """
@@ -115,7 +115,7 @@ class Files(Immutable):
 
         Args:
             path: the path of the file to be written
-            content the content to append
+            content: the content to append
         Return:
             `Effect` that that appends `content` to file at `path`
         """
@@ -140,7 +140,7 @@ class Files(Immutable):
 
         Args:
             path: the path of the file to be written
-            content the content to append
+            content: the content to append
         Return:
             `Effect` that that appends `content` to file at `path`
         """
@@ -196,7 +196,7 @@ def write(path: str, content: str) -> Effect[HasFiles, OSError, None]:
 
     Args:
         path: the path of the file to be written
-        content the content to write
+        content: the content to write
     Return:
         `Effect` that that writes `content` to file at `path`
     """
@@ -239,7 +239,7 @@ def write_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
 
     Args:
         path: the path of the file to be written
-        content the content to write
+        content: the content to write
     Return:
         `Effect` that that writes `content` to file at `path`
     """
@@ -263,7 +263,7 @@ def append(path: str, content: str) -> Effect[HasFiles, OSError, None]:
 
     Args:
         path: the path of the file to be written
-        content the content to append
+        content: the content to append
     Return:
         `Effect` that that appends `content` to file at `path`
     """
@@ -287,7 +287,7 @@ def append_bytes(path: str, content: bytes) -> Effect[HasFiles, OSError, None]:
 
     Args:
         path: the path of the file to be written
-        content the content to append
+        content: the content to append
     Return:
         `Effect` that that appends `content` to file at `path`
     """

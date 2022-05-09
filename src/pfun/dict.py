@@ -119,7 +119,7 @@ class Dict(Immutable, Mapping[K, V], init=False):
             'value'
         Args:
             key: the key to retrieve
-            Return:
+        Return:
             value associated with key
         """
         return self._d[key]
@@ -203,7 +203,6 @@ class Dict(Immutable, Mapping[K, V], init=False):
 
         Args:
             key: the key to retrieve
-            default: value to return if the key is not found
         Return:
             `Just` if key is found in dictionary
                  or default is given,

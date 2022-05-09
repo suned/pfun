@@ -1730,6 +1730,8 @@ class Effect(CEffect, *EffectGen.__mro_entries__((EffectGen,))):
 
 
 Success = Effect[object, NoReturn, A]
+"""Type-alias for `Effect[object, NoReturn, TypeVar('A')]`."""
+
 Try = Effect[object, E, A]
 Depends = Effect[R, NoReturn, A]
 
