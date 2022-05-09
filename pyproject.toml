@@ -11,7 +11,7 @@ include = ["src/pfun/py.typed", "src/pfun/*.c"]
 python = ">= 3.7, < 3.11"
 typing-extensions = "^3.10.0.0"
 aiohttp = {extras = ["speedups"], version = "^3.7.4", optional = true}
-asyncpg = {version = "^0.21.0", optional = true}
+asyncpg = {version = "^0.23.0", optional = true}
 hypothesis = {version = "^6.8.5", optional = true}
 dill = "^0.3.2"
 
@@ -32,11 +32,11 @@ pre-commit = "^2.5.1"
 pre-commit-hooks = "^3.1.0"
 main-dec = "^0.1.1"
 asynctest = "^0.13.0"
-mkdocs = "^1.1.2"
-mkdocstrings = "^0.15.0"
+mkdocs = "^1.3.0"
+mkdocstrings = {version = "^0.18.1", extras = []}
+pytkdocs = { file = "./pytkdocs-0.14.0-py3-none-any.whl" }
 mkdocs-material = "^5.4.0"
 taskipy = "^1.6.0"
-pytkdocs = { file = "./pytkdocs-0.11.1-py3-none-any.whl" }
 
 [tool.poetry.extras]
 http = ["aiohttp"]

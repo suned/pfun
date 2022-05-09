@@ -231,7 +231,6 @@ def and_(a) -> Unary:
 
     Args:
         a: left element of and_ expression
-        b: right element of and_ expression
 
     Return:
         True if both `a` and `b`, False otherwise
@@ -407,7 +406,6 @@ def or_(a) -> Unary:
 
     Args:
         a: left element of or expression
-        b: right element of or expression
 
     Return:
         True if either `a` or `b`, False otherwise
