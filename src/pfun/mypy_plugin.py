@@ -32,29 +32,6 @@ _EFFECT_COMBINE = 'pfun.effect.combine'
 _EITHER_CATCH = 'pfun.either.catch'
 
 
-class ReplaceTypeVar(TypeTranslator):
-    """
-    Visitor that replaces a target type variable and defintion with
-    new
-    """
-    def __init__(self,
-                 target_t_var: TypeVarType,
-                 replacement_t_var: TypeVarType):
-        self.target_t_var = target_t_var
-        self.replacement_t_var = replacement_t_var
-
-    def translate_variables(self, variables):
-        return [v if v != self.target_t_var else self.replacement_t_var
-                for v in variables]
-
-    def visit_instance(self, t: Instance) -> Type:
-        new_t = super().visit_instance(t)
-        return new_t.copy_modified()
-
-    def visit_type_var(self, t: TypeVarType):
-        return t if t != self.target_t_var else self.replacement_t_var
-
-
 class IllegalIntersection(Exception):
     pass
 
@@ -664,7 +641,7 @@ def _lens_getattr_hook(fullname: str, context: AttributeContext) -> Type:
         default_attr_type = context.default_attr_type.copy_modified(
             args=(context.type.args[0], attr_type)
         )
-        _set_lens_method_types(default_attr_type)
+        _set_lens__call__type_var_upper_bound(default_attr_type)
         return default_attr_type
     args_repr = ", ".join(str(a) for a in context.type.args)
     type_repr = f'pfun.lens.Lens[{args_repr}]'
@@ -694,7 +671,7 @@ def _lens_getitem_hook(context: MethodContext) -> Type:
         default_return_type = context.default_return_type.copy_modified(
             args=(context.default_return_type.args[0], result_type)
         )
-        _set_lens_method_types(default_return_type)
+        _set_lens__call__type_var_upper_bound(default_return_type)
         return default_return_type
     context.api.fail(
         f'Value of type "{type_repr}" is not indexable', context.context
@@ -703,7 +680,7 @@ def _lens_getitem_hook(context: MethodContext) -> Type:
     return context.default_return_type.copy_modified(args=(any_t, any_t))
 
 
-def _set_lens_method_types(lens: Instance) -> None:
+def _set_lens__call__type_var_upper_bound(lens: Instance) -> None:
     arg_type = lens.args[0]
     t_var = _type_var('A',
         'pfun.lens',
