@@ -25,7 +25,7 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.11
+        pip install poetry==1.1.13
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
