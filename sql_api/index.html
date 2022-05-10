@@ -16,7 +16,7 @@
       
       
       <link rel="shortcut icon" href="../nav_logo.svg">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-5.5.14">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-5.5.14">
     
     
       
@@ -65,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pfun.sql.Results" class="md-skip">
+        <a href="#pfun.sql.SQL" class="md-skip">
           Skip to content
         </a>
       
@@ -519,13 +519,6 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pfun.sql.Results" class="md-nav__link">
-    Results
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pfun.sql.SQL" class="md-nav__link">
     SQL
   </a>
@@ -771,13 +764,6 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pfun.sql.Results" class="md-nav__link">
-    Results
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pfun.sql.SQL" class="md-nav__link">
     SQL
   </a>
@@ -903,31 +889,13 @@
 </div>
 
 
-  <div class="doc doc-object doc-attribute">
-
-
-
-<h1 class="doc doc-heading" id="pfun.sql.Results">
-<code class="codehilite language-python"><span class="n">pfun</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">Results</span></code>
-
-
-</h1>
-
-    <div class="doc doc-contents first">
-
-      <p>Type-alias for <code>pfun.list.List[pfun.dict.Dict[str, typing.Any]]</code></p>
-    </div>
-
-  </div>
-
-
-
   <div class="doc doc-object doc-class">
 
 
 
 <h1 class="doc doc-heading" id="pfun.sql.SQL">
-        <code>pfun.sql.SQL</code>
+        <code>
+pfun.sql.SQL        </code>
 
 
   <span class="doc doc-properties">
@@ -1226,7 +1194,7 @@ as a <code>List</code> of <code>Dict</code></p>
   </thead>
   <tbody>
     <tr>
-      <td><code>Try[asyncpg.PostgresError, Results]</code></td>
+      <td><code>Try[asyncpg.PostgresError, List[Dict[str, Any]]]</code></td>
       <td><p><code>Effect</code> that retrieves rows returned by <code>query</code> as <code>Results</code></p></td>
     </tr>
   </tbody>
@@ -1366,7 +1334,8 @@ as a <code>List</code> of <code>Dict</code></p>
 
 
 <h1 class="doc doc-heading" id="pfun.sql.MalformedConnectionStr">
-        <code>pfun.sql.MalformedConnectionStr</code>
+        <code>
+pfun.sql.MalformedConnectionStr        </code>
 
 
 
@@ -1389,7 +1358,8 @@ as a <code>List</code> of <code>Dict</code></p>
 
 
 <h1 class="doc doc-heading" id="pfun.sql.HasSQL">
-        <code>pfun.sql.HasSQL</code>
+        <code>
+pfun.sql.HasSQL        </code>
 
 
 
@@ -1468,7 +1438,7 @@ as a <code>List</code> of <code>Dict</code></p>
       </tr>
       <tr>
         <td><code>results</code></td>
-        <td><code>Results</code></td>
+        <td><code>List[Dict[str, Any]]</code></td>
         <td><p>database results to convert</p></td>
         <td><em>required</em></td>
       </tr>
@@ -1697,7 +1667,7 @@ as a <code>List</code> of <code>Dict</code></p>
   </thead>
   <tbody>
     <tr>
-      <td><code>Effect[HasSQL, asyncpg.PostgresError, Results]</code></td>
+      <td><code>Effect[HasSQL, asyncpg.PostgresError, List[Dict[str, Any]]]</code></td>
       <td><p><code>Effect</code> that retrieves rows returned by <code>query</code> as <code>Results</code></p></td>
     </tr>
   </tbody>
@@ -1795,7 +1765,7 @@ as a <code>List</code> of <code>Dict</code></p>
     </div>
     
       <script src="../assets/javascripts/vendor.2d1db4bd.min.js"></script>
-      <script src="../assets/javascripts/bundle.6627ddf3.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      <script src="../assets/javascripts/bundle.6627ddf3.min.js"></script><script id="__lang" type="application/json">{"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching"}</script>
       
       <script>
         app = initialize({
