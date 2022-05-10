@@ -1,5 +1,5 @@
 import operator
-from typing import Container, Optional, TypeVar, overload
+from typing import Container, Iterable, Optional, TypeVar, overload
 
 from . import protocols
 from .functions import Unary, curry
@@ -547,7 +547,7 @@ def contains(elem: A, container: Container[A]) -> bool:
 
 
 @curry
-def count_of(elem: A, container: Container[A]) -> int:
+def count_of(elem: A, container: Iterable[A]) -> int:
     """
     Return count of how many times `elem` appears in `container`. \
     Note that the order of arguments are flipped comparet to the builtins \

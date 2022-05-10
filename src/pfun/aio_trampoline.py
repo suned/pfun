@@ -78,7 +78,7 @@ class Done(Trampoline[A]):
     ) -> Trampoline[B]:
         result = cont(self.a)
         if iscoroutine(result):
-            return await result  # type: ignore
+            return await result
         return result  # type: ignore
 
 
