@@ -33,7 +33,9 @@ jobs:
         poetry run task compile
         poetry install
     - name: Lint
-      run: poetry run task lint
+      run: |
+        poetry show mypy
+        poetry run task lint
   build_docs:
     runs-on: ubuntu-latest
     steps:
