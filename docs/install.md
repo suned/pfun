@@ -24,4 +24,4 @@ add the following to your MyPy configuration:
 plugins = pfun.mypy_plugin
 ```
 
-`pfun` is currently only tested against MyPy 0.910
+`pfun` is currently only tested against MyPy 0.950

@@ -65,7 +65,7 @@ class List(Monad, Tuple[A, ...]):
         """
         return self + tuple(iterable)
 
-    def __add__(self, other: Iterable[A]) -> 'List[A]':
+    def __add__(self, other: Iterable[A]) -> 'List[A]':  # type: ignore
         """
         Concatenate with other ``Iterable`` or `List`
 
