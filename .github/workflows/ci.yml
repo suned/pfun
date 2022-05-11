@@ -17,15 +17,15 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.10.4
     - name: Restore cache
       uses: actions/cache@v1
       with:
         path: .venv
-        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+        key: py3.10-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.11
+        pip install poetry==1.1.13
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -33,7 +33,9 @@ jobs:
         poetry run task compile
         poetry install
     - name: Lint
-      run: poetry run task lint
+      run: |
+        poetry show mypy
+        poetry run task lint
   build_docs:
     runs-on: ubuntu-latest
     steps:
@@ -94,7 +96,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout

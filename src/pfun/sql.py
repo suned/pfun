@@ -74,7 +74,7 @@ def as_type(type_: Type[T],
     """
 
     try:
-        return success(List(type_(**row) for row in results)  # type: ignore
+        return success(List(type_(**row) for row in results)
                        )
     except TypeError as e:
         return error(e)

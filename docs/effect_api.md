@@ -16,6 +16,8 @@
             repeat,
             retry
         ]
+    rendering:
+        show_bases: false
 
 ::: pfun.Success
 ::: pfun.Try

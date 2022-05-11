@@ -19,9 +19,8 @@ from mypy.subtypes import is_protocol_implementation
 from mypy.type_visitor import TypeTranslator
 from mypy.typeops import make_simplified_union
 from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
-                        TypeAliasType, TypeOfAny, TypeVarDef, TypeVarId,
-                        TypeVarType, UninhabitedType, UnionType,
-                        get_proper_type)
+                        TypeAliasType, TypeOfAny, TypeVarId, TypeVarType,
+                        UninhabitedType, UnionType, get_proper_type)
 from mypy.typevars import has_no_typevars
 
 from .functions import curry
@@ -34,29 +33,6 @@ _RESULT = 'pfun.result.result'
 _EITHER = 'pfun.either.either'
 _EFFECT_COMBINE = 'pfun.effect.combine'
 _EITHER_CATCH = 'pfun.either.catch'
-
-
-class ReplaceTypeVar(TypeTranslator):
-    """
-    Visitor that replaces a target type variable and defintion with
-    new
-    """
-    def __init__(self,
-                 target_t_var: TypeVarType,
-                 replacement_t_var: TypeVarType,
-                 target_t_def: t.Optional[TypeVarDef] = None,
-                 replacement_t_def: t.Optional[TypeVarDef] = None):
-        self.target_t_var = target_t_var
-        self.target_t_def = target_t_def
-        self.replacement_t_var = replacement_t_var
-        self.replacement_t_def = replacement_t_def
-
-    def translate_variables(self, variables):
-        return [v if v != self.target_t_def else self.replacement_t_def
-                for v in variables]
-
-    def visit_type_var(self, t: TypeVarType):
-        return t if t != self.target_t_var else self.replacement_t_var
 
 
 class IllegalIntersection(Exception):
@@ -334,18 +310,24 @@ def _variadic_decorator_hook(context: FunctionContext) -> Type:
     )
 
 
-def _type_var_def(
+def _type_var(
     name: str,
     module: str,
     upper_bound,
     values=(),
     meta_level=0,
     variance=INVARIANT
-) -> TypeVarDef:
+) -> TypeVarType:
     id_ = TypeVarId.new(meta_level)
-    id_.raw_id = -id_.raw_id
     fullname = f'{module}.{name}'
-    return TypeVarDef(name, fullname, id_, list(values), upper_bound, variance)
+    return TypeVarType(
+        name,
+        fullname,
+        id_,
+        values=list(values),
+        upper_bound=upper_bound,
+        variance=variance
+    )
 
 
 def _get_compose_type(context: FunctionContext) -> t.Optional[CallableType]:
@@ -356,31 +338,28 @@ def _get_compose_type(context: FunctionContext) -> t.Optional[CallableType]:
     arg_types = []
     arg_kinds = []
     arg_names = []
-    ret_type_def = _type_var_def(
-        'R1', 'pfun.compose', context.api.named_type('builtins.object')
+    ret_type = _type_var(
+        'R1',
+        'pfun.compose',
+        context.api.named_type('builtins.object')
     )
-    ret_type = TypeVarType(ret_type_def)
-    variables = [ret_type_def]
+    variables = [ret_type]
     for n in range(n_args):
-        current_arg_type_def = _type_var_def(
-            f'R{n + 2}',
+        current_arg_type = _type_var(f'R{n + 2}',
             'pfun.compose',
-            context.api.named_type('builtins.object')
-        )
-        current_arg_type = TypeVarType(current_arg_type_def)
+            context.api.named_type('builtins.object'))
         arg_type = CallableType(
             arg_types=[current_arg_type],
             ret_type=ret_type,
             arg_kinds=[ARG_POS],
             arg_names=[None],
-            variables=[current_arg_type_def, ret_type_def],
+            variables=[current_arg_type, ret_type],
             fallback=context.api.named_type('builtins.function')
         )
         arg_types.append(arg_type)
         arg_kinds.append(ARG_POS)
         arg_names.append(None)
-        variables.append(current_arg_type_def)
-        ret_type_def = current_arg_type_def
+        variables.append(current_arg_type)
         ret_type = current_arg_type
     first_arg_type, *_, last_arg_type = arg_types
     ret_type = CallableType(
@@ -410,7 +389,8 @@ def _compose_hook(context: FunctionContext) -> Type:
         [
             [i, i] for i in
             range(len([arg for args in context.arg_types for arg in args]))
-        ]
+        ],
+        context.api.expr_checker.argument_infer_context()
     )
     ret_type = context.api.expr_checker.apply_inferred_arguments(
         compose, inferred, context.context
@@ -465,10 +445,11 @@ def _combine_hook(context: FunctionContext):
             else:
                 pos_map_arg_types.append(result_type)
 
-        map_return_type_def = _type_var_def(
-            'R1', 'pfun.effect', context.api.named_type('builtins.object')
+        map_return_type = _type_var(
+            'R1',
+            'pfun.effect',
+            context.api.named_type('builtins.object')
         )
-        map_return_type = TypeVarType(map_return_type_def)
         var_arg_types = ([UnionType.make_union(list(set(var_map_arg_types)))]
                          if var_map_arg_types else [])
         arg_types = pos_map_arg_types + var_arg_types
@@ -477,7 +458,7 @@ def _combine_hook(context: FunctionContext):
             arg_kinds=map_arg_kinds,
             arg_names=[None] * len(arg_types),
             ret_type=map_return_type,
-            variables=[map_return_type_def],
+            variables=[map_return_type],
             fallback=context.api.named_type('builtins.function')
         )
         ret_type = context.default_return_type.ret_type
@@ -506,7 +487,7 @@ def _combine_hook(context: FunctionContext):
             arg_types=[map_function_type],
             arg_kinds=[ARG_POS],
             arg_names=[None],
-            variables=[map_return_type_def],
+            variables=[map_return_type],
             ret_type=ret_type,
             fallback=context.api.named_type('builtins.function')
         )
@@ -588,7 +569,8 @@ def _effect_lift_call_hook(context: MethodContext) -> Type:
         inferred = infer.infer_function_type_arguments(
             f,
             as_, [kind for kinds in context.arg_kinds for kind in kinds],
-            [[i, i] for i in range(len(as_))]
+            [[i, i] for i in range(len(as_))],
+            context.api.expr_checker.argument_infer_context()
         )
         a = context.api.expr_checker.apply_inferred_arguments(
             f, inferred, context.context
@@ -662,7 +644,7 @@ def _lens_getattr_hook(fullname: str, context: AttributeContext) -> Type:
         default_attr_type = context.default_attr_type.copy_modified(
             args=(context.type.args[0], attr_type)
         )
-        _set_lens_method_types(default_attr_type)
+        _set_lens__call__type_var_upper_bound(default_attr_type)
         return default_attr_type
     args_repr = ", ".join(str(a) for a in context.type.args)
     type_repr = f'pfun.lens.Lens[{args_repr}]'
@@ -692,7 +674,7 @@ def _lens_getitem_hook(context: MethodContext) -> Type:
         default_return_type = context.default_return_type.copy_modified(
             args=(context.default_return_type.args[0], result_type)
         )
-        _set_lens_method_types(default_return_type)
+        _set_lens__call__type_var_upper_bound(default_return_type)
         return default_return_type
     context.api.fail(
         f'Value of type "{type_repr}" is not indexable', context.context
@@ -701,29 +683,23 @@ def _lens_getitem_hook(context: MethodContext) -> Type:
     return context.default_return_type.copy_modified(args=(any_t, any_t))
 
 
-def _set_lens_method_types(lens: Instance) -> None:
+def _set_lens__call__type_var_upper_bound(lens: Instance) -> None:
     arg_type = lens.args[0]
-    t_def = _type_var_def(
-        'A',
+    t_var = _type_var('A',
         'pfun.lens',
         upper_bound=arg_type,
-        variance=COVARIANT
-    )
-    t_var = TypeVarType(t_def)
+        variance=COVARIANT)
     __call__ = lens.type.names['__call__']
-    _set_method_type_vars(__call__, t_var, t_def)
-
-
-def _set_method_type_vars(method, t_var, t_def):
-    ret_type = method.node.type.ret_type
-    old_t_var = ret_type.ret_type
-    translator = ReplaceTypeVar(
-        target_t_var=old_t_var,
-        replacement_t_var=t_var
+    __call__.node.type = __call__.node.type.copy_modified(
+        ret_type=CallableType(
+            arg_types=[t_var],
+            arg_kinds=[ARG_POS],
+            arg_names=[None],
+            ret_type=t_var,
+            variables=[t_var],
+            fallback=__call__.node.type.ret_type.fallback
+        )
     )
-    ret_type = ret_type.accept(translator)
-    ret_type = ret_type.copy_modified(variables=[t_def])
-    method.node.type = method.node.type.copy_modified(ret_type=ret_type)
 
 
 def _lens_hook(context: FunctionContext) -> Type:
@@ -733,7 +709,7 @@ def _lens_hook(context: FunctionContext) -> Type:
     if not hasattr(arg_type, 'is_type_obj') or not arg_type.is_type_obj():
         return context.default_return_type
     if isinstance(arg_type, Overloaded):
-        arg_type = arg_type.items()[0]
+        arg_type = arg_type.items[0]
     arg_type = arg_type.ret_type
     return context.default_return_type.copy_modified(
         args=(arg_type,)
