@@ -326,6 +326,58 @@
     from pfun import depend
 
     depend(0)  # E: Value of type variable "T" of "depend" cannot be "int"
+- case: provide_eliminates_dependencies
+  disable_cache: true
+  main: |
+    from typing import Protocol
+    from pfun import Depends, Intersection, Success, Try
+
+    class P1(Protocol):
+      x: str
+    
+    class P2(Protocol):
+      y: int
+    
+    class P3(Protocol):
+      z: float
+    
+    class C1:
+      x: str
+    
+    class C2:
+      y: int
+
+    class C3:
+      z: float
+
+    e1: Depends[Intersection[P1, P2, P3], None]
+    e2 = e1.provide(C1())
+    reveal_type(e2)  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P2, main.P3], <nothing>, None]"
+    
+    e2.run(None)  # E: Argument 1 to "run" of "Effect" has incompatible type "None"; expected "Intersection[main.P2, main.P3]"
+    
+    e3 = e2.provide(C2())
+    reveal_type(e3) # N: Revealed type is "pfun.effect.Effect[main.P3, <nothing>, None]"
+    
+    e4 = e3.provide(C3())
+    reveal_type(e4)  # N: Revealed type is "pfun.effect.Effect[builtins.object, <nothing>, None]"
+
+    d1: Success[C1]
+    e5 = e1.provide(d1)
+    reveal_type(e5)  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P2, main.P3], <nothing>, None]"
+
+    d2: Try[str, C2]
+    e6 = e5.provide(d2)
+    reveal_type(e6)  # N: Revealed type is "pfun.effect.Effect[main.P3, builtins.str, None]"
+
+    d3: Depends[float, C3]
+    e7 = e6.provide(d3)
+    reveal_type(e7)  # N: Revealed type is "pfun.effect.Effect[builtins.float, builtins.str, None]"
+
+    d4: Depends[P1, P2]
+    e8 = e2.provide(d4)
+    reveal_type(e8)  # N: Revealed type is "pfun.effect.Effect[pfun.Intersection[main.P3, main.P1], <nothing>, None]"
+
 - case: lens_without_arg_allows_all
   disable_cache: true
   main: |
