@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing_extensions import Protocol
-
 from . import clock, console, files, logging, random, state, subprocess  # noqa
 from .dict import Dict  # noqa
 from .effect import *  # noqa
@@ -18,7 +16,12 @@ except ImportError:
     pass
 
 
-class Intersection(Protocol):
+class _IntersectionMeta(type):
+    def __getitem__(self, item):
+        return self
+
+
+class Intersection(metaclass=_IntersectionMeta):
     """
     Abstract type that represents the intersection between two or more
     protocols when using the pfun MyPy plugin.

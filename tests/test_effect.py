@@ -361,7 +361,7 @@ class TestEffect(MonadTest):
         assert effect.depend(P).provide(C(0, '')).run(None) == C(0, '')
 
     def test_provide_with_generic(self):
-        depend(List[str]).provide(List([])).run(None) == List([])
+        effect.depend(List[str]).provide(List([])).run(None) == List([])
 
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'
