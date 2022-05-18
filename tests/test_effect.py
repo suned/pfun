@@ -4,13 +4,12 @@ from contextlib import ExitStack
 from datetime import timedelta
 from subprocess import CalledProcessError
 from unittest import mock
-from dataclasses import dataclass
 
-from typing_extensions import Protocol
 import aiohttp
 import asynctest
 import pytest
 from hypothesis import assume, given, settings
+from typing_extensions import Protocol
 
 from pfun import (DefaultModules, Dict, Immutable, List, clock, compose,
                   console, effect, either, files, http, identity, logging,
@@ -360,6 +359,9 @@ class TestEffect(MonadTest):
                 return self.x == other.x and self.y == other.y
 
         assert effect.depend(P).provide(C(0, '')).run(None) == C(0, '')
+
+    def test_provide_with_generic(self):
+        depend(List[str]).provide(List([])).run(None) == List([])
 
     def test_success_repr(self):
         assert repr(effect.success('value')) == 'success(\'value\')'

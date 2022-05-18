@@ -6,7 +6,7 @@ Attributes:
     Try (TypeAlias): Type-alias for `Effect[object, TypeVar('E'), TypeVar('A')]`.
     Depends (TypeAlias): Type-alias for `Effect[TypeVar('R'), NoReturn, TypeVar('A')]`.
 """
-from typing import Generic, TypeVar, NoReturn
+from typing import Generic, TypeVar, NoReturn, get_origin
 import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
@@ -859,8 +859,11 @@ cdef class CDepends(CEffect):
     cdef object t
 
     def __cinit__(self, t):
-        if issubclass(t, Protocol):
+        if type(t) == type and issubclass(t, Protocol):
             t = runtime_checkable(t)
+        origin = get_origin(t)
+        if origin is not None:
+            t = origin
         self.t = t
 
     def __reduce__(self):

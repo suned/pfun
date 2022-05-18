@@ -52,7 +52,9 @@ class DefaultModules:
         files: The files module
         console: The console module
         random: The random module
-        clock: the clock module
+        clock: The clock module
+        logging: The logging module
+        subprocess: The subprocess module
     """
     files: 'files.Files'
     console: 'console.Console'

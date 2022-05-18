@@ -310,6 +310,22 @@
 
 
     reveal_type(catch_cpu_bound(ValueError, TypeError)(f))  # N: Revealed type is "def (a: builtins.str) -> pfun.effect.Effect[builtins.object, Union[builtins.ValueError, builtins.TypeError], builtins.int]"
+- case: depend_argument_can_be_abstract
+  disable_cache: true
+  main: |
+    from typing import Protocol
+    from pfun import depend
+
+    class P(Protocol):
+      pass
+    
+    reveal_type(depend(P))  # N: Revealed type is "pfun.effect.Effect[main.P, <nothing>, main.P]"
+- case: depend_argument_must_be_type
+  disable_cache: true
+  main: |
+    from pfun import depend
+
+    depend(0)  # E: Value of type variable "T" of "depend" cannot be "int"
 - case: lens_without_arg_allows_all
   disable_cache: true
   main: |
@@ -366,6 +382,17 @@
         name: str
     
     reveal_type(lens(User))  # N: Revealed type is "pfun.lens.RootLens[main.User]"
+- case: lens_argument_must_be_type
+  disable_cache: true
+  main: |
+    from pfun import lens
+
+    lens(0)
+  out: |
+    main:3: error: No overload variant of "lens" matches argument type "int"
+    main:3: note: Possible overload variants:
+    main:3: note:     def [T] lens(t: T) -> RootLens[T]
+    main:3: note:     def lens(t: None = ...) -> RootLens[Any]
 - case: transform_checks_args
   disable_cache: true
   main: |

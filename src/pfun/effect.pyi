@@ -141,7 +141,10 @@ class Effect(Generic[R, E, A], Immutable, Monad):
 def success(value: A1) -> Effect[object, NoReturn, A1]: ...
 
 
-def depend(r_type: Type[R1]) -> Depends[R1, R1]: ...
+T = TypeVar('T', bound=Type[Any])
+
+
+def depend(r_type: T) -> Depends[T, T]: ...
 
 
 def from_awaitable(awaitable: Awaitable[A1]) -> Effect[object, NoReturn, A1]:
