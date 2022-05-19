@@ -867,13 +867,13 @@ cdef class CDepends(CEffect):
         return (depend, (self.t,))
 
     cdef object get_dependency_type(self):
-        if not inspect.isclass(self.t):
-            raise TypeError(f'depend arguments must be types, but was {self.t}')
         origin = get_origin(self.t)
         if origin is not None:
             t = origin
         else:
             t = self.t
+        if not inspect.isclass(t):
+            raise TypeError(f'depend arguments must be types, but was {self.t}')
         if issubclass(t, Protocol):
             t = runtime_checkable(t)
         return t
