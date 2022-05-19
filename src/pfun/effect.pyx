@@ -12,6 +12,7 @@ import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
 from functools import wraps
+import inspect
 
 import dill
 from typing_extensions import Protocol, runtime_checkable
@@ -860,27 +861,46 @@ cdef class CDepends(CEffect):
     cdef object t
 
     def __cinit__(self, t):
-        if type(t) == type and issubclass(t, Protocol):
-            t = runtime_checkable(t)
-        origin = get_origin(t)
-        if origin is not None:
-            t = origin
         self.t = t
 
     def __reduce__(self):
         return (depend, (self.t,))
 
-    async def resume(self, RuntimeEnv env):
+    cdef object get_dependency_type(self):
+        if not inspect.isclass(self.t):
+            raise TypeError(f'depend arguments must be types, but was {self.t}')
+        origin = get_origin(self.t)
+        if origin is not None:
+            t = origin
+        else:
+            t = self.t
+        if issubclass(t, Protocol):
+            t = runtime_checkable(t)
+        return t
+
+    cdef object resolve_dependency(self, RuntimeEnv env):
         if isinstance(env.r, CompositeR):
+            t = self.get_dependency_type()
             for r in env.r.rs:
-                if isinstance(r, self.t):
-                    return CSuccess(r)
+                if isinstance(r, t):
+                    return r
             type_reprs = ', '.join([repr(r) for r in env.r.rs])
-            return Error(TypeError(f'Could not satisfy dependency of type "{self.t}" with provided arguments: {type_reprs}'))
-        return CSuccess(env.r)
+            raise TypeError(f'Could not satisfy dependency of type "{self.t}" with provided arguments: {type_reprs}')
+        return env.r
+
+    async def resume(self, RuntimeEnv env):
+        try:
+            r = self.resolve_dependency(env)
+            return CSuccess(r)
+        except TypeError as e:
+            return Error(e)
 
     async def apply_continuation(self, object f, RuntimeEnv env):
-        return await f(env.r)
+        try:
+            r = self.resolve_dependency(env)
+            return await f(r)
+        except TypeError as e:
+            return Error(e)
     
     def __repr__(self):
         return f'depend({repr(self.t)})'
