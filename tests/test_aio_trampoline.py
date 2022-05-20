@@ -1,5 +1,5 @@
 import pytest
-from hypothesis import assume, given
+from hypothesis import assume, given, settings
 
 from pfun import compose, identity
 from pfun.aio_trampoline import Done
@@ -20,6 +20,7 @@ class TestTrampoline(MonadTest):
     async def test_left_identity_law(self, value, f):
         assert (await Done(value).and_then(f).run()) == (await f(value).run())
 
+    @settings(deadline=None)
     @pytest.mark.asyncio
     @given(
         aio_trampolines(anything()),
