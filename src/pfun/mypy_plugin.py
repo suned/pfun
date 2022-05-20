@@ -6,6 +6,7 @@ from mypy import checkmember, infer
 from mypy.argmap import map_actuals_to_formals
 from mypy.checker import TypeChecker
 from mypy.expandtype import freshen_function_type_vars
+from mypy.messages import format_type_distinctly
 from mypy.mro import MroError, calculate_mro
 from mypy.nodes import (ARG_NAMED, ARG_NAMED_OPT, ARG_OPT, ARG_POS, ARG_STAR,
                         ARG_STAR2, COVARIANT, INVARIANT, Block, ClassDef,
@@ -14,7 +15,9 @@ from mypy.plugin import (AnalyzeTypeContext, AttributeContext, ClassDefContext,
                          FunctionContext, FunctionSigContext, MethodContext,
                          MethodSigContext, Plugin)
 from mypy.plugins.dataclasses import DataclassTransformer
+from mypy.subtypes import is_protocol_implementation
 from mypy.type_visitor import TypeTranslator
+from mypy.typeops import make_simplified_union
 from mypy.types import (AnyType, CallableType, Instance, Overloaded, Type,
                         TypeAliasType, TypeOfAny, TypeVarId, TypeVarType,
                         UninhabitedType, UnionType, get_proper_type)
@@ -699,7 +702,7 @@ def _set_lens__call__type_var_upper_bound(lens: Instance) -> None:
     )
 
 
-def _lens_hook(context: FunctionContext) -> Type:
+def _check_arg_is_type_hook(context: FunctionContext) -> Type:
     if not context.arg_types[0]:
         return context.default_return_type
     arg_type = context.arg_types[0][0]
@@ -709,11 +712,13 @@ def _lens_hook(context: FunctionContext) -> Type:
         arg_type = arg_type.items[0]
     arg_type = arg_type.ret_type
     return context.default_return_type.copy_modified(
-        args=(arg_type,)
+        args=[arg_type] * len(context.default_return_type.args)
     )
 
 
 def _create_intersection(args, context, api):
+    if args == []:
+        return api.named_type('object')
     defn = ClassDef('Intersection', Block([]))
     defn.fullname = 'pfun.Intersection'
     info = TypeInfo({}, defn, 'pfun')
@@ -761,6 +766,67 @@ def _intersection_hook(context: FunctionSigContext):
     return translated
 
 
+def _is_intersection(t: Type) -> bool:
+    return (isinstance(t, Instance) and
+            'pfun.Intersection' in t.type.fullname)
+
+
+def _provide_effect_hook(ctx: MethodSigContext,
+                         arg: Instance,
+                         intersection: Instance) -> CallableType:
+    arg_r, arg_e, arg_a = arg.args
+    satisfied = [b for b in intersection.type.bases
+                 if is_protocol_implementation(arg_a, b)]
+    if satisfied == []:
+        union = UnionType.make_union(intersection.type.bases)
+        arg_type_str, union_str = format_type_distinctly(arg, union)
+        msg = (f'Argument 1 to "provide" has incompatible type {arg_type_str};'
+               f' expected {union_str}')
+        ctx.api.fail(msg, ctx.context)
+        return ctx.default_return_type
+    new_bases = [b for b in intersection.type.bases if b not in satisfied]
+    new_intersection = _create_intersection(
+        new_bases + [arg_r],
+        ctx.context,
+        ctx.api
+    )
+    signature: CallableType = ctx.default_signature
+    ret_type = signature.ret_type
+    _, e, a = ret_type.args
+    ret_type = ret_type.copy_modified(
+        args=(new_intersection, make_simplified_union([arg_e, e]), a)
+    )
+    arg_types = [arg]
+    return signature.copy_modified(arg_types=arg_types, ret_type=ret_type)
+
+
+def _provide_hook(ctx: MethodSigContext) -> CallableType:
+    intersection: Instance = ctx.type.args[0]
+    if not _is_intersection(intersection):
+        return ctx.default_signature
+    arg = ctx.api.expr_checker.accept(ctx.args[0][0])
+    arg = get_proper_type(arg)
+    if isinstance(arg, Instance) and arg.type.fullname == 'pfun.effect.Effect':
+        return _provide_effect_hook(ctx, arg, intersection)
+    satisfied = [b for b in intersection.type.bases
+                 if is_protocol_implementation(arg, b)]
+    if satisfied == []:
+        union = UnionType.make_union(intersection.type.bases)
+        arg_type_str, union_str = format_type_distinctly(arg, union)
+        msg = (f'Argument 1 to "provide" has incompatible type {arg_type_str};'
+               f' expected {union_str}')
+        ctx.api.fail(msg, ctx.context)
+        return ctx.default_return_type
+    new_bases = [b for b in intersection.type.bases if b not in satisfied]
+    new_intersection = _create_intersection(new_bases, ctx.context, ctx.api)
+    signature: CallableType = ctx.default_signature
+    ret_type = signature.ret_type
+    _, e, a = ret_type.args
+    ret_type = ret_type.copy_modified(args=(new_intersection, e, a))
+    arg_types = [_create_intersection(satisfied, ctx.context, ctx.api)]
+    return signature.copy_modified(arg_types=arg_types, ret_type=ret_type)
+
+
 C = t.TypeVar('C')
 T = t.TypeVar('T')
 Hook = t.Optional[t.Callable[[C], T]]
@@ -793,8 +859,8 @@ class PFun(Plugin):
                         'pfun.effect.combine_io_bound',
                         'pfun.effect.combine_async'):
             return _combine_hook
-        if fullname == 'pfun.lens.lens':
-            return _lens_hook
+        if fullname in ('pfun.lens.lens', 'pfun.effect.depend'):
+            return _check_arg_is_type_hook
         return None
 
     def get_function_signature_hook(self, fullname: str
@@ -828,6 +894,8 @@ class PFun(Plugin):
                         'pfun.effect.lift_io_bound.__call__',
                         'pfun.effect.lift_async.__call__'):
             return _effect_lift_call_signature_hook
+        if fullname == 'pfun.effect.Effect.provide':
+            return _provide_hook
         return _intersection_hook
 
     def get_base_class_hook(self, fullname: str):

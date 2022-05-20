@@ -104,7 +104,7 @@ else:
 ```
 
 ## Effect
-The `pfun.effect.Effect` type lets you express side-effects in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "[functional effect system](https://en.wikipedia.org/wiki/Effect_system)", which is precisely what `pfun.effect.Effect` is. The core type you will use when expressing side-effects with `pfun` is `pfun.effect.Effect`. `Effect` has a function `run` that perfoms the side-effect it represents. `run` is a function that:
+The `pfun.effect.Effect` type lets you express side-effects in a side-effect free fashion. Readers with functional programming experience may be familiar with the term "[functional effect system](https://en.wikipedia.org/wiki/Effect_system)", which is precisely what `pfun.effect.Effect` is. The core type you will use when expressing side-effects with `pfun` is `pfun.effect.Effect`. `Effect` has a method `run` that perfoms the side-effect it represents. `run` is a method that:
 
 - Takes exactly one argument
 - May or may not perform side-effects when called (including raising exceptions)
@@ -130,7 +130,7 @@ class Effect(Generic[R, E, A]):
 In other words, `Effect` takes three type paramaters: `R`, `E` and `A`. We'll study them one at a time.
 
 ### The Success Type
-The `A` in `Effect[R, E, A]` is the _success type_. This is the type that the effect function will return if no error occurs. For example, in an `Effect` instance that reads a file as a `str`, `A` would be parameterized with `str`. You can create an `Effect` instance that succeeds with the value `a` using `pfun.effect.success(a)`:
+The `A` in `Effect[R, E, A]` is the _success type_. This is the type that the `run` method will return if no error occurs. For example, in an `Effect` instance that reads a file as a `str`, `A` would be parameterized with `str`. You can create an `Effect` instance that succeeds with the value `a` using `pfun.effect.success(a)`:
 
 ```python
 from typing import NoReturn
@@ -215,12 +215,68 @@ if __name__ == '__main__':
     # run in development
     program.run('user@dev_db')
 ```
-In the next section, we will discuss this _dependency injection_ capability of `Effect` in detail.
+In most examples we have looked at so far, `R` is parameterized with `object`. This means that it can safely be called with any value (since all Python values are sub-types of `object`). This is mostly useful when you're working with effects that don't use the dependency argument for anything, in which case any value will do.
+
+You can ask for a dependency using the `pfun.effect.depend` function. It takes as an argument the type of the dependency you need:
+```python
+from typing import NoReturn
+
+from pfun.effect import Effect, depend
+
+
+e: Effect[str, NoReturn, str] = depend(str)
+assert e.run('Hello!') == 'Hello!'
+```
+
+In addition to providing the dependency type as an argument to `run`, you can also provide it using the `provide` method, which doesn't run your effect, but returns a new effect with a satisfied dependency type:
+```python
+def do_something() -> Effect[Tuple[int], NoReturn, int]:
+    ...
+
+e: Effect[object, NoReturn, int] = do_something().provide((0,))
+```
+
+!!! warning
+    Since calls to `provide` can be chained in order to provide multiple dependency instances, effects returned by `depend` need to resolve which provided dependency is needed for that particular call. `depend` uses `isinstance` to compare the provided dependencies with the requested dependency type given as argument to `depend`. This means that:
+    
+    - When depending on protocols, `depend` uses `typing.runtime_checkable` to compare provided dependencies with the argument given to `depend`. This only allows for structural comparison (i.e not taking into account type signatures). This means you should be careful when depending on multiple protocols with identical structures, but different type signatures.
+    - When depending on generic types such as `List[str]`, `depend` uses `typing.get_origin` to compare provided dependencies with the argument given to `depend`. This means that type arguments are not taken into consideration when resolving dependencies.
+
+`provide` is useful when part of your program benefits from having some dependency passed in on-demand instead of explicitly as an argument threaded through
+every function call, but you want to satisfy that dependency "locally" i.e not at the edge of your program, and without performing the side effect that the `Effect` instance represents.
+
+Moreover, `provide` allows you to provide dependencies that themselves requires side-effects to be satisfied. For example, imagine that you store
+configuration variables in a JSON file. You depend on that configuration using `depend` in several places, but in order to read the config,
+you need to read the JSON file, which is itself an effect. This might look like this:
+```python
+from typing import Any
+import json
+
+from pfun import Dict, Effect, files
+
+
+Config = Dict[str, Any]
+
+
+def get_config() -> Effect[files.HasFiles, IOError, Config]:
+    return files.read('config.json').map(json.loads).map(Dict)
+```
+To use the effect returned by `get_config` to provide the config to an effect that depends on it, you can use `provide`:
+```python
+from typing import NoReturn
+
+from pfun import depend
+    
+
+needs_config: Effect[Config, NoReturn, Config] = depend(Config)
+e: Effect[files.HasFiles, IOError, Config] = needs_config.provide(get_config())
+
+```
+
+In the next section, we will discuss how to use `R`, `run` and `provide` of `Effect` in detail.
 
 ### The Module Pattern
-This section is dedicated to the dependency type `R`. In most examples we have looked at so far, `R` is parameterized with `object`. This means that it can safely be called with any value (since all Python values are sub-types of `object`). This is mostly useful when you're working with effects that don't use the dependency argument for anything, in which case any value will do.
-
-In the previous section we saw how the `R` parameter of `Effect` can be used for dependency injection. But what happens when we try to combine two effects with different dependency types with `and_then`? The `Effect` instance returned by `and_then` must have a dependency type that is a combination of the dependency types of both the combined effects, since the dependency passed to the combined effect is also passed to the other effects.
+This section is dedicated to the dependency type `R`. In the previous section we saw how the `R` parameter of `Effect` can be used for dependency injection. But what happens when we try to combine two effects with different dependency types with `and_then`? The `Effect` instance returned by `and_then` must have a dependency type that is a combination of the dependency types of both the combined effects, since the dependency passed to the combined effect is also passed to the other effects.
 
 Consider for example this effect, that uses the `execute` function from above to get database results, and combines it with a function `make_request` that calls an api, and requires a `Credentials` instance as the dependency type:
 
@@ -239,7 +295,7 @@ response.run(...)  # What could this argument be?
 ```
 To call the `response.run` function, we need an instance of a type that is a `str` and a `Credentials` instance _at the same time_, because that argument must be passed to both the effect returned by `execute` and by `make_request`. Ideally, we want `response` to have the type `Effect[Intersection[Credentials, str], IOError, bytes]`, where `Intersection[Credentials, str]` indicates that the dependency type must be both of type `Credentials` and of type `str`.
 
-In theory such an object could exist (defined as `class MyEnv(Credentials, str): ...`), but there is no straight-forward way of expressing that type dynamically in the Python type system. As a consequence, `pfun` infers the resulting effect with the `R` parameterized as `typing.Any`, which in this case means that `pfun` could not assign a meaningful type to `R`.
+In theory such an object could exist (defined as `class MyDependency(Credentials, str): ...`), but there is no straight-forward way of expressing that type dynamically in the Python type system. As a consequence, `pfun` infers the resulting effect with the `R` parameterized as `typing.Any`, which in this case means that `pfun` could not assign a meaningful type to `R`.
 
 If you use the `pfun` MyPy plugin, you can however redesign the program to follow a pattern that enables `pfun` to infer a meaningful combined type
 in much the same way that the error type resulting from combining two effects using `and_then` can be inferred. This pattern is called _the module pattern_.
@@ -311,8 +367,6 @@ def execute(query: str) -> Effect[HasDatabase, IOError, List[DBRow]]:
 ```
 There are two _modules_: `Requests` and `Database` that provide implementations. There are two corresponding _module providers_: `HasRequests` and `HasDatabase`. Finally there are two functions `execute` and `make_request` that puts it all together.
 
-Pay attention to the fact that `execute` and `make_request` look quite similar: they both start by calling `pfun.effect.depend`. This function returns an effect that succeeds with the dependency value that will eventually be passed as the argument to the final effect (in this example the effect produced by `execute(...).and_then(make_request)`). The optional parameter passed to `depend` is merely for type-checking purposes, and doesn't change the result in any way.
-
 If we combine the new functions `execute` and `make_request` that both has protocols as the dependency types, `pfun` can infer a meaningful type, and make sure that the dependency type that is eventually passed to the whole program provides both the `requests` and the `database` attributes:
 
 ```python
@@ -336,6 +390,19 @@ class Env:
 effect.run(Env())
 ```
 MyPy would tell you the call `effect.run(Env())` is a type error since `Env` doesn't have a `requests` attribute. It's worth understanding the module pattern, since `pfun` uses it pervasively in its api, e.g in `pfun.files` and `pfun.console`, in order that `pfun` can infer the dependency type of effects resulting from combining functions from `pfun` with user defined functions that also follow the module pattern.
+
+Effects that depend on `pfun.Intersection` can have its dependencies partially satisfied when using `provide`. When using the `MyPy` plugin, the return type of `provide` will correctly reflect that the dependency has been satisfied:
+
+```python
+from typing import NoReturn
+from pfun import Effect, Intersection, files, console
+
+class Modules:
+    files = files.Files()
+
+e: Effect[Intersection[files.HasFiles, console.HasConsole], NoReturn, str]
+e1: Effect[console.HasConsole, NoReturn, str] = e.provide(Modules())
+```
 
 A very attractive added bonus of the module pattern is that mocking out particular dependencies of your program becomes extremely simple, and by extension that unit testing becomes easier:
 ```python
@@ -555,7 +622,7 @@ assert slow_effect.race(fast_effect).run(DefaultModules()) == 'Born ready!'
 
 `pfun.effect` supports powerful scheduling mechanisms for repeating or retrying effects.
 `Effect.repeat` and `Effect.retry` both take a schedule as an argument of type `pfun.schedule.Schedule`, which is 
-simply a type-alias:
+simply a type-alias defined as:
 
 ```python
 from typing import TypeVar, Iterator

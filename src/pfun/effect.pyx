@@ -7,12 +7,15 @@ Attributes:
     Depends (TypeAlias): Type-alias for `Effect[TypeVar('R'), NoReturn, TypeVar('A')]`.
 """
 from typing import Generic, TypeVar, NoReturn
+from typing_extensions import get_origin
 import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
 from functools import wraps
+import inspect
 
 import dill
+from typing_extensions import Protocol, runtime_checkable
 
 from .either import Right, Left
 from .functions import curry
@@ -60,6 +63,20 @@ cdef class RuntimeEnv:
         return await loop.run_in_executor(
             self.thread_executor, lambda: f(*args, **kwargs)
         )
+
+cdef class CompositeR:
+    cdef readonly tuple rs
+
+    def __cinit__(self, rs):
+        self.rs = rs
+
+    def __reduce__(self):
+        return (CompositeR, (self.rs,))
+
+    def __eq__(self, other):
+        if not isinstance(other, CompositeR):
+            return False
+        return self.rs == other.rs
 
 
 def run_dill_encoded(payload):
@@ -388,6 +405,51 @@ cdef class CEffect:
             Effect[pfun.Intersection[R, R1, pfun.clock.HasClock], E, Tuple[A]]: This effect repeated according to `schedule`
         """
         return Repeat(self, schedule)
+
+    def provide(self, r):
+        """
+        Create an `Effect` that provides `r` to this effect when executed. \
+        `r` may also be an effect providing the dependency, in which case \
+        the success value of that effect will be used to satisfy the \
+        dependency
+
+        Example:
+            >>> depend(str).provide('hello!').run(None)
+            'Hello!'
+            >>> depend(str).provide(success('Hello!')).run(None)
+            'Hello!'
+        
+        Args:
+            r (Union[R, Effect[R1, E1, R]]): The dependency to provide
+        Return:
+            Effect[Union[object, R1], Union[E, E1], A]: Effect in which `r` will be provided to this effect. 
+        """
+        if isinstance(r, CEffect):
+            return r.and_then(lambda env: self.provide(env)).with_repr(f'{repr(self)}.provide({repr(r)})')
+        return Provide(self, r)
+
+
+cdef class Provide(CEffect):
+    cdef CEffect effect
+    cdef object r
+
+    def __cinit__(self, effect, r):
+        self.effect = effect
+        self.r = r
+
+    async def resume(self, RuntimeEnv env):
+        async def thunk():
+            if isinstance(env.r, CompositeR):
+                new_r = CompositeR((self.r,) + env.r.rs)
+            else:
+                new_r = CompositeR((self.r, env.r))
+            new_env = RuntimeEnv(new_r, env.exit_stack, env.max_processes, env.max_threads)
+            return await self.effect.do(new_env)
+        return Call(thunk)
+
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
 
 
 cdef class Repeat(CEffect):
@@ -813,17 +875,55 @@ cdef class Call(CEffect):
 
 
 cdef class CDepends(CEffect):
+    cdef object t
+
+    def __cinit__(self, t):
+        self.t = t
+
+    def __reduce__(self):
+        return (depend, (self.t,))
+
+    cdef object get_dependency_type(self):
+        origin = get_origin(self.t)
+        if origin is not None:
+            t = origin
+        else:
+            t = self.t
+        if not inspect.isclass(t):
+            raise TypeError(f'depend arguments must be types, but was {self.t}')
+        if issubclass(t, Protocol):
+            t = runtime_checkable(t)
+        return t
+
+    cdef object resolve_dependency(self, RuntimeEnv env):
+        if isinstance(env.r, CompositeR):
+            t = self.get_dependency_type()
+            for r in env.r.rs:
+                if isinstance(r, t):
+                    return r
+            type_reprs = ', '.join([repr(r) for r in env.r.rs])
+            raise TypeError(f'Could not satisfy dependency of type "{self.t}" with provided arguments: {type_reprs}')
+        return env.r
+
     async def resume(self, RuntimeEnv env):
-        return CSuccess(env.r)
+        try:
+            r = self.resolve_dependency(env)
+            return CSuccess(r)
+        except TypeError as e:
+            return Error(e)
 
     async def apply_continuation(self, object f, RuntimeEnv env):
-        return await f(env.r)
+        try:
+            r = self.resolve_dependency(env)
+            return await f(r)
+        except TypeError as e:
+            return Error(e)
     
     def __repr__(self):
-        return 'depend()'
+        return f'depend({repr(self.t)})'
 
 
-def depend(r_type=None):
+def depend(r_type):
     """
     Get an `Effect` that produces the dependency passed to `run` \
     when executed
@@ -831,13 +931,11 @@ def depend(r_type=None):
         >>> depend(str).run('dependency')
         'dependency'
     Args:
-        r_type (R): The expected dependency type of the resulting effect. \
-        Used ONLY for type-checking and doesn't impact runtime behaviour in \
-        any way
+        r_type (R): The expected dependency type of the resulting effect.
     Return:
-        Effect[R, NoReturn, R]: `Effect` that produces the dependency passed to `run`
+        Effect[R, NoReturn, R]: `Effect` that produces the dependency passed to `run` or `provide`
     """
-    return CDepends()
+    return CDepends(r_type)
 
 
 cdef class Gather(CEffect):

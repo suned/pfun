@@ -371,7 +371,7 @@ def put(
     Return:
         `Effect` that produces a `Response`
     """
-    return depend().and_then(
+    return depend(HasHTTP).and_then(
         lambda env: env.http.make_request(
             'put',
             url,

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing_extensions import Protocol
-
 from . import clock, console, files, logging, random, state, subprocess  # noqa
 from .dict import Dict  # noqa
 from .effect import *  # noqa
@@ -18,7 +16,12 @@ except ImportError:
     pass
 
 
-class Intersection(Protocol):
+class _IntersectionMeta(type):
+    def __getitem__(self, item):
+        return self
+
+
+class Intersection(metaclass=_IntersectionMeta):
     """
     Abstract type that represents the intersection between two or more
     protocols when using the pfun MyPy plugin.
@@ -52,15 +55,21 @@ class DefaultModules:
         files: The files module
         console: The console module
         random: The random module
-        clock: the clock module
+        clock: The clock module
+        logging: The logging module
+        subprocess: The subprocess module
     """
     files: 'files.Files'
     console: 'console.Console'
     random: 'random.Random'
     clock: 'clock.Clock'
+    logging: 'logging.Logging'
+    subprocess: 'subprocess.Subprocess'
 
     def __init__(self):
         self.files = files.Files()
         self.console = console.Console()
         self.random = random.Random()
         self.clock = clock.Clock()
+        self.logging = logging.Logging()
+        self.subprocess = subprocess.Subprocess()

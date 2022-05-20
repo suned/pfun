@@ -131,16 +131,20 @@ class Effect(Generic[R, E, A], Immutable, Monad):
 
     def repeat(self, schedule: Effect[R1, NoReturn, Iterator[timedelta]]) -> Effect[Intersection[R, R1, HasClock], E, Tuple[A]]: ...
 
+    @overload
+    def provide(self, r: R) -> Effect[object, E, A]: ...
+
+    @overload
+    def provide(self, r: Effect[R1, E2, R]) -> Effect[R1, Union[E, E2], A]: ...
+
 
 def success(value: A1) -> Effect[object, NoReturn, A1]: ...
 
 
-@overload
-def depend(r_type: None = None) -> Depends: ...
+T = TypeVar('T', bound=Type[Any])
 
 
-@overload
-def depend(r_type: Type[R1] = None) -> Depends[R1, R1]: ...
+def depend(r_type: T) -> Depends[T, T]: ...
 
 
 def from_awaitable(awaitable: Awaitable[A1]) -> Effect[object, NoReturn, A1]:

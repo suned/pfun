@@ -14,7 +14,8 @@
             race,
             timeout,
             repeat,
-            retry
+            retry,
+            provide
         ]
     rendering:
         show_bases: false
