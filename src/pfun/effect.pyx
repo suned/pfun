@@ -407,6 +407,23 @@ cdef class CEffect:
         return Repeat(self, schedule)
 
     def provide(self, r):
+        """
+        Create an `Effect` that provides `r` to this effect when executed. \
+        `r` may also be an effect providing the dependency, in which case \
+        the success value of that effect will be used to satisfy the \
+        dependency
+
+        Example:
+            >>> depend(str).provide('hello!').run(None)
+            'Hello!'
+            >>> depend(str).provide(success('Hello!')).run(None)
+            'Hello!'
+        
+        Args:
+            r (Union[R, Effect[R1, E1, R]]): The dependency to provide
+        Return:
+            Effect[Union[object, R1], Union[E, E1], A]: Effect in which `r` will be provided to this effect. 
+        """
         if isinstance(r, CEffect):
             return r.and_then(lambda env: self.provide(env)).with_repr(f'{repr(self)}.provide({repr(r)})')
         return Provide(self, r)
@@ -914,11 +931,9 @@ def depend(r_type):
         >>> depend(str).run('dependency')
         'dependency'
     Args:
-        r_type (R): The expected dependency type of the resulting effect. \
-        Used ONLY for type-checking and doesn't impact runtime behaviour in \
-        any way
+        r_type (R): The expected dependency type of the resulting effect.
     Return:
-        Effect[R, NoReturn, R]: `Effect` that produces the dependency passed to `run`
+        Effect[R, NoReturn, R]: `Effect` that produces the dependency passed to `run` or `provide`
     """
     return CDepends(r_type)
 
