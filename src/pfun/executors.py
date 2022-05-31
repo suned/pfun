@@ -42,7 +42,7 @@ class ProcessPoolExecutorState:
 
 @dataclass(frozen=True)
 class Stop:
-    pass
+    stop_manager: bool = True
 
 
 def _extract_tb(e: Exception) -> str:
@@ -53,9 +53,10 @@ def _extract_tb(e: Exception) -> str:
 
 
 class ManagerThread(Thread):
-    def __init__(self, result_queue: Queue[Result], futures):
+    def __init__(self, result_queue: Queue[Result], futures, manager):
         self.futures = futures
         self.result_queue = result_queue
+        self.manager = manager
         self.stop = False
         super().__init__()
     
@@ -64,7 +65,7 @@ class ManagerThread(Thread):
             try:
                 result = self.result_queue.get()
                 if isinstance(result, Stop):
-                    self.stop = True
+                    self.stop = result
                 else:
                     future = self.futures.pop(result.id)
                     if isinstance(result, Error):
@@ -74,6 +75,10 @@ class ManagerThread(Thread):
                         future.set_result(result.value)
                 self.result_queue.task_done()
                 if self.stop and self.result_queue.empty() and len(self.futures) == 0:
+                    del self.result_queue
+                    if self.stop.stop_manager:
+                        self.manager.shutdown()
+                        self.manager.join()
                     return
             except EOFError:
                 return
@@ -85,7 +90,7 @@ class SchedulerThread(Thread):
         self.pool = pool
         self.futures = futures
         self.result_queue = result_queue
-        self.stop = False
+        self.stop = None
         super().__init__()
     
     def run(self):
@@ -93,17 +98,23 @@ class SchedulerThread(Thread):
             try:
                 todo = self.todo_queue.get()
                 if isinstance(todo, Stop):
-                    self.stop = True
+                    self.stop = todo
                 else:
                     future: Future = self.futures[todo.id_]
                     if not future.cancelled():
                         future.set_running_or_notify_cancel()
-                        self.pool.apply_async(partial(execute, self.result_queue, todo.id_, todo.fn, *todo.args, **todo.kwargs))
+                        try:
+                            self.pool.apply_async(partial(execute, self.result_queue, todo.id_, todo.fn, *todo.args, **todo.kwargs))
+                        except ValueError as e:
+                            future.set_exception(e)
                     else:
                         del self.futures[todo.id]
                 self.todo_queue.task_done()
                 if self.stop and self.todo_queue.empty():
-                    self.result_queue.put(Stop())
+                    self.result_queue.put(self.stop)
+                    del self.pool
+                    del self.result_queue
+                    del self.todo_queue
                     return
             except EOFError:
                 return
@@ -120,9 +131,19 @@ def execute(result_queue, id, fn, *args, **kwargs):
 
 
 class ProcessPoolExecutor(Executor):
-    def __init__(self):
+    def __init__(self, 
+                 max_workers=None,
+                 initializer=None, 
+                 initargs=(), 
+                 *, 
+                 max_tasks_per_child=None):
         self.manager = Manager()
-        self.pool: Pool = self.manager.Pool()
+        self.pool: Pool = self.manager.Pool(
+            processes=max_workers, 
+            initializer=initializer,
+            initargs=initargs,
+            maxtasksperchild=max_tasks_per_child
+        )
         self.result_queue: Queue[Result] = self.manager.Queue()
         self.todo_queue = self.manager.Queue()
         self.futures = {}
@@ -131,7 +152,7 @@ class ProcessPoolExecutor(Executor):
         self.terminated = False
     
     def init_manager_thread(self):
-        self.manager_thread = ManagerThread(self.result_queue, self.futures)
+        self.manager_thread = ManagerThread(self.result_queue, self.futures, self.manager)
         self.manager_thread.setDaemon(True)
         self.manager_thread.start()
     
@@ -163,23 +184,19 @@ class ProcessPoolExecutor(Executor):
         self.futures[id_] = future
         self.todo_queue.put(Todo(id_, fn, args, kwargs))
         return future
-    
+
     def shutdown(self, wait=True, *, cancel_futures=False, stop_manager=True):
         self.terminated = True
         if cancel_futures:
             for future in self.futures.values():
                 future.cancel()
-        self.todo_queue.put(Stop())
+        self.todo_queue.put(Stop(stop_manager=stop_manager))
         if wait:
             self.scheduler_thread.join()
             self.manager_thread.join()
+        # delete refs to queues to allow them to be collected in manager
         del self.todo_queue
         del self.result_queue
-        if stop_manager:
-            self.pool.close()
-            self.pool.join()
-            self.manager.shutdown()
-            if wait:
-                self.manager.join()
+        
             
 
