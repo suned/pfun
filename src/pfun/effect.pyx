@@ -849,9 +849,10 @@ cdef class Map(CEffect):
     
     async def resume(self, RuntimeEnv env):
         async def g(x):
-            result = self.continuation(x)
-            if asyncio.iscoroutine(result):
-                result = await result
+            if asyncio.iscoroutinefunction(self.continuation):
+                result = await self.continuation(x)
+            else:
+                result = self.continuation(x)
             return CSuccess.__new__(CSuccess, result)
         return await self.effect.apply_continuation(g, env)
     
