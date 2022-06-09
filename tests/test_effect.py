@@ -526,6 +526,12 @@ class TestEffect(MonadTest):
         assert (repr(effect.success(0).timeout(timedelta(seconds=1))) ==
                 'success(0).timeout(datetime.timedelta(seconds=1))')
 
+    def test_map_generator(self):
+        def f(_):
+            yield from [1, 2, 3]
+
+        assert list(effect.success(None).map(f).run(None)) == [1, 2, 3]
+
 
 class TestResource:
     def test_get(self):
