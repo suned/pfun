@@ -33,7 +33,7 @@ On [ko-fi](https://ko-fi.com/python_pfun)
 
 Requires [poetry](https://poetry.eustace.io/)
 
-- Install dependencies with `poetry install -E http -E sql`
+- Install dependencies with `poetry run task install -E http -E sql`
 - Build documentation with `poetry run task serve-docs`
 - Run tests with `poetry run task test`
 - Lint with `poetry run task lint`
