@@ -6,6 +6,7 @@ from typing_extensions import Protocol
 
 from .effect import Effect, Success, add_repr, depend, purify_io_bound
 from .immutable import Immutable
+from .executors import thread_pool_executor
 
 
 class Console(Immutable):
@@ -26,7 +27,7 @@ class Console(Immutable):
         Return:
             `Effect` that prints `msg` to stdout
         """
-        return purify_io_bound(print)(msg)
+        return purify_io_bound(print)(msg).provide(thread_pool_executor.get())
 
     def input(self, prompt: str = '') -> Success[str]:
         """
@@ -44,7 +45,7 @@ class Console(Immutable):
         Return:
             `Effect` that reads from stdin
         """
-        return purify_io_bound(input)(prompt)
+        return purify_io_bound(input)(prompt).provide(thread_pool_executor.get())
 
 
 class HasConsole(Protocol):

@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import Dict, Any, Callable
-from concurrent.futures import Executor, Future
+from typing import Dict, Any, Callable, Protocol, NoReturn, Final
+from concurrent.futures import Executor, Future, ThreadPoolExecutor as _ThreadPoolExecutor
 from concurrent.futures.process import _rebuild_exc
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import Pool
@@ -11,6 +11,9 @@ from uuid import uuid4, UUID
 from functools import partial
 import traceback
 from collections import defaultdict
+
+from .effect import Resource
+from .either import Right, Either
 
 
 @dataclass(frozen=True)
@@ -42,7 +45,7 @@ class ProcessPoolExecutorState:
 
 @dataclass(frozen=True)
 class Stop:
-    stop_manager: bool = True
+    pass
 
 
 def _extract_tb(e: Exception) -> str:
@@ -53,12 +56,17 @@ def _extract_tb(e: Exception) -> str:
 
 
 class ManagerThread(Thread):
-    def __init__(self, result_queue: Queue[Result], futures, manager):
+    pool: Pool
+    def __init__(self, result_queue: Queue[Result], futures, manager, pool):
         self.futures = futures
         self.result_queue = result_queue
         self.manager = manager
         self.stop = False
+        self.pool = pool
         super().__init__()
+    
+    def can_stop_manager(self):
+        return hasattr(self.manager, 'shutdown')
     
     def run(self):
         while True:
@@ -76,7 +84,9 @@ class ManagerThread(Thread):
                 self.result_queue.task_done()
                 if self.stop and self.result_queue.empty() and len(self.futures) == 0:
                     del self.result_queue
-                    if self.stop.stop_manager:
+                    if self.can_stop_manager():
+                        self.pool.close()
+                        self.pool.join()
                         self.manager.shutdown()
                         self.manager.join()
                     return
@@ -116,7 +126,9 @@ class SchedulerThread(Thread):
                     del self.result_queue
                     del self.todo_queue
                     return
-            except EOFError:
+            except Exception as e:
+                for future in self.futures.values():
+                    future.set_exception(e)
                 return
 
 
@@ -152,13 +164,13 @@ class ProcessPoolExecutor(Executor):
         self.terminated = False
     
     def init_manager_thread(self):
-        self.manager_thread = ManagerThread(self.result_queue, self.futures, self.manager)
-        self.manager_thread.setDaemon(True)
+        self.manager_thread = ManagerThread(self.result_queue, self.futures, self.manager, self.pool)
+        self.manager_thread.daemon = True
         self.manager_thread.start()
     
     def init_scheduler_thread(self):
         self.scheduler_thread = SchedulerThread(self.todo_queue, self.result_queue, self.pool, self.futures)
-        self.scheduler_thread.setDaemon(True)
+        self.scheduler_thread.daemon = True
         self.scheduler_thread.start()
 
     def __getstate__(self) -> ProcessPoolExecutorState:
@@ -182,15 +194,18 @@ class ProcessPoolExecutor(Executor):
         id_ = uuid4()
         future = Future()
         self.futures[id_] = future
-        self.todo_queue.put(Todo(id_, fn, args, kwargs))
+        try:
+            self.todo_queue.put(Todo(id_, fn, args, kwargs))
+        except BrokenPipeError as e:
+            future.set_exception(e)
         return future
 
-    def shutdown(self, wait=True, *, cancel_futures=False, stop_manager=True):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         self.terminated = True
         if cancel_futures:
             for future in self.futures.values():
                 future.cancel()
-        self.todo_queue.put(Stop(stop_manager=stop_manager))
+        self.todo_queue.put(Stop())
         if wait:
             self.scheduler_thread.join()
             self.manager_thread.join()
@@ -198,5 +213,50 @@ class ProcessPoolExecutor(Executor):
         del self.todo_queue
         del self.result_queue
         
-            
 
+class ThreadPoolExecutor(_ThreadPoolExecutor):
+    pass
+
+
+class HasProcessPoolExecutor(Protocol):
+    process_pool_executor: ProcessPoolExecutor
+
+
+class HasThreadPoolExecutor(Protocol):
+    thread_pool_executor: ThreadPoolExecutor
+
+
+class HasLiveThreadPoolExecutor():
+    def __init__(self):
+        self.thread_pool_executor = ThreadPoolExecutor()
+    
+    def __enter__(self) -> None:
+        return self.thread_pool_executor.__enter__()
+    
+    
+    def __exit__(self, exc_t, exc_v, exc_tb) -> None:
+        return self.thread_pool_executor.__exit__(exc_t, exc_v, exc_tb)
+
+
+class HasLiveProcessPoolExecutor():
+    def __init__(self):
+        self.process_pool_executor = ProcessPoolExecutor()
+    
+    def __enter__(self) -> None:
+        return self.process_pool_executor.__enter__()
+    
+    
+    def __exit__(self, exc_t, exc_v, exc_tb) -> None:
+        return self.process_pool_executor.__exit__(exc_t, exc_v, exc_tb)
+
+
+def thread_pool_factory() -> Either[NoReturn, HasLiveThreadPoolExecutor]:
+    return Right(HasLiveThreadPoolExecutor())
+
+
+def process_pool_factory() -> Either[NoReturn, HasLiveProcessPoolExecutor]:
+    return Right(HasLiveProcessPoolExecutor())
+
+
+thread_pool_executor: Final = Resource(thread_pool_factory)
+process_pool_executor: Final = Resource(process_pool_factory)

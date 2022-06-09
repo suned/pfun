@@ -761,9 +761,52 @@ def slow_function(a: int) -> int:
     time.sleep(2)
     return a + 2
 
-lift_cpu_bound(slow_function)(success(2))
+slow_effect = lift_cpu_bound(slow_function)(success(2))
 ```
-Take a look at the api documentation for details.
+In order to run `slow_effect`, or any effect created by a function with `cpu_bound` in its name,  you must provide an instance of `pfun.executors.ProcessPoolExecutor` as a dependency:
+```python
+from pfun.executors import ProcessPoolExecutor
+
+class Modules:
+    def __init__(self):
+        self.process_pool_executor = ProcessPoolExecutor()
+
+
+m = Modules()
+with m.process_pool_executor:
+    print(slow_effect.run(m))  # output: 4
+```
+`pfun.executors.ProcessPoolExecutor` is a `concurrent.futures.Executor` that may be shared between process, unlike [`concurrent.futures.ProcessPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor). This is because
+the underlying process pool in `pfun.executors.ProcessPoolExecutor` lives in a separate [manager](https://docs.python.org/3/library/multiprocessing.html#managers) process. When `shutdown` is called on the `pfun.executors.ProcessPoolExecutor` that was first created (typically the one in the root process), the manager process will also be shut down. After this, no new tasks can be submitted to the pool, from any process with which the `pfun.executors.ProcessPoolExecutor` was shared.
+
+When running effects created with functions with `io_bound` in their name, you must supply a `pfun.executors.ThreadProolExecutor` as a dependency in the same way:
+
+```python
+from pfun.effect import purify_io_bound
+from pfun.executors import ThreadPoolExecutor
+
+
+def read_file(path: str) -> str:
+    with open(path) as f:
+        return f.read()
+
+
+io_bound_effect = purify_io_bound(read_file)('foo.txt')
+
+
+class Modules:
+    def __init__(self):
+        self.thread_pool_executor = ThreadPoolExecutor()
+
+m = Modules()
+with m.thread_pool_executor:
+    io_bound_effect.run(m)
+```
+If a function returns an effect that depends on an executor, it will be reflected by the dependency type of the effect when using the MyPy plugin:
+```python
+reveal_type(slow_effect)      # Revealed type is: pfun.effect.Depends[pfun.executors.ProcessPoolExecutor, int]
+reveal_type(io_bound_effect)  # Revealed type is: pfun.effect.Depends[pfun.executors.ThreadPoolExecutor, str]
+```
 
 ### Combining effects
 Sometimes you need to keep the the result of two or more effects in scope to work with

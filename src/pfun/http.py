@@ -5,12 +5,12 @@ import json
 import ssl
 from typing import Any, Callable
 from typing import Dict as Dict_
-from typing import Iterable, Mapping, Union
+from typing import Iterable, Mapping, Union, NoReturn
 
 from typing_extensions import Protocol
 
 from .dict import Dict
-from .effect import (Depends, Effect, Resource, Try, add_repr, depend, error,
+from .effect import (Depends, Effect, AsyncResource, Try, add_repr, depend, error,
                      success)
 from .either import Right
 from .functions import curry
@@ -69,7 +69,7 @@ class HTTP(Immutable, init=False):
     """
     Module for making HTTP requests.
     """
-    session: Resource
+    session: AsyncResource[NoReturn, aiohttp.ClientSession]
 
     def __init__(
         self,
@@ -99,7 +99,7 @@ class HTTP(Immutable, init=False):
         object.__setattr__(
             self,
             'session',
-            Resource(
+            AsyncResource(
                 lambda: Right(
                     aiohttp.ClientSession(
                         connector=connector,

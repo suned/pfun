@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from functools import wraps
 from typing import (Any, Callable, Generic, Iterable, NoReturn, TypeVar, Union,
                     cast)
+from typing_extensions import TypeAlias
 
 from typing_extensions import Literal
 
@@ -193,7 +194,7 @@ class Left(Either_, Generic[B]):
         return f'Left({repr(self.get)})'
 
 
-Either = Union[Left[B], Right[A]]
+Either: TypeAlias = Union[Left[B], Right[A]]
 """
 Type-alias for `Union[Left[TypeVar('L')], Right[TypeVar('R')]]`
 """

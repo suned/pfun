@@ -1,8 +1,8 @@
 from datetime import timedelta
-from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
+from typing import (Any, AsyncContextManager, ContextManager, Awaitable, Callable, Generic,
                     Iterable, NoReturn, Optional, Tuple, Type, TypeVar, Union,
-                    overload, Iterator)
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+                    overload, Iterator, Protocol)
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import AsyncExitStack
 import asyncio
 
@@ -11,6 +11,7 @@ from pfun.immutable import Immutable
 from pfun.either import Either, Left, Right
 from pfun.monad import Monad
 from pfun.clock import HasClock
+from pfun.executors import HasProcessPoolExecutor, HasThreadPoolExecutor
 from pfun import Intersection
 
 
@@ -20,13 +21,44 @@ E2 = TypeVar('E2')
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
 
-C = TypeVar('C', bound=AsyncContextManager)
+AC = TypeVar('AC', bound=AsyncContextManager)
+C = TypeVar('C', bound=ContextManager)
 
 F = TypeVar('F', bound=Callable[..., 'Effect'])
 
 R1 = TypeVar('R1')
 E1 = TypeVar('E1')
 A1 = TypeVar('A1')
+
+
+class AsyncResource(Immutable, Generic[E, AC]):
+    """
+    Enables lazy initialisation of global async context managers that should \
+    only be entered once per effect invocation. If the same resource is \
+    acquired twice by an effect using `get`, the same context manager will \
+    be returned. All context managers controlled by resources are guaranteed \
+    to be entered before the effect that requires it is invoked, and exited \
+    after it returns. The wrapped context manager is only available when the \
+    resources context is entered.
+
+
+    :example:
+    >>> from aiohttp import ClientSession
+    >>> resource = Resource(ClientSession)
+    >>> r1, r2 = resource.get().and_then(
+    ...     lambda r1: resource.get().map(lambda r2: (r1, r2))
+    ... )
+    >>> assert r1 is r2
+    >>> assert r1.closed
+    >>> assert resource.resource is None
+
+    :attribute resource_factory: function to initialiaze the context manager
+    """
+    def __init__(self, 
+                 resource_factory: Callable[[], Union[Either[E, AC], Awaitable[Either[E, AC]]]]):
+        ...
+
+    def get(self) -> Effect[object, E, AC]: ...
 
 
 class Resource(Immutable, Generic[E, C]):
@@ -69,8 +101,6 @@ class RuntimeEnv(Immutable, Generic[A]):
     """
     r: A
     exit_stack: AsyncExitStack
-    process_executor: ProcessPoolExecutor
-    thread_executor: ThreadPoolExecutor
 
     async def run_in_process_executor(
         self, f: Callable[..., B], *args: Any, **kwargs: Any
@@ -260,13 +290,13 @@ def from_callable(
 
 def from_io_bound_callable(
     f: Callable[[R1], Either[E1, A1]]
-) -> Effect[R1, E1, A1]:
+) -> Effect[Intersection[R1, HasThreadPoolExecutor], E1, A1]:
     ...
 
 
 def from_cpu_bound_callable(
     f: Callable[[R1], Either[E1, A1]]
-) -> Effect[R1, E1, A1]:
+) -> Effect[Intersection[R1, HasProcessPoolExecutor], E1, A1]:
     ...
 
 
@@ -294,7 +324,7 @@ class catch_io_bound(Immutable, Generic[EX], init=False):
         ...
 
     def __call__(self, f: Callable[..., B]
-                 ) -> Callable[..., Try[EX, B]]:
+                 ) -> Callable[..., Effect[HasThreadPoolExecutor, EX, B]]:
         ...
 
 
@@ -303,16 +333,16 @@ class catch_cpu_bound(Immutable, Generic[EX], init=False):
         ...
 
     def __call__(self, f: Callable[..., B]
-                 ) -> Callable[..., Try[EX, B]]:
+                 ) -> Callable[..., Effect[HasProcessPoolExecutor, EX, B]]:
         ...
 
 def purify(f: Callable[..., Union[Awaitable[B], B]]) -> Callable[..., Success[B]]:
     ...
 
-def purify_io_bound(f: Callable[..., B]) -> Callable[..., Success[B]]:
+def purify_io_bound(f: Callable[..., B]) -> Callable[..., Depends[HasThreadPoolExecutor, B]]:
     ...
 
-def purify_cpu_bound(f: Callable[..., B]) -> Callable[..., Success[B]]:
+def purify_cpu_bound(f: Callable[..., B]) -> Callable[..., Depends[HasProcessPoolExecutor, B]]:
     ...
 
 

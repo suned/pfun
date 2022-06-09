@@ -6,7 +6,7 @@ from typing import Any, Iterable, Type, TypeVar, Union
 from typing_extensions import Protocol
 
 from .dict import Dict
-from .effect import (Effect, Resource, Try, add_repr, catch, depend, error,
+from .effect import (Effect, AsyncResource, Try, add_repr, catch, depend, error,
                      success)
 from .either import Either, Left, Right
 from .functions import curry
@@ -90,7 +90,7 @@ class SQL(Immutable, init=False):
     """
     Module providing postgres sql client capability
     """
-    connection: Resource
+    connection: AsyncResource[asyncpg.PostgresError, PostgresConnection]
 
     def __init__(self, connection_str: str):
         """
@@ -117,7 +117,7 @@ class SQL(Immutable, init=False):
             except asyncpg.PostgresError as e:
                 return Left(e)
 
-        object.__setattr__(self, 'connection', Resource(connection_factory))
+        object.__setattr__(self, 'connection', AsyncResource(connection_factory))
 
     def get_connection(self) -> Try[asyncpg.PostgresError, asyncpg.Connection]:
         """

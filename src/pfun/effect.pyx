@@ -6,19 +6,22 @@ Attributes:
     Try (TypeAlias): Type-alias for `Effect[object, TypeVar('E'), TypeVar('A')]`.
     Depends (TypeAlias): Type-alias for `Effect[TypeVar('R'), NoReturn, TypeVar('A')]`.
 """
-from typing import Generic, TypeVar, NoReturn
+from typing import Generic, TypeVar, NoReturn, Protocol
 from typing_extensions import get_origin
 import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
-from functools import wraps
+from functools import wraps, partial
 import inspect
+import sys
+import types
 
 import dill
 from typing_extensions import Protocol, runtime_checkable
 
 from .either import Right, Left
 from .functions import curry
+from .lens import lens
 
 
 cdef class RuntimeEnv:
@@ -30,38 +33,25 @@ cdef class RuntimeEnv:
     """
     cdef object r
     cdef object exit_stack
-    cdef object max_processes
-    cdef object max_threads
-    cdef readonly object process_executor
-    cdef readonly object thread_executor
 
-    def __cinit__(self, r, exit_stack, max_processes, max_threads):
+    def __cinit__(self, r, exit_stack):
         self.r = r
         self.exit_stack = exit_stack
-        self.max_processes = max_processes
-        self.max_threads = max_threads
-        self.process_executor = None
-        self.thread_executor = None
+        
     
     async def run_in_process_executor(self, f, *args, **kwargs):
         loop = asyncio.get_running_loop()
-        payload = dill.dumps((f, args, kwargs))
-        if self.process_executor is None:
-            self.process_executor = ProcessPoolExecutor(max_workers=self.max_processes)
-            self.exit_stack.enter_context(self.process_executor)
+        payload = dill.dumps((f, args, kwargs), recurse=True)
         return dill.loads(
             await loop.run_in_executor(
-                self.process_executor, run_dill_encoded, payload
+                self.r.process_pool_executor, run_dill_encoded, payload
             )
         )
 
     async def run_in_thread_executor(self, f, *args, **kwargs):
         loop = asyncio.get_running_loop()
-        if self.thread_executor is None:
-            self.thread_executor = ThreadPoolExecutor(max_workers=self.max_threads)
-            self.exit_stack.enter_context(self.thread_executor)
         return await loop.run_in_executor(
-            self.thread_executor, lambda: f(*args, **kwargs)
+            self.r.thread_pool_executor, lambda: f(*args, **kwargs)
         )
 
 cdef class CompositeR:
@@ -77,11 +67,17 @@ cdef class CompositeR:
         if not isinstance(other, CompositeR):
             return False
         return self.rs == other.rs
+    
+    def __getattr__(self, name):
+        for r in self.rs:
+            if hasattr(r, name):
+                return getattr(r, name)
+        raise AttributeError(f'Could not resolve a dependency with attribute {name}')
 
 
 def run_dill_encoded(payload):
     fun, args, kwargs = dill.loads(payload)
-    return dill.dumps(fun(*args, **kwargs))
+    return dill.dumps(fun(*args, **kwargs), recurse=True)
 
 
 cdef class AsyncWrapper:
@@ -107,7 +103,7 @@ cdef class CEffect:
     def with_repr(self, repr_):
         return WithRepr(self, repr_)
 
-    async def __call__(self, object r, max_processes=None, max_threads=None):
+    async def __call__(self, object r):
         """
         Run the function wrapped by this `Effect` asynchronously, \
         including potential side-effects. If the function fails the \
@@ -115,10 +111,6 @@ cdef class CEffect:
         Args:
             self (Effect[R, E, A]):
             r (R): The dependency with which to run this `Effect`
-            max_processes (Optional[int]): The max number of processes used to run cpu bound \
-                parts of this effect
-            max_threads (Optional[int]): The max number of threads used to run io bound \
-                parts of this effect
         Return:
             Awaitable[A]: The succesful result of the wrapped function if it succeeds
         Raises:
@@ -128,7 +120,7 @@ cdef class CEffect:
         """
         stack = AsyncExitStack()
         async with stack:
-            env = RuntimeEnv(r, stack, max_processes, max_threads)
+            env = RuntimeEnv(r, stack)
             effect = await self.do(env)
             if isinstance(effect, CSuccess):
                 return effect.result
@@ -182,7 +174,7 @@ cdef class CEffect:
         """
         return Map(self, f)
     
-    def run(self, env, max_processes=None, max_threads=None):
+    def run(self, env):
         """
         Run the function wrapped by this `Effect`, including potential \
         side-effects. If the function fails the resulting error will be \
@@ -190,10 +182,6 @@ cdef class CEffect:
         Args:
             self (Effect[R, E, A]):
             r (R): The dependency with which to run this `Effect`
-            max_processes (Optional[int]): The max number of processes used to run cpu bound \
-                parts of this effect
-            max_threads (Optional[int]): The max number of threads used to run io bound \
-                parts of this effect
         Return:
             A: The succesful result of the wrapped function if it succeeds
         Raises:
@@ -201,7 +189,7 @@ cdef class CEffect:
             RuntimeError: if the effect fails and `E` is not a subclass of \
                           Exception
         """
-        return asyncio.run(self(env, max_processes, max_threads))
+        return asyncio.run(self(env))
 
     async def resume(self, RuntimeEnv env):
         raise NotImplementedError()
@@ -436,6 +424,9 @@ cdef class Provide(CEffect):
     def __cinit__(self, effect, r):
         self.effect = effect
         self.r = r
+    
+    def __repr__(self):
+        return f'{repr(self.effect)}.provide({repr(self.r)})'
 
     async def resume(self, RuntimeEnv env):
         async def thunk():
@@ -443,7 +434,7 @@ cdef class Provide(CEffect):
                 new_r = CompositeR((self.r,) + env.r.rs)
             else:
                 new_r = CompositeR((self.r, env.r))
-            new_env = RuntimeEnv(new_r, env.exit_stack, env.max_processes, env.max_threads)
+            new_env = RuntimeEnv(new_r, env.exit_stack)
             return await self.effect.do(new_env)
         return Call(thunk)
 
@@ -667,8 +658,8 @@ cdef class Either(CEffect):
         return effect.c_and_then(f)
 
 
-cdef class ResourceGet(CEffect):
-    cdef Resource resource
+cdef class AsyncResourceGet(CEffect):
+    cdef AsyncResource resource
 
     def __cinit__(self, resource):
         self.resource = resource
@@ -688,6 +679,83 @@ cdef class ResourceGet(CEffect):
     async def apply_continuation(self, object f, RuntimeEnv env):
         cdef CEffect effect = await self.resume(env)
         return effect.c_and_then(f)
+
+
+cdef class ResourceGet(CEffect):
+    cdef Resource resource
+
+    def __cinit__(self, resource):
+        self.resource = resource
+
+    async def resume(self, RuntimeEnv env):
+        if self.resource.resource is None:
+            # this is the first time this effect is called
+            resource = self.resource.resource_factory()  # type:ignore
+            if asyncio.iscoroutine(resource):
+                resource = await resource
+            self.resource.resource = resource
+            env.exit_stack.enter_context(self.resource)
+        if isinstance(self.resource.resource, Right):
+            return CSuccess(self.resource.resource.get)
+        return Error(self.resource.resource.get)
+    
+    async def apply_continuation(self, object f, RuntimeEnv env):
+        cdef CEffect effect = await self.resume(env)
+        return effect.c_and_then(f)
+
+
+cdef class AsyncResource:
+    """
+    Enables lazy initialisation of global async context managers that should \
+    only be entered once per effect invocation. If the same resource is \
+    acquired twice by an effect using `get`, the same context manager will \
+    be returned. All context managers controlled by resources are guaranteed \
+    to be entered before the effect that requires it is invoked, and exited \
+    after it returns. The wrapped context manager is only available when the \
+    resources context is entered.
+    :example:
+    >>> from pfun.either import Right
+    >>> from aiohttp import ClientSession
+    >>> resource = Resource(lambda: Right(ClientSession()))
+    >>> r1, r2 = resource.get().and_then(
+    ...     lambda r1: resource.get().map(lambda r2: (r1, r2))
+    ... )
+    >>> assert r1 is r2
+    >>> assert r1.closed
+    :attribute resource_factory: function to initialiaze the context manager
+    """
+    cdef object resource_factory
+    cdef readonly object resource
+
+    def __cinit__(self, resource_factory):
+        self.resource_factory = resource_factory
+        self.resource = None
+
+    def get(self):
+        """
+        Create an ``Effect` that produces the initialized
+        context manager.
+        :example:
+        >>> from aiohttp import ClientSession
+        >>> resource = Resource(ClientSession)
+        >>> async def get_request(session: ClientSession) -> bytes:
+        ...     async with session.get('foo.com') as request:
+        ...         return await request.read()
+        >>> resource.get().map(get_request)(None)
+        b'content of foo.com'
+        :return: ``Effect`` that produces the wrapped context manager
+        """
+        return AsyncResourceGet(self)
+
+    async def __aenter__(self):
+        if isinstance(self.resource, Right):
+            return await self.resource.get.__aenter__()
+
+    async def __aexit__(self, *args, **kwargs):
+        resource = self.resource
+        self.resource = None
+        if isinstance(resource, Right):
+            return await resource.get.__aexit__(*args, **kwargs)
 
 
 cdef class Resource:
@@ -733,15 +801,15 @@ cdef class Resource:
         """
         return ResourceGet(self)
 
-    async def __aenter__(self):
+    def __enter__(self):
         if isinstance(self.resource, Right):
-            return await self.resource.get.__aenter__()
+            return self.resource.get.__enter__()
 
-    async def __aexit__(self, *args, **kwargs):
+    def __exit__(self, *args, **kwargs):
         resource = self.resource
         self.resource = None
         if isinstance(resource, Right):
-            return await resource.get.__aexit__(*args, **kwargs)
+            return resource.get.__exit__(*args, **kwargs)
 
 
 cdef class CSuccess(CEffect):
@@ -795,6 +863,19 @@ cdef class Error(CEffect):
     async def apply_continuation(self, object f, RuntimeEnv env):
         return self
 
+def get_tb():
+    tb = None
+    depth = 0
+    while True:
+        try:
+            frame = sys._getframe(depth)
+            depth += 1
+        except ValueError as exc:
+            break
+
+        tb = types.TracebackType(tb, frame, frame.f_lasti, frame.f_lineno)
+
+    return tb
 
 def error(reason):
     """
@@ -807,7 +888,11 @@ def error(reason):
     Return:
         Effect[object, E, NoReturn]: `Effect` that fails with `reason`
     """
-    return Error(reason)
+    if isinstance(reason, (Exception, BaseException)):
+        if reason.__traceback__ is None:
+            return Error(reason.with_traceback(get_tb()))
+        return reason
+    return Error(RuntimeError(reason).with_traceback(get_tb()))
 
 
 cdef class AndThen(CEffect):
@@ -1074,7 +1159,7 @@ cdef class FromIOBoundCallable(FromCallable):
 
 cdef class FromCPUBoundCallable(FromCallable):
     async def call_f(self, RuntimeEnv env):
-        return await env.run_in_process_executor(self.f, env.r)
+        return await env.run_in_process_executor(partial(self.f, env.r))
 
     def __repr__(self):
         return f'from_cpu_bound_callable({repr(self.f)})'
