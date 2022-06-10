@@ -679,3 +679,14 @@
     reveal_type(c3.f(a3, b3)) # N: Revealed type is "pfun.Intersection[main.P2, main.P3, main.P1]"
 
     c1.f(a4, b4) # E: All arguments to "Intersection" must be protocols but inferred "pfun.Intersection[builtins.object, builtins.str, main.P1]"
+- case: "intersection_deduplicates_typevars"
+  disable_cache: true
+  main: |
+    from typing import TypeVar, Callable
+
+    from pfun import Depends
+
+    R = TypeVar('R')
+
+    def f(d1: Depends[R, int], d2: Callable[[int], Depends[R, str]]) -> Depends[R, str]:
+        return reveal_type(d1.and_then(d2))  # N: Revealed type is "pfun.effect.Effect[R`-1, <nothing>, builtins.str]"
