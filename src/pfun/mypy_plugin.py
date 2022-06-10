@@ -86,8 +86,6 @@ class TranslateIntersection(TypeTranslator):
                            f'must be protocols, but got "{s}"')
                 self.api.msg.fail(msg, self.context)
                 return AnyType(TypeOfAny.special_form)
-            if not has_no_typevars(t):
-                return t
             bases = []
             for arg in args:
                 if arg in bases:
@@ -95,6 +93,8 @@ class TranslateIntersection(TypeTranslator):
                 bases.extend(self.get_bases(arg, []))
             if len(bases) == 1:
                 return bases[0]
+            if not has_no_typevars(t):
+                return t
             bases_repr = ', '.join([repr(base) for base in bases])
             name = f'Intersection[{bases_repr}]'
             defn = ClassDef(
