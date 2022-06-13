@@ -3,7 +3,7 @@ from functools import wraps
 from typing import (Any, Callable, Generic, Iterable, Optional, Sequence,
                     TypeVar, Union, cast)
 
-from typing_extensions import Literal
+from typing_extensions import Literal, ParamSpec
 
 from .either import Either, Left
 from .functions import curry
@@ -14,6 +14,7 @@ from .monad import Monad, filter_m_, map_m_, sequence_
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
 C = TypeVar('C')
+P = ParamSpec('P')
 
 
 class Maybe_(Immutable, Monad, ABC):
@@ -101,7 +102,7 @@ Type-alias for `Union[Nothing, Just[TypeVar('A')]]`
 Maybe.__module__ = __name__
 
 
-def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
+def maybe(f: Callable[P, B]) -> Callable[P, Maybe[B]]:
     """
     Wrap a function that may raise an exception with a `Maybe`.
     Can also be used as a decorator. Useful for turning
@@ -121,7 +122,7 @@ def maybe(f: Callable[..., B]) -> Callable[..., Maybe[B]]:
 
     """
     @wraps(f)
-    def dec(*args: object, **kwargs: object) -> Maybe[B]:
+    def dec(*args: P.args, **kwargs: P.kwargs) -> Maybe[B]:
         try:
             return Just(f(*args, **kwargs))
         except:  # noqa

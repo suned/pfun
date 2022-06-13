@@ -5,7 +5,7 @@ from functools import wraps
 from typing import (Any, Callable, Generic, Iterable, NoReturn, TypeVar, Union,
                     cast)
 
-from typing_extensions import Literal
+from typing_extensions import Literal, ParamSpec
 
 from .functions import curry
 from .immutable import Immutable
@@ -15,6 +15,7 @@ A = TypeVar('A', covariant=True)
 B = TypeVar('B', covariant=True)
 C = TypeVar('C')
 D = TypeVar('D')
+P = ParamSpec('P')
 
 
 class Either_(Immutable, Monad, ABC):
@@ -200,7 +201,7 @@ Type-alias for `Union[Left[TypeVar('L')], Right[TypeVar('R')]]`
 Either.__module__ = __name__
 
 
-def either(f: Callable[..., A]) -> Callable[..., Either[NoReturn, A]]:
+def either(f: Callable[P, A]) -> Callable[P, Either[NoReturn, A]]:
     """
     Turn ``f`` into a monadic function in the ``Either`` monad by wrapping
     in it a `Right`
@@ -215,7 +216,7 @@ def either(f: Callable[..., A]) -> Callable[..., Either[NoReturn, A]]:
         ``f`` wrapped with a ``Right``
     """
     @wraps(f)
-    def decorator(*args: object, **kwargs: object) -> Either[NoReturn, A]:
+    def decorator(*args: P.args, **kwargs: P.kwargs) -> Either[NoReturn, A]:
         return Right(f(*args, **kwargs))
 
     return decorator
@@ -318,7 +319,7 @@ def tail_rec(f: Callable[[D], Either[C, Either[D, B]]], a: D) -> Either[C, B]:
     return inner_either
 
 
-def catch(f: Callable[..., A]) -> Callable[..., Either[Exception, A]]:
+def catch(f: Callable[P, A]) -> Callable[P, Either[Exception, A]]:
     """
     Decorator that wraps return values of decoratod functions with `Right`,
     and wraps catched exceptions with `Left`
@@ -336,7 +337,7 @@ def catch(f: Callable[..., A]) -> Callable[..., Either[Exception, A]]:
         decorated function
     """
     @wraps(f)
-    def decorator(*args: object, **kwargs: object) -> Either[Exception, A]:
+    def decorator(*args: P.args, **kwargs: P.kwargs) -> Either[Exception, A]:
         try:
             return Right(f(*args, **kwargs))
         except Exception as e:
