@@ -2,6 +2,7 @@ from datetime import timedelta
 from typing import (Any, AsyncContextManager, Awaitable, Callable, Generic,
                     Iterable, NoReturn, Optional, Tuple, Type, TypeVar, Union,
                     overload, Iterator)
+from typing_extensions import ParamSpec
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import AsyncExitStack
 import asyncio
@@ -19,6 +20,7 @@ E = TypeVar('E', covariant=True)
 E2 = TypeVar('E2')
 A = TypeVar('A', covariant=True)
 B = TypeVar('B')
+P = ParamSpec('P')
 
 C = TypeVar('C', bound=AsyncContextManager)
 
@@ -279,13 +281,13 @@ class catch(Immutable, Generic[EX], init=False):
         ...
 
     @overload
-    def __call__(self, f: Callable[..., Awaitable[B]]
-                 ) -> Callable[..., Try[EX, B]]:
+    def __call__(self, f: Callable[P, Awaitable[B]]
+                 ) -> Callable[P, Try[EX, B]]:
         ...
 
     @overload
-    def __call__(self, f: Callable[..., B]
-                 ) -> Callable[..., Try[EX, B]]:
+    def __call__(self, f: Callable[P, B]
+                 ) -> Callable[P, Try[EX, B]]:
         ...
 
 
@@ -293,8 +295,8 @@ class catch_io_bound(Immutable, Generic[EX], init=False):
     def __init__(self, error: Type[EX], *errors: Type[EX]):
         ...
 
-    def __call__(self, f: Callable[..., B]
-                 ) -> Callable[..., Try[EX, B]]:
+    def __call__(self, f: Callable[P, B]
+                 ) -> Callable[P, Try[EX, B]]:
         ...
 
 
@@ -302,17 +304,17 @@ class catch_cpu_bound(Immutable, Generic[EX], init=False):
     def __init__(self, error: Type[EX], *errors: Type[EX]):
         ...
 
-    def __call__(self, f: Callable[..., B]
-                 ) -> Callable[..., Try[EX, B]]:
+    def __call__(self, f: Callable[P, B]
+                 ) -> Callable[P, Try[EX, B]]:
         ...
 
-def purify(f: Callable[..., Union[Awaitable[B], B]]) -> Callable[..., Success[B]]:
+def purify(f: Callable[P, Union[Awaitable[B], B]]) -> Callable[P, Success[B]]:
     ...
 
-def purify_io_bound(f: Callable[..., B]) -> Callable[..., Success[B]]:
+def purify_io_bound(f: Callable[P, B]) -> Callable[P, Success[B]]:
     ...
 
-def purify_cpu_bound(f: Callable[..., B]) -> Callable[..., Success[B]]:
+def purify_cpu_bound(f: Callable[P, B]) -> Callable[P, Success[B]]:
     ...
 
 

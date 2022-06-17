@@ -28,8 +28,6 @@ from .functions import curry
 _CURRY = 'pfun.functions.curry'
 _COMPOSE = 'pfun.functions.compose'
 _IMMUTABLE = 'pfun.immutable.Immutable'
-_MAYBE = 'pfun.maybe.maybe'
-_RESULT = 'pfun.result.result'
 _EITHER = 'pfun.either.either'
 _EFFECT_COMBINE = 'pfun.effect.combine'
 _EITHER_CATCH = 'pfun.either.catch'
@@ -287,27 +285,6 @@ def _curry_hook(context: FunctionContext) -> Type:
         )
         return Overloaded([merged, function, with_opts])
     return Overloaded([merged, function])
-
-
-def _variadic_decorator_hook(context: FunctionContext) -> Type:
-    arg_type = context.arg_types[0][0]
-    function = _get_callable_type(arg_type, context)
-    if function is None:
-        return context.default_return_type
-
-    ret_type = get_proper_type(context.default_return_type.ret_type)
-    variables = list(
-        set(function.variables + context.default_return_type.variables)
-    )
-    return CallableType(
-        arg_types=function.arg_types,
-        arg_kinds=function.arg_kinds,
-        arg_names=function.arg_names,
-        ret_type=ret_type,
-        fallback=function.fallback,
-        variables=variables,
-        implicit=True
-    )
 
 
 def _type_var(
@@ -843,17 +820,6 @@ class PFun(Plugin):
             return _curry_hook
         if fullname == _COMPOSE:
             return _compose_hook
-        if fullname in (
-            _MAYBE,
-            _RESULT,
-            _EITHER,
-            _EITHER_CATCH,
-            'pfun.effect.catch_all',
-            'pfun.effect.purify',
-            'pfun.effect.purify_io_bound',
-            'pfun.effect.purify_cpu_bound'
-        ):
-            return _variadic_decorator_hook
         if fullname in ('pfun.effect.combine',
                         'pfun.effect.combine_cpu_bound',
                         'pfun.effect.combine_io_bound',
