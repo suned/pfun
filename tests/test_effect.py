@@ -5,12 +5,12 @@ from datetime import timedelta
 from subprocess import CalledProcessError
 from unittest import mock
 
-import aiohttp
 import asynctest
 import pytest
 from hypothesis import assume, given, settings
 from typing_extensions import Protocol
 
+import aiohttp
 from pfun import (DefaultModules, Dict, Immutable, List, clock, compose,
                   console, effect, either, files, http, identity, logging,
                   random, schedule, sql, state, subprocess)
