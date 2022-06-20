@@ -259,6 +259,7 @@ class TestEffect(MonadTest):
     def test_from_callable_cpu_bound(self, f):
         assert effect.from_cpu_bound_callable(f).run(None) == f(None).get
 
+    @settings(deadline=None)
     @given(unaries(rights(anything())))
     def test_from_callable_io_bound(self, f):
         assert effect.from_io_bound_callable(f).run(None) == f(None).get
