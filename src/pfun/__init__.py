@@ -49,7 +49,7 @@ class DefaultModules:
 
     Example:
         >>> from pfun import console, random, DefaultModules
-        >>> random.random().and_then(console.print).run(DefaultModules())
+        >>> random.random().and_then(console.print_line).run(DefaultModules())
         0.51351531
     Attributes:
         files: The files module
