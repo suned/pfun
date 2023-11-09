@@ -59,6 +59,7 @@ jobs:
         poetry install -E http -E sql --no-root
         poetry run task compile
         poetry install
+        poetry run task pytkdocs
     - name: Build docs
       run: poetry run mkdocs build
   test_sdist:
