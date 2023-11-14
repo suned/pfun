@@ -17,7 +17,10 @@ generate-setup-file = true
 [tool.poetry.dependencies]
 python = ">= 3.7, < 3.12"
 aiohttp = {extras = ["speedups"], version = "^3.7.4", optional = true}
-asyncpg = {version = "^0.23.0", optional = true}
+asyncpg = [
+    {version = "^0.23.0", python = ">= 3.7, < 3.11"},
+    {git = "https://github.com/includesoftware/python-asyncpg.git", branch = "cython3", optional = true, python = "==3.11"}
+]
 hypothesis = {version = "^6.8.5", optional = true}
 dill = "^0.3.2"
 typing-extensions = [

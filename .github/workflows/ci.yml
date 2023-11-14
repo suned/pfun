@@ -17,15 +17,15 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.10.4
+        python-version: 3.11
     - name: Restore cache
       uses: actions/cache@v1
       with:
         path: .venv
-        key: py3.10-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+        key: py3.11-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.13
+        pip install poetry==1.7.0
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -52,7 +52,7 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.11
+        pip install poetry==1.7.0
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -78,7 +78,7 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.11
+        pip install poetry==1.7.0
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -97,7 +97,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
@@ -113,7 +113,7 @@ jobs:
         key: py${{ matrix.python-version }}-${{ matrix.os }}-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.11
+        pip install poetry==1.7.0
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
@@ -146,7 +146,7 @@ jobs:
         key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
-        pip install poetry==1.1.11
+        pip install poetry==1.7.0
         poetry config virtualenvs.in-project true
     - name: Download wheels and sdist
       uses: actions/download-artifact@v2

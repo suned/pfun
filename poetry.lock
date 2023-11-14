@@ -185,7 +185,7 @@ typing-extensions = {version = ">=3.6.5", markers = "python_version < \"3.8\""}
 name = "asyncpg"
 version = "0.23.0"
 description = "An asyncio PostgreSQL driver"
-optional = true
+optional = false
 python-versions = ">=3.5.0"
 files = [
     {file = "asyncpg-0.23.0-cp35-cp35m-macosx_10_14_x86_64.whl", hash = "sha256:f86378bbfbec7334af03bad4d5fd432149286665ecc8bfbcb7135da56b15d34b"},
@@ -212,6 +212,28 @@ typing-extensions = {version = ">=3.7.4.3", markers = "python_version < \"3.8\""
 dev = ["Cython (>=0.29.20,<0.30.0)", "Sphinx (>=1.7.3,<1.8.0)", "flake8 (>=3.7.9,<3.8.0)", "pycodestyle (>=2.5.0,<2.6.0)", "pytest (>=3.6.0)", "sphinx-rtd-theme (>=0.2.4,<0.3.0)", "sphinxcontrib-asyncio (>=0.2.0,<0.3.0)", "uvloop (>=0.14.0,<0.15.0)"]
 docs = ["Sphinx (>=1.7.3,<1.8.0)", "sphinx-rtd-theme (>=0.2.4,<0.3.0)", "sphinxcontrib-asyncio (>=0.2.0,<0.3.0)"]
 test = ["flake8 (>=3.7.9,<3.8.0)", "pycodestyle (>=2.5.0,<2.6.0)", "uvloop (>=0.14.0,<0.15.0)"]
+
+[[package]]
+name = "asyncpg"
+version = "0.30.0.dev0+d40d5a8"
+description = "An asyncio PostgreSQL driver"
+optional = true
+python-versions = ">=3.8.0"
+files = []
+develop = false
+
+[package.dependencies]
+async_timeout = {version = ">=4.0.3", markers = "python_version < \"3.12.0\""}
+
+[package.extras]
+docs = ["Sphinx (>=5.3.0,<5.4.0)", "sphinx_rtd_theme (>=1.2.2)", "sphinxcontrib-asyncio (>=0.3.0,<0.4.0)"]
+test = ["flake8 (>=6.1,<7.0)", "uvloop (>=0.15.3)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/includesoftware/python-asyncpg.git"
+reference = "cython3"
+resolved_reference = "d40d5a883e349f3728da80eef02020f31fac6fcf"
 
 [[package]]
 name = "asynctest"
@@ -1686,13 +1708,13 @@ toml = "*"
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.40"
+version = "3.0.41"
 description = "Library for building powerful interactive command lines in Python"
 optional = false
 python-versions = ">=3.7.0"
 files = [
-    {file = "prompt_toolkit-3.0.40-py3-none-any.whl", hash = "sha256:99ba3dfb23d5b5af89712f89e60a5f3d9b8b67a9482ca377c5771d0e9047a34b"},
-    {file = "prompt_toolkit-3.0.40.tar.gz", hash = "sha256:a371c06bb1d66cd499fecd708e50c0b6ae00acba9822ba33c586e2f16d1b739e"},
+    {file = "prompt_toolkit-3.0.41-py3-none-any.whl", hash = "sha256:f36fe301fafb7470e86aaf90f036eef600a3210be4decf461a5b1ca8403d3cb2"},
+    {file = "prompt_toolkit-3.0.41.tar.gz", hash = "sha256:941367d97fc815548822aa26c2a269fdc4eb21e9ec05fc5d447cf09bad5d75f0"},
 ]
 
 [package.dependencies]
@@ -2508,13 +2530,13 @@ watchmedo = ["PyYAML (>=3.10)"]
 
 [[package]]
 name = "wcwidth"
-version = "0.2.9"
+version = "0.2.10"
 description = "Measures the displayed width of unicode strings in a terminal"
 optional = false
 python-versions = "*"
 files = [
-    {file = "wcwidth-0.2.9-py2.py3-none-any.whl", hash = "sha256:9a929bd8380f6cd9571a968a9c8f4353ca58d7cd812a4822bba831f8d685b223"},
-    {file = "wcwidth-0.2.9.tar.gz", hash = "sha256:a675d1a4a2d24ef67096a04b85b02deeecd8e226f57b5e3a72dbb9ed99d27da8"},
+    {file = "wcwidth-0.2.10-py2.py3-none-any.whl", hash = "sha256:aec5179002dd0f0d40c456026e74a729661c9d468e1ed64405e3a6c2176ca36f"},
+    {file = "wcwidth-0.2.10.tar.gz", hash = "sha256:390c7454101092a6a5e43baad8f83de615463af459201709556b6e4b1c861f97"},
 ]
 
 [[package]]
@@ -2647,10 +2669,10 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 
 [extras]
 http = ["aiohttp"]
-sql = ["asyncpg"]
+sql = ["asyncpg", "asyncpg"]
 test = ["hypothesis"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">= 3.7, < 3.12"
-content-hash = "b57b2916aec1a6c738eb715c53845af1615c56ebbd9730973101ab14c87b0e2c"
+content-hash = "22fc7f4782688683f1fdde800da814f4caca1232e55ca22f8cf6ff8701959e0a"
