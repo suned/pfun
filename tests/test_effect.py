@@ -6,7 +6,11 @@ from subprocess import CalledProcessError
 from unittest import mock
 
 import aiohttp
-import asynctest
+try:
+    import asynctest
+except AttributeError as err:
+    asyncio.coroutine = lambda fn: lambda: fn()
+    import asynctest
 import pytest
 from hypothesis import assume, given, settings
 from typing_extensions import Protocol
