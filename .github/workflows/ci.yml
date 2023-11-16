@@ -17,12 +17,12 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.11
+        python-version: 3.7
     - name: Restore cache
       uses: actions/cache@v1
       with:
         path: .venv
-        key: py3.11-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
         pip install poetry>=1.5.0
