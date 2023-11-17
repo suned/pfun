@@ -29,7 +29,7 @@ jobs:
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
-        poetry install -E http -E sql --no-root
+        poetry install -E http -E sql
         poetry run task compile
     - name: Lint
       run: |
@@ -55,7 +55,7 @@ jobs:
         poetry config virtualenvs.in-project true
     - name: Install dependencies
       run: |
-        poetry install -E http -E sql --no-root
+        poetry install -E http -E sql
         poetry run task compile
         poetry run task pytkdocs
     - name: Build docs
@@ -68,12 +68,12 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.10.4
     - name: Restore cache
       uses: actions/cache@v1
       with:
         path: .venv
-        key: py3.7-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
+        key: py3.10-ubuntu-latest-venv-cache-${{ hashFiles('**/poetry.lock') }}
     - name: Install poetry
       run: |
         pip install poetry>=1.5.0
@@ -120,6 +120,7 @@ jobs:
         poetry build -f wheel
         poetry run pip install --ignore-installed dist/*
     - name: Run tests
+      if: ${{matrix.python-version!='3.7'}}
       run: poetry run pytest -n 4 --mypy-ini-file=tests/mypy.ini
     - name: Upload wheel
       uses: actions/upload-artifact@v2

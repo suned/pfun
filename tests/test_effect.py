@@ -6,31 +6,13 @@ from subprocess import CalledProcessError
 from unittest import mock
 
 import aiohttp
-
 import pytest
 from hypothesis import assume, given, settings
 from typing_extensions import Protocol
 
-from pfun import (
-    DefaultModules,
-    Dict,
-    Immutable,
-    List,
-    clock,
-    compose,
-    console,
-    effect,
-    either,
-    files,
-    http,
-    identity,
-    logging,
-    random,
-    schedule,
-    sql,
-    state,
-    subprocess,
-)
+from pfun import (DefaultModules, Dict, Immutable, List, clock, compose,
+                  console, effect, either, files, http, identity, logging,
+                  random, schedule, sql, state, subprocess)
 from pfun.effect import Resource
 from pfun.hypothesis_strategies import anything, effects, rights, unaries
 
@@ -68,9 +50,9 @@ class TestEffect(MonadTest):
     @given(unaries(anything()), unaries(anything()), anything(), anything())
     def test_composition_law(self, f, g, value, env):
         h = compose(f, g)
-        assert effect.success(value).map(h).run(env) == effect.success(value).map(
-            g
-        ).map(f).run(env)
+        assert effect.success(value).map(h).run(env) == effect.success(
+            value
+        ).map(g).map(f).run(env)
 
     @given(anything(), anything())
     def test_identity_law(self, value, env):
@@ -97,7 +79,9 @@ class TestEffect(MonadTest):
     @given(anything(), anything(), anything())
     def test_inequality(self, first, second, env):
         assume(first != second)
-        assert effect.success(first).run(env) != effect.success(second).run(env)
+        assert effect.success(first).run(env) != effect.success(second).run(
+            env
+        )
 
     def test_depend(self):
         assert effect.depend(str).run("env") == "env"
@@ -109,13 +93,17 @@ class TestEffect(MonadTest):
         assert effect.from_awaitable(f()).run(None) == 1
 
     def test_gather(self):
-        assert effect.gather_async([effect.success(v) for v in range(3)]).run(None) == (
+        assert effect.gather_async([effect.success(v) for v in range(3)]).run(
+            None
+        ) == (
             0,
             1,
             2,
         )
 
-        assert effect.gather([effect.success(v) for v in range(3)]).run(None) == (
+        assert effect.gather([effect.success(v) for v in range(3)]).run(
+            None
+        ) == (
             0,
             1,
             2,
@@ -128,7 +116,9 @@ class TestEffect(MonadTest):
 
     def test_stack_safety(self):
         with recursion_limit(100):
-            effect.gather_async([effect.success(v) for v in range(500)]).run(None)
+            effect.gather_async([effect.success(v) for v in range(500)]).run(
+                None
+            )
 
         e = effect.error("")
         for _ in range(500):
@@ -144,17 +134,19 @@ class TestEffect(MonadTest):
             e.run(None)
 
     def test_filter(self):
-        assert effect.filter_(lambda v: effect.success(v % 2 == 0), range(5)).run(
-            None
-        ) == (0, 2, 4)
+        assert effect.filter_(
+            lambda v: effect.success(v % 2 == 0), range(5)
+        ).run(None) == (0, 2, 4)
 
     def test_filter_async(self):
-        assert effect.filter_async(lambda v: effect.success(v % 2 == 0), range(5)).run(
-            None
-        ) == (0, 2, 4)
+        assert effect.filter_async(
+            lambda v: effect.success(v % 2 == 0), range(5)
+        ).run(None) == (0, 2, 4)
 
     def test_filter_generator(self):
-        e = effect.filter_(lambda v: effect.success(v % 2 == 0), (v for v in range(5)))
+        e = effect.filter_(
+            lambda v: effect.success(v % 2 == 0), (v for v in range(5))
+        )
         assert e.run(None) == (0, 2, 4)
         assert e.run(None) == (0, 2, 4)
 
@@ -162,7 +154,11 @@ class TestEffect(MonadTest):
         assert effect.for_each(effect.success, range(3)).run(None) == (0, 1, 2)
 
     def test_for_each_async(self):
-        assert effect.for_each_async(effect.success, range(3)).run(None) == (0, 1, 2)
+        assert effect.for_each_async(effect.success, range(3)).run(None) == (
+            0,
+            1,
+            2,
+        )
 
     def test_either(self):
         success = effect.success(1)
@@ -196,7 +192,9 @@ class TestEffect(MonadTest):
             return a + b
 
         assert (
-            effect.combine(effect.success("a"), effect.success("b"))(f).run(None)
+            effect.combine(effect.success("a"), effect.success("b"))(f).run(
+                None
+            )
             == "ab"
         )
 
@@ -205,7 +203,9 @@ class TestEffect(MonadTest):
             return a + b
 
         assert (
-            effect.combine_async(effect.success("a"), effect.success("b"))(f).run(None)
+            effect.combine_async(effect.success("a"), effect.success("b"))(
+                f
+            ).run(None)
             == "ab"
         )
 
@@ -213,13 +213,20 @@ class TestEffect(MonadTest):
         def f(a, b):
             return a + b
 
-        assert effect.lift(f)(effect.success(2), effect.success(2)).run(None) == 4
+        assert (
+            effect.lift(f)(effect.success(2), effect.success(2)).run(None) == 4
+        )
 
     def test_lift_async(self):
         def f(a, b):
             return a + b
 
-        assert effect.lift_async(f)(effect.success(2), effect.success(2)).run(None) == 4
+        assert (
+            effect.lift_async(f)(effect.success(2), effect.success(2)).run(
+                None
+            )
+            == 4
+        )
 
     def test_catch(self):
         def f(fail):
@@ -257,7 +264,9 @@ class TestEffect(MonadTest):
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
     def test_lift_cpu_bound(self, e1, e2):
-        assert effect.lift_cpu_bound(lambda v1, v2: (v1, v2))(e1, e2).run(None) == (
+        assert effect.lift_cpu_bound(lambda v1, v2: (v1, v2))(e1, e2).run(
+            None
+        ) == (
             e1.run(None),
             e2.run(None),
         )
@@ -265,7 +274,9 @@ class TestEffect(MonadTest):
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
     def test_lift_io_bound(self, e1, e2):
-        assert effect.lift_io_bound(lambda v1, v2: (v1, v2))(e1, e2).run(None) == (
+        assert effect.lift_io_bound(lambda v1, v2: (v1, v2))(e1, e2).run(
+            None
+        ) == (
             e1.run(None),
             e2.run(None),
         )
@@ -273,7 +284,9 @@ class TestEffect(MonadTest):
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
     def test_combine_cpu_bound(self, e1, e2):
-        assert effect.combine_cpu_bound(e1, e2)(lambda v1, v2: (v1, v2)).run(None) == (
+        assert effect.combine_cpu_bound(e1, e2)(lambda v1, v2: (v1, v2)).run(
+            None
+        ) == (
             e1.run(None),
             e2.run(None),
         )
@@ -281,7 +294,9 @@ class TestEffect(MonadTest):
     @settings(deadline=None)
     @given(effects(anything()), effects(anything()))
     def test_combine_io_bound(self, e1, e2):
-        assert effect.combine_io_bound(e1, e2)(lambda v1, v2: (v1, v2)).run(None) == (
+        assert effect.combine_io_bound(e1, e2)(lambda v1, v2: (v1, v2)).run(
+            None
+        ) == (
             e1.run(None),
             e2.run(None),
         )
@@ -415,7 +430,8 @@ class TestEffect(MonadTest):
     def test_map_repr(self):
         f = lambda _: _
         assert (
-            repr(effect.success("value").map(f)) == f"success('value').map({repr(f)})"
+            repr(effect.success("value").map(f))
+            == f"success('value').map({repr(f)})"
         )
 
     def test_discard_and_then_repr(self):
@@ -502,7 +518,10 @@ class TestEffect(MonadTest):
 
     def test_lift_repr(self):
         f = lambda _: _
-        assert repr(effect.lift(f)(effect.success(0))) == f"lift({repr(f)})(success(0))"
+        assert (
+            repr(effect.lift(f)(effect.success(0)))
+            == f"lift({repr(f)})(success(0))"
+        )
 
     def test_lift_io_bound_repr(self):
         f = lambda _: _
@@ -582,7 +601,9 @@ class TestResource:
     def test_resources_are_unique(self):
         mock_resource = mock.MagicMock()
         resource = Resource(lambda: either.Right(mock_resource))
-        r1, r2 = effect.gather_async((resource.get(), resource.get())).run(None)
+        r1, r2 = effect.gather_async((resource.get(), resource.get())).run(
+            None
+        )
         assert r1 is r2
         mock_resource.__aenter__.assert_called_once()
 
@@ -603,7 +624,9 @@ class TestConsole:
         assert captured.out == "Hello, world!\n"
 
     def test_get_line(self) -> None:
-        with mock.patch("pfun.console.input", return_value="Hello!") as mocked_input:
+        with mock.patch(
+            "pfun.console.input", return_value="Hello!"
+        ) as mocked_input:
             e = console.get_line("Say hello")
             assert e.run(HasConsole()) == "Hello!"
             mocked_input.assert_called_once_with("Say hello")
@@ -684,7 +707,9 @@ class HasSubprocess:
 
 class TestSubprocess:
     def test_run_in_shell(self):
-        stdout, stderr = subprocess.run_in_shell('echo "test"').run(HasSubprocess())
+        stdout, stderr = subprocess.run_in_shell('echo "test"').run(
+            HasSubprocess()
+        )
         assert stdout == b"test\n"
 
         with pytest.raises(CalledProcessError):
@@ -703,20 +728,24 @@ class TestLogging:
 
     @mock.patch("pfun.logging.logging")
     @pytest.mark.parametrize(
-        "log_method", ["debug", "info", "warning", "error", "critical", "exception"]
+        "log_method",
+        ["debug", "info", "warning", "error", "critical", "exception"],
     )
     def test_logger_methods(self, mock_logging, log_method):
         logging.get_logger("foo").and_then(
             lambda logger: getattr(logger, log_method)("test")
         ).run(HasLogging())
         exc_and_stack_info = log_method == "exception"
-        getattr(mock_logging.getLogger("foo"), log_method).assert_called_once_with(
+        getattr(
+            mock_logging.getLogger("foo"), log_method
+        ).assert_called_once_with(
             "test", exc_info=exc_and_stack_info, stack_info=exc_and_stack_info
         )  # yapf: disable
 
     @mock.patch("pfun.logging.logging")
     @pytest.mark.parametrize(
-        "log_method", ["debug", "info", "warning", "error", "critical", "exception"]
+        "log_method",
+        ["debug", "info", "warning", "error", "critical", "exception"],
     )
     def test_logging_methods(self, mock_logging, log_method):
         getattr(logging, log_method)("test").run(HasLogging())
@@ -772,12 +801,17 @@ class TestHTTP:
             read_mock = mock.AsyncMock()
             read_mock.return_value = b"test"
             (
-                session.return_value.request.return_value.__aenter__.return_value.read
+                session.return_value.request.return_value.__aenter__
+                .return_value.read
             ) = read_mock
             (
-                session.return_value.request.return_value.__aenter__.return_value.headers
+                session.return_value.request.return_value.__aenter__
+                .return_value.headers
             ) = Dict()
-            assert getattr(http, method)("foo.com").run(HasHTTP()).content == b"test"
+            assert (
+                getattr(http, method)("foo.com").run(HasHTTP()).content
+                == b"test"
+            )
             session().request.assert_called_once_with(
                 method, "foo.com", **self.default_params
             )
@@ -791,14 +825,22 @@ class TestSQL:
     def test_get_connetion(self):
         with mock.patch("pfun.sql.asyncpg.connect") as connect_mock:
             connect_mock.return_value.close = CoroutineMock()
-            assert sql.get_connection().run(HasSQL()) == connect_mock.return_value
-            connect_mock.assert_called_once_with("postgres://test@host/test_db")
+            assert (
+                sql.get_connection().run(HasSQL()) == connect_mock.return_value
+            )
+            connect_mock.assert_called_once_with(
+                "postgres://test@host/test_db"
+            )
 
     def test_execute(self):
         with mock.patch("pfun.sql.asyncpg.connect") as connect_mock:
             connect_mock.return_value.close = CoroutineMock()
-            connect_mock.return_value.execute = CoroutineMock(return_value="SELECT 1")
-            assert sql.execute("select * from users").run(HasSQL()) == "SELECT 1"
+            connect_mock.return_value.execute = CoroutineMock(
+                return_value="SELECT 1"
+            )
+            assert (
+                sql.execute("select * from users").run(HasSQL()) == "SELECT 1"
+            )
 
     def test_execute_many(self):
         with mock.patch("pfun.sql.asyncpg.connect") as connect_mock:
@@ -806,9 +848,9 @@ class TestSQL:
             connect_mock.return_value.executemany = CoroutineMock(
                 return_value=("SELECT 1",)
             )
-            assert sql.execute_many("select * from users", ["arg"]).run(HasSQL()) == (
-                "SELECT 1",
-            )
+            assert sql.execute_many("select * from users", ["arg"]).run(
+                HasSQL()
+            ) == ("SELECT 1",)
 
     def test_fetch_one(self):
         with mock.patch("pfun.sql.asyncpg.connect") as connect_mock:
@@ -847,8 +889,13 @@ class TestClock:
 
     def test_now(self):
         with mock.patch("pfun.clock.datetime.datetime") as datetime_mock:
-            datetime_mock.now.return_value = datetime.datetime.utcfromtimestamp(0)
-            assert clock.now().run(DefaultModules()) == datetime_mock.now.return_value
+            datetime_mock.now.return_value = (
+                datetime.datetime.utcfromtimestamp(0)
+            )
+            assert (
+                clock.now().run(DefaultModules())
+                == datetime_mock.now.return_value
+            )
 
 
 class TestRandom:

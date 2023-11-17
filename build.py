@@ -1,5 +1,5 @@
-from setuptools.extension import Extension
 from Cython.Build import cythonize
+from setuptools.extension import Extension
 
 
 def build(setup_kwargs):
