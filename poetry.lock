@@ -231,7 +231,7 @@ test = ["flake8 (>=6.1,<7.0)", "uvloop (>=0.15.3)"]
 
 [package.source]
 type = "git"
-url = "https://github.com/includesoftware/python-asyncpg.git"
+url = "https://github.com/musicinmybrain/asyncpg.git"
 reference = "cython3"
 resolved_reference = "d40d5a883e349f3728da80eef02020f31fac6fcf"
 
@@ -2675,4 +2675,4 @@ test = ["hypothesis"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">= 3.7, < 3.12"
-content-hash = "22fc7f4782688683f1fdde800da814f4caca1232e55ca22f8cf6ff8701959e0a"
+content-hash = "047bb3a64fdc532997f622b5fb4616f9ce36ce6b684c9d7e581a278e851d7d52"

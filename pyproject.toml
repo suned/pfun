@@ -47,7 +47,6 @@ isort = "^4.3.21"
 pre-commit = "^2.5.1"
 pre-commit-hooks = "^3.1.0"
 main-dec = "^0.1.1"
-asynctest = "^0.13.0"
 mkdocs = "^1.3.0"
 mkdocstrings = {version = "^0.18.1", extras = []}
 mkdocs-material = "^5.4.0"
@@ -60,7 +59,7 @@ test = ["hypothesis"]
 
 [tool.taskipy.tasks]
 compile = "poetry run cython --3str src/pfun/*.pyx"
-install = "poetry run task compile && poetry install"
+install = "poetry run task compile && poetry install -E test -E sql -E http"
 build = "poetry run task compile && poetry build"
 test = "poetry run task install && poetry run pytest -rsx -n 4 --mypy-ini-file=tests/mypy.ini"
 serve-docs = "poetry run task install && poetry run mkdocs serve"
