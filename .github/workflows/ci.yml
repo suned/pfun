@@ -165,8 +165,7 @@ jobs:
         poetry run python scripts/check_version.py pyproject.toml $tag
     - name: Release pfun
       env:
-        PYPI_USERNAME: ${{ secrets.PYPI_USER }}
-        PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
       run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
     - name: Release docs
       run: |
