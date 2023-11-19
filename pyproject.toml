@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pfun"
-version = "0.13.1"
+version = "0.13.2"
 description = "Functional, composable, asynchronous, type-safe Python."
 authors = ["Sune Debel"]
 readme = "README.md"
