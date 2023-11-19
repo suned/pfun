@@ -166,7 +166,7 @@ jobs:
     - name: Release pfun
       env:
         POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-      run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
+      run: poetry publish
     - name: Release docs
       run: |
         git fetch origin gh-pages
