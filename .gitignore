@@ -128,3 +128,4 @@ docs/build
 .vscode
 .DS_Store
 *.c
+setup.py
