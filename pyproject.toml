@@ -6,10 +6,6 @@ authors = ["Sune Debel"]
 readme = "README.md"
 include = ["src/pfun/py.typed", "src/pfun/*.c", "src/pfun/*.so"]
 
-[project]
-name = "pfun"
-dynamic = ["description", "readme", "authors", "version"]
-
 [tool.poetry.build]
 script = "build.py"
 generate-setup-file = true
