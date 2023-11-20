@@ -8,7 +8,7 @@ include = ["src/pfun/py.typed", "src/pfun/*.c", "src/pfun/*.so"]
 
 [project]
 name = "pfun"
-version = "0.13.1"
+dynamic = ["description", "readme", "authors", "version"]
 
 [tool.poetry.build]
 script = "build.py"
